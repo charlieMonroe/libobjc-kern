@@ -26,14 +26,19 @@ typedef struct objc_class *Class;
 typedef unsigned short SEL;
 
 typedef struct objc_selector {
-	const char *name;
-	const char *types;
+	const char *name; /* Name of the selector. */
+	const char *types; /* Types of the selector. */
+	
+	/* 
+	 * On registering, the selUID is populated and is
+	 * the pointer into the selector table.
+	 */
+	SEL selUID;
 } objc_selector_t;
 
 /**
  * Definition of id - a pointer to an object - a struct, where the first field
- * is so-called isa, in GCC run-time called 'class_pointer'. I've chosen to keep
- * the 'isa' name.
+ * is so-called isa, pointer to the class the object is an instance of.
  */
 typedef struct objc_object {
 	Class isa;
@@ -55,21 +60,29 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
  * Declaration of a Method.
  */
 typedef struct objc_method {
-	SEL selector;
-	const char *types;
 	IMP implementation;
+	
+	objc_selector_t *selector;
+	
+	// Do we need types here, since they are already in the selector,
+	// selector is typed and we do not allow two selectors with
+	// different types?
+	const char *types;
+	
 	unsigned int version;
 } *Method;
 
 
 /**
- * The same as objc_method, but char * instead
+ * TODO - depends on the struct above The same as objc_method, but char * instead
  * of SEL.
  */
 struct objc_method_prototype {
+	IMP implementation;
+	
 	const char *selector_name;
 	const char *types;
-	IMP implementation;
+	
 	unsigned int version;
 };
 
@@ -81,6 +94,7 @@ typedef struct objc_ivar {
 	const char *type;
 	unsigned int size;
 	unsigned int offset;
+	unsigned int align;
 } *Ivar;
 
 /**
@@ -90,47 +104,6 @@ typedef struct objc_ivar {
  */
 #define nil ((id)0)
 #define Nil ((Class)0)
- 
-/**
- * A definition for a class holder - a data structure that is responsible for
- * keeping a list of classes registered with the run-time, looking them up, etc.
- * Priority of this structure should be lookup speed.
- */
-typedef void *objc_class_holder;
-
-/**
- * A definition for a selector holder - a data structure that is responsible for
- * keeping a list of selectors registered with the run-time, looking them up, etc.
- * Priority of this structure should be both lookup and insertion speed.
- */
-typedef void *objc_selector_holder;
-
-/**
- * A definition for a cache - a data structure that is responsible for
- * keeping a list of IMPs to be found by SEL.
- * Priority of this structure should be both lookup and insertion speed.
- */
-typedef void *objc_cache;
-
-/**
- * A definition for a dynamically growing array structure. The easiest
- * implementation is to create a structure which includes a counter of objects,
- * size of the array, and a dynamically allocated C-array of inserted pointers.
- * It is used to keep arrays of methods, protocols, etc. on a class.
- * This run-time provides a default implementation of such an array.
- */
-typedef void *objc_array;
-
-/**
- * An enumerator structure returned by the array.
- */
-typedef struct _objc_array_enumerator {
-	struct _objc_array_enumerator *next;
-	void *item;
-} *objc_array_enumerator;
-
-/* A definition for a read/write lock. */
-typedef void *objc_rw_lock;
 
 
 /* Actual structure of Class. */
