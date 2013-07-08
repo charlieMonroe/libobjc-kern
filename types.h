@@ -14,6 +14,15 @@ typedef signed char BOOL;
 #ifndef NULL
 	#define NULL ((void*)0)
 #endif
+
+/**
+ * Definitions of nil and Nil.
+ * nil is used for objects, Nil for classes. It doesn't really matter,
+ * but all traditional run-times use this as "type checking".
+ */
+#define nil ((id)0)
+#define Nil ((Class)0)
+
  
 /********** Class ***********/
 /**
@@ -74,19 +83,6 @@ typedef struct objc_method {
 
 
 /**
- * TODO - depends on the struct above The same as objc_method, but char * instead
- * of SEL.
- */
-struct objc_method_prototype {
-	IMP implementation;
-	
-	const char *selector_name;
-	const char *types;
-	
-	unsigned int version;
-};
-
-/**
  * Declaration of an Ivar.
  */
 typedef struct objc_ivar {
@@ -97,20 +93,59 @@ typedef struct objc_ivar {
 	unsigned int align;
 } *Ivar;
 
-/**
- * Definitions of nil and Nil.
- * nil is used for objects, Nil for classes. It doesn't really matter,
- * but all traditional run-times use this as "type checking".
- */
-#define nil ((id)0)
-#define Nil ((Class)0)
+
+
+struct objc_category {
+	const char *category_name;
+	const char *class_name;
+	
+	objc_array instance_methods;
+	objc_array class_methods;
+	objc_array protocols;
+} *Category;
+
+
+struct objc_property {
+	const char *name;
+	const char *getter_name;
+	const char *setter_name;
+	
+	const char *getter_types;
+	const char *setter_types;
+	
+	// TODO flags
+	unsigned int flags;
+	
+} *Property;
+
+struct objc_protocol {
+	Class isa;
+	const char *name;
+	
+	objc_array protocols; // other protocols
+	objc_array instance_methods;
+	objc_array class_methods;
+	
+	objc_array optional_instance_methods;
+	objc_array optional_class_methods;
+	
+	objc_array properties;
+	objc_array optional_properties;
+}
 
 
 /* Actual structure of Class. */
 struct objc_class {
-	Class isa; /* Points to self - this way the lookup mechanism detects class method calls */
+	Class isa; /* Points to meta class */
 	Class super_class;
 	char *name;
+	
+	/**
+	 * On class registration, the run-time calculates
+	 * offsets of all ivars, allocs an array here and 
+	 * populates it with ivar offsets.
+	 */
+	unsigned int *ivar_offsets;
 	
 	/*
 	 * Both class and instance methods and ivars are actually
@@ -119,45 +154,26 @@ struct objc_class {
 	 *
 	 * WARNING: All of them are lazily created -> may be NULL!
 	 */
-	objc_array class_methods;
-	objc_array instance_methods;
+	objc_array methods;
 	objc_array ivars;
+	objc_array categories;
+	objc_array protocols;
+	objc_array properties;
 	
-	/* Cache */
-	objc_cache class_cache;
-	objc_cache instance_cache;
+	// TODO
+	// Do we want subclasses and siblings like the GNUStep?
 	
-	unsigned int instance_size; /* Doesn't include class extensions */
+	/* Cache/Dispatch table */
+	objc_cache cache;
+	
+	unsigned int instance_size;
 	unsigned int version; /** Right now 0. */
+	
 	struct {
+		BOOL is_meta : 1;
 		BOOL in_construction : 1;
 	} flags;
-	
-	void *extra_space;
 };
 
-/** Class prototype. */
-struct objc_class_prototype {
-	Class isa; /* Must be NULL! */
-	const char *super_class_name;
-	const char *name;
-	
-	/** All must be NULL-terminated. */
-	struct objc_method_prototype **class_methods;
-	struct objc_method_prototype **instance_methods;
-	Ivar *ivars;
-	
-	/* Cache - all pointers must be NULL */
-	objc_cache class_cache;
-	objc_cache instance_cache;
-	
-	unsigned int instance_size; /* Will be filled */
-	unsigned int version; /** Right now 0. */
-	struct {
-		BOOL in_construction : 1; /* Must be YES */
-	} flags;
-	
-	void *extra_space; /* Must be NULL */
-};
 
 #endif /* OBJC_TYPES_H_ */
