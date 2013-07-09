@@ -1,5 +1,5 @@
 /*
- * This file contains basic types, like BOOL and OBJC_NULL.
+ * This file contains basic types, like BOOL and NULL.
  */
 
 #ifndef OBJC_TYPES_H_
@@ -24,26 +24,48 @@ typedef signed char BOOL;
 #define Nil ((Class)0)
 
  
-/********** Class ***********/
 /**
- * Declaration of a Class.
+ * Forward declarations.
  */
-
 typedef struct objc_class *Class;
+typedef struct objc_selector *Selector;
+typedef struct objc_ivar *Ivar;
+typedef struct objc_category *Category;
+typedef struct objc_method *Method;
+typedef struct objc_property *Property;
+typedef struct objc_protocol *Protocol;
+typedef struct objc_object *id;
 
 /* A definition of a SEL. */
 typedef unsigned short SEL;
 
-typedef struct objc_selector {
+
+/**
+ * Actual declarations of the structures follow.
+ * TODO: decide whether to make them opaque,
+ * declared in a private header/source files.
+ */
+struct objc_selector {
 	const char *name; /* Name of the selector. */
 	const char *types; /* Types of the selector. */
 	
-	/* 
+	/*
 	 * On registering, the selUID is populated and is
 	 * the pointer into the selector table.
 	 */
 	SEL selUID;
-} objc_selector_t;
+};
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Definition of id - a pointer to an object - a struct, where the first field
@@ -71,7 +93,7 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
 typedef struct objc_method {
 	IMP implementation;
 	
-	objc_selector_t *selector;
+	Selector selector;
 	
 	// Do we need types here, since they are already in the selector,
 	// selector is typed and we do not allow two selectors with

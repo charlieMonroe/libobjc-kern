@@ -1,6 +1,17 @@
+
 #include "selector.h"
-#include "os.h" /* For run-time functions */
 #include "utils.h" /* For strcpy */
+
+/**
+ * Since the SEL is a 16-bit integer, all we need to
+ * have are 2-level arrays that get slowly filled as
+ * needed for the look-up.
+ *
+ * The actual
+ *
+ *
+ */
+
 
 static objc_selector_holder selector_cache;
 
