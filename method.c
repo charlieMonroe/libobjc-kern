@@ -65,18 +65,23 @@ OBJC_INLINE void _methods_copy_to_list(objc_array method_list, Method *list, uns
 
 /* Public functions are documented in the header file. */
 
-Method objc_method_create(SEL selector, const char *types, IMP implementation){
+Method objc_method_create(SEL selector, IMP implementation){
+	objc_assert(implementation != NULL, "Trying to create a method with NULL implementation!");
+	
 	Method m = objc_alloc(sizeof(struct objc_method));
 	m->selector = selector;
 	m->implementation = implementation;
-	m->types = objc_strcpy(types);
 	m->version = 0;
 	return m;
 }
 
 IMP objc_method_get_implementation(Method method){
+	objc_assert(method != NULL, "Getting implementation of NULL method!");
 	return method->implementation;
 }
+
+
+
 
 objc_array objc_method_transform_method_prototypes(struct objc_method_prototype **prototypes){
 	objc_array arr;

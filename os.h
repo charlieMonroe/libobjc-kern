@@ -29,5 +29,13 @@ static inline void panic(const char *reason){
 
 // TODO
 #define objc_lock void
+#define objc_array void
+
+/**
+ * Some small macros that are used in a few places,
+ * mostly for stitching.
+ */
+#define REALLY_PREFIX_SUFFIX(x, y) x ## y
+#define PREFIX_SUFFIX(x, y) REALLY_PREFIX_SUFFIX(x, y)
 
 #endif /* OBJC_OS_H_ */

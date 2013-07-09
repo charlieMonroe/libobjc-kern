@@ -5,6 +5,8 @@
 #ifndef OBJC_TYPES_H_
 #define OBJC_TYPES_H_
 
+#include "os.h"
+
 /* A boolean type. */
 typedef signed char BOOL;
 #define YES ((BOOL)1)
@@ -67,21 +69,13 @@ struct objc_method {
 	unsigned int version;
 };
 
-
-
-
-
-
-
-
-
 /**
  * Definition of id - a pointer to an object - a struct, where the first field
  * is so-called isa, pointer to the class the object is an instance of.
  */
-typedef struct objc_object {
+struct objc_object {
 	Class isa;
-} *id;
+};
 
 /**
  * Definition of super. As the super calls may
@@ -92,32 +86,16 @@ typedef struct {
 	Class class;
 } objc_super;
 
-
-
-
-
 /**
  * Declaration of an Ivar.
  */
-typedef struct objc_ivar {
+struct objc_ivar {
 	const char *name;
 	const char *type;
 	unsigned int size;
 	unsigned int offset;
 	unsigned int align;
-} *Ivar;
-
-
-
-struct objc_category {
-	const char *category_name;
-	const char *class_name;
-	
-	objc_array instance_methods;
-	objc_array class_methods;
-	objc_array protocols;
-} *Category;
-
+};
 
 struct objc_property {
 	const char *name;
@@ -130,22 +108,35 @@ struct objc_property {
 	// TODO flags
 	unsigned int flags;
 	
-} *Property;
+};
+
+
+#include "list_types.h"
+
 
 struct objc_protocol {
 	Class isa;
 	const char *name;
 	
-	objc_array protocols; // other protocols
-	objc_array instance_methods;
-	objc_array class_methods;
+	objc_protocol_list *protocols; // other protocols
+	objc_method_list *instance_methods;
+	objc_method_list *class_methods;
 	
-	objc_array optional_instance_methods;
-	objc_array optional_class_methods;
+	objc_method_list *optional_instance_methods;
+	objc_method_list *optional_class_methods;
 	
-	objc_array properties;
-	objc_array optional_properties;
-}
+	objc_property_list *properties;
+	objc_property_list *optional_properties;
+};
+
+struct objc_category {
+	const char *category_name;
+	const char *class_name;
+	
+	objc_method_list *instance_methods;
+	objc_method_list *class_methods;
+	objc_protocol_list *protocols;
+};
 
 
 /* Actual structure of Class. */
@@ -168,17 +159,17 @@ struct objc_class {
 	 *
 	 * WARNING: All of them are lazily created -> may be NULL!
 	 */
-	objc_array methods;
-	objc_array ivars;
-	objc_array categories;
-	objc_array protocols;
-	objc_array properties;
+	objc_method_list *methods;
+	objc_ivar_list *ivars;
+	objc_category_list *categories;
+	objc_protocol_list *protocols;
+	objc_property_list *properties;
 	
 	// TODO
 	// Do we want subclasses and siblings like the GNUStep?
 	
 	/* Cache/Dispatch table */
-	objc_cache cache;
+	void *cache;
 	
 	unsigned int instance_size;
 	unsigned int version; /** Right now 0. */
@@ -188,6 +179,5 @@ struct objc_class {
 		BOOL in_construction : 1;
 	} flags;
 };
-
 
 #endif /* OBJC_TYPES_H_ */
