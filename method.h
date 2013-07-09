@@ -7,7 +7,7 @@
 /**
  * Allocates a new Method structure and populates it with the arguments.
  */
-extern Method objc_method_create(SEL selector, const char *types, IMP implementation);
+extern Method objc_method_create(SEL selector, IMP implementation);
 
 /**
  * Returns the IMP of the method.

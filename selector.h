@@ -26,4 +26,9 @@ OBJC_INLINE BOOL objc_selectors_equal(SEL selector1, SEL selector2){
  */
 extern const char *objc_selector_get_name(SEL selector);
 
+/*
+ * Returns the selector types.
+ */
+extern const char *objc_selector_get_types(SEL selector);
+
 #endif /* OBJC_SELECTOR_H_ */

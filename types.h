@@ -39,6 +39,9 @@ typedef struct objc_object *id;
 /* A definition of a SEL. */
 typedef unsigned short SEL;
 
+/* A definition of a method implementation function pointer. */
+typedef id(*IMP)(id target, SEL _cmd, ...);
+
 
 /**
  * Actual declarations of the structures follow.
@@ -56,8 +59,13 @@ struct objc_selector {
 	SEL selUID;
 };
 
-
-
+// TODO - include types? They're already in the selector...
+struct objc_method {
+	IMP implementation;
+	SEL selector;
+	
+	unsigned int version;
+};
 
 
 
@@ -84,24 +92,8 @@ typedef struct {
 	Class class;
 } objc_super;
 
-/* A definition of a method implementation function pointer. */
-typedef id(*IMP)(id target, SEL _cmd, ...);
 
-/**
- * Declaration of a Method.
- */
-typedef struct objc_method {
-	IMP implementation;
-	
-	Selector selector;
-	
-	// Do we need types here, since they are already in the selector,
-	// selector is typed and we do not allow two selectors with
-	// different types?
-	const char *types;
-	
-	unsigned int version;
-} *Method;
+
 
 
 /**

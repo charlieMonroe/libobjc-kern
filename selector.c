@@ -4,42 +4,71 @@
 
 /**
  * Since the SEL is a 16-bit integer, all we need to
- * have are 2-level arrays that get slowly filled as
- * needed for the look-up.
+ * have are 2-level sparse arrays that get slowly filled,
+ * the index in the sparse array is the actual SEL which
+ * means quick SEL -> selector name conversion.
  *
- * The actual
- *
+ * To efficiently register selectors, however, it is necessary
+ * to keep an additional hash table that hashes name -> SEL.
  *
  */
 
 
-static objc_selector_holder selector_cache;
+// TODO initialize
+static void *selector_hashtable;
+static void *selector_sparse;
+
+static void objc_selector_register_direct(Selector selector) {
+	objc_assert(selector != NULL, "Registering NULL selector!");
+	
+	// TODO
+	// Actually register
+}
+
 
 /* Public functions, documented in the header file. */
-
-SEL objc_selector_register(const char *name){
-	SEL selector = objc_selector_holder_lookup(selector_cache, name);
+SEL objc_selector_register(const char *name const char *types){
+	objc_assert(name != NULL, "Cannot register a selector with NULL name!");
+	objc_assert(types != NULL, "Cannot register a selector with NULL types!");
+	objc_assert(objc_strlen(types) > 2, "Not enough types for registering selector.");
+	
+	Selector selector = objc_selector_hashtable_lookup(selector_hashtable, name);
 	if (selector == NULL){
-		/* Check if the selector hasn't been added yet */
-		selector = (SEL)objc_selector_holder_lookup(selector_cache, name);
-		if (selector == NULL){
-			/* Still nothing, insert */
-			selector = objc_alloc(sizeof(struct objc_selector));
-			selector->name = objc_strcpy(name);
-			objc_selector_holder_insert(selector_cache, selector);
-		}
+		selector = objc_alloc(sizeof(struct objc_selector));
+		selector->name = objc_strcpy(name);
+		sel_to_add->types = objc_strcpy(types);
+		selector->selUID = 0; // Will be populated when registered
+		
+		objc_selector_register_direct(selector);
+	}else{
+		objc_assert(objc_strings_equal(types, selector->types), "Trying to register a"
+			    " selector with the same name but different types!");
 	}
-	return selector;
+	
+	return selector->selUID;
 }
 
 const char *objc_selector_get_name(SEL selector){
 	if (selector == NULL){
 		return "((null))";
 	}
+	
+	Selector selector = objc_selector_hashtable_lookup(selector_cache, name);
+	objc_assert(selector != NULL, "Trying to get name from an unregistered selector.");
 	return selector->name;
 }
 
+const char *objc_selector_get_types(SEL selector){
+	if (selector == NULL){
+		return "";
+	}
+	Selector selector = objc_selector_hashtable_lookup(selector_cache, name);
+	objc_assert(selector != NULL, "Trying to get types from an unregistered selector.");
+	return selector->types;
+}
+
+void objc_selector_init(void) __attribute__((constructor));
 void objc_selector_init(void){
-	selector_cache = objc_selector_holder_create();
+	// TODO init table + sparse
 }
 
