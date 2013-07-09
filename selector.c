@@ -13,34 +13,85 @@
  *
  */
 
+/**
+ * The initial capacity for the hash table.
+ */
+#define OBJC_TABLE_INITIAL_CAPACITY 1024
+
+
+static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2){
+	if (sel1 == NULL && sel2 == NULL){
+		// Who really can say?
+		return YES;
+	}
+	if (sel1 == NULL || sel2 == NULL){
+		// Just one of them
+		return NO;
+	}
+	return sel1->selUID == sel2->selUID;
+}
+
+static inline uint32_t _objc_selector_hash(Selector sel){
+	objc_assert(sel != NULL, "Can't hash NULL selector!");
+	return objc_hash_string(sel->name);
+}
+
+#define MAP_TABLE_NAME objc_selector
+#define MAP_TABLE_COMPARE_FUNCTION _objc_selector_structs_are_equal
+#define MAP_TABLE_HASH_KEY _objc_selector_hash
+#define MAP_TABLE_HASH_VALUE _objc_selector_hash
+#define MAP_TABLE_VALUE_TYPE Selector
+
+#include "hashtable.h"
 
 // TODO initialize
-static void *selector_hashtable;
+struct objc_selector_table_struct *objc_selector_hashtable;
 static void *selector_sparse;
 
-static void objc_selector_register_direct(Selector selector) {
+static BOOL objc_selector_register_direct(Selector selector) {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
+	// TODO remove
+	static int counter = 0;
+	selector->selUID = counter++;
+	
+	if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
+		printf("Failed to insert selector %s!\n", selector->name);
+		return NO;
+	}
+	
+	//
 	// TODO
-	// Actually register
+	// Insert into sparse array
+	
+	return YES;
 }
 
 
 /* Public functions, documented in the header file. */
-SEL objc_selector_register(const char *name const char *types){
+SEL objc_selector_register(const char *name, const char *types){
 	objc_assert(name != NULL, "Cannot register a selector with NULL name!");
 	objc_assert(types != NULL, "Cannot register a selector with NULL types!");
 	objc_assert(objc_strlen(types) > 2, "Not enough types for registering selector.");
 	
-	Selector selector = objc_selector_hashtable_lookup(selector_hashtable, name);
+	struct objc_selector fake_sel = {
+		.name = name,
+		.types = types,
+		.selUID = 0
+	};
+	
+	Selector selector = objc_selector_table_get(objc_selector_hashtable, &fake_sel);
 	if (selector == NULL){
 		selector = objc_alloc(sizeof(struct objc_selector));
 		selector->name = objc_strcpy(name);
-		sel_to_add->types = objc_strcpy(types);
+		selector->types = objc_strcpy(types);
 		selector->selUID = 0; // Will be populated when registered
 		
-		objc_selector_register_direct(selector);
+		if (!objc_selector_register_direct(selector)){
+			return 0;
+		}
 	}else{
+		printf("Trying to register %s for the second time! \n", selector->name);
 		objc_assert(objc_strings_equal(types, selector->types), "Trying to register a"
 			    " selector with the same name but different types!");
 	}
@@ -49,26 +100,36 @@ SEL objc_selector_register(const char *name const char *types){
 }
 
 const char *objc_selector_get_name(SEL selector){
-	if (selector == NULL){
+	if (selector == 0){
 		return "((null))";
 	}
 	
-	Selector selector = objc_selector_hashtable_lookup(selector_cache, name);
+	/**
+	Selector selector = objc_selector_table_get(objc_selector_hashtable, selector);
 	objc_assert(selector != NULL, "Trying to get name from an unregistered selector.");
 	return selector->name;
+	 */
+	// TODO get it from the sparse array
+	return "";
 }
 
 const char *objc_selector_get_types(SEL selector){
-	if (selector == NULL){
+	if (selector == 0){
 		return "";
 	}
+	/*
 	Selector selector = objc_selector_hashtable_lookup(selector_cache, name);
 	objc_assert(selector != NULL, "Trying to get types from an unregistered selector.");
 	return selector->types;
+	 */
+	// TODO get it from the sparse array
+	return "";
 }
 
-void objc_selector_init(void) __attribute__((constructor));
 void objc_selector_init(void){
-	// TODO init table + sparse
+	// Assert that the runtime initialization lock is locked.
+	
+	objc_selector_hashtable = objc_selector_table_create(OBJC_TABLE_INITIAL_CAPACITY);
+	// TODO init sparse
 }
 

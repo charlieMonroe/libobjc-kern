@@ -6,8 +6,6 @@
 #define _OBJC_H_
 
 #include "class.h"
-#include "classext.h"
-#include "ftypes.h"
 #include "method.h"
 #include "runtime.h"
 #include "selector.h"

@@ -3,7 +3,6 @@
  */
 
 #include "private.h"
-#include "classext.h"
 #include "os.h"
 #include "utils.h"
 #include "selector.h"
