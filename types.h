@@ -116,7 +116,15 @@ struct objc_property {
 };
 
 
-#include "list_types.h"
+/**
+ * Need to make forward typedefs since they are used
+ * in structures which are needed in the actual defs.
+ */
+typedef struct objc_protocol_list_struct objc_protocol_list;
+typedef struct objc_method_list_struct objc_method_list;
+typedef struct objc_property_list_struct objc_property_list;
+typedef struct objc_ivar_list_struct objc_ivar_list;
+typedef struct objc_category_list_struct objc_category_list;
 
 
 struct objc_protocol {
@@ -148,7 +156,7 @@ struct objc_category {
 struct objc_class {
 	Class isa; /* Points to meta class */
 	Class super_class;
-	char *name;
+	const char *name;
 	
 	/**
 	 * On class registration, the run-time calculates
@@ -184,5 +192,7 @@ struct objc_class {
 		BOOL in_construction : 1;
 	} flags;
 };
+
+#include "list_types.h"
 
 #endif /* OBJC_TYPES_H_ */

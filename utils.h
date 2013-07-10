@@ -88,18 +88,10 @@ OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
  * Hashes string str.
  */
 OBJC_INLINE unsigned int objc_hash_string(const char *str){
-	register unsigned int hash = 0;
-	register unsigned char *s = (unsigned char *)str;
-	
-	for (; ; ) {
-		if (*s == '\0') break;
-		hash ^= (unsigned int)*s++;
-		if (*s == '\0') break;
-		hash ^= (unsigned int)*s++ << 8;
-		if (*s == '\0') break;
-		hash ^= (unsigned int)*s++ << 16;
-		if (*s == '\0') break;
-		hash ^= (unsigned int)*s++ << 24;
+	register uint32_t hash = 0;
+	register int32_t c;
+	while ((c = *str++)){
+		hash = c + (hash << 6) + (hash << 16) - hash;
 	}
 	return hash;
 }

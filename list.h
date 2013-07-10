@@ -63,7 +63,7 @@
  *	Method *method_list;
  * }
  */
-typedef struct OBJC_LIST_STRUCTURE_NAME {
+struct OBJC_LIST_STRUCTURE_NAME {
 	/**
 	 * If chainable, include a pointer to the next
 	 * structure.
@@ -80,10 +80,84 @@ typedef struct OBJC_LIST_STRUCTURE_NAME {
 	/**
 	 * Actual list of the items.
 	 */
-	OBJC_LIST_TYPE *PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list);
-} OBJC_LIST_STRUCTURE_TYPE_NAME;
+	OBJC_LIST_TYPE PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[];
+};
 
+/**
+ * Creates a new structure (the above one).
+ */
+static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _create)(unsigned int count){
+	OBJC_LIST_STRUCTURE_TYPE_NAME *result = objc_zero_alloc(sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + count * sizeof(OBJC_LIST_TYPE));
+	result->size = count;
+	return result;
+}
 
+static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _expand_by)(OBJC_LIST_STRUCTURE_TYPE_NAME *list, unsigned int count){
+	list = objc_realloc(list, sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + (list->size + count) * sizeof(OBJC_LIST_TYPE) );
+	list->size += count;
+	return list;
+}
+
+#if OBJC_LIST_CHAINABLE
+/**
+ * Appends a structure to the end of the list.
+ */
+static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _append)(
+	OBJC_LIST_STRUCTURE_TYPE_NAME *head,
+        OBJC_LIST_STRUCTURE_TYPE_NAME *to_append
+){
+	OBJC_LIST_STRUCTURE_TYPE_NAME *str = head;
+	while (str->next != NULL){
+		str = str->next;
+	}
+	str->next = to_append;
+	return head;
+}
+
+static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _prepend)(
+									 OBJC_LIST_STRUCTURE_TYPE_NAME *head,
+									 OBJC_LIST_STRUCTURE_TYPE_NAME *to_prepend
+									 ){
+	to_prepend->next = head;
+	return to_prepend;
+}
+
+/**
+ * Goes through the whole linked list and copies all the ->*_list items into one big list.
+ */
+static inline OBJC_LIST_TYPE **PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _flatten)(
+												    OBJC_LIST_STRUCTURE_TYPE_NAME *head
+												    ){
+	// First, figure out how much to allocate.
+	size_t size = 0;
+	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
+	while (list != NULL){
+		size += list->size;
+		list = list->next;
+	}
+	
+	// NULL-terminated
+	OBJC_LIST_TYPE **objs = objc_alloc((size + 1) * sizeof(OBJC_LIST_TYPE*));
+	unsigned int counter = 0;
+	list = head;
+	while (list != NULL && counter < size){
+		for (int i = 0; i < list->size; ++i){
+			objs[counter] = &(list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			++counter;
+			
+			if (counter >= size){
+				// Someone probably added something in the meanwhile
+				break;
+			}
+		}
+		
+		list = list->next;
+	}
+	objs[size] = NULL; // NULL-terminate
+	return objs;
+}
+
+#endif // OBJC_LIST_CHAINABLE
 
 #undef OBJC_LIST_TYPE_NAME
 #undef OBJC_LIST_TYPE

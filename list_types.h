@@ -11,31 +11,31 @@
 
 /** Method list. */
 #define OBJC_LIST_TYPE_NAME method
-#define OBJC_LIST_TYPE Method
+#define OBJC_LIST_TYPE struct objc_method
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 
 /** Ivar list. */
 #define OBJC_LIST_TYPE_NAME ivar
-#define OBJC_LIST_TYPE Ivar
+#define OBJC_LIST_TYPE struct objc_ivar
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
 /** Categories. */
 #define OBJC_LIST_TYPE_NAME category
-#define OBJC_LIST_TYPE Category
+#define OBJC_LIST_TYPE struct objc_category
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
 /** Protocols. */
 #define OBJC_LIST_TYPE_NAME protocol
-#define OBJC_LIST_TYPE Protocol
+#define OBJC_LIST_TYPE struct objc_protocol
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 
 /** Properties. */
 #define OBJC_LIST_TYPE_NAME property
-#define OBJC_LIST_TYPE Property
+#define OBJC_LIST_TYPE struct objc_property
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 

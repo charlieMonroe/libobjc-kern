@@ -7,22 +7,32 @@
 #include "utils.h"
 #include "selector.h"
 #include "method.h"
+#include "sarray2.h"
+
+#pragma mark -
+#pragma mark STATIC_VARIABLES_AND_MACROS
 
 /**
- * A class holder - all classes that get registered
- * with the run-time get stored here.
+ * The initial capacity for the hash table.
  */
-objc_class_holder objc_classes;
+#define OBJC_CLASS_TABLE_INITIAL_CAPACITY 256
+
+// Forward declarations needed for the hash table
+static inline BOOL _objc_classes_are_equal(Class cl1, Class cl2);
+static inline uint32_t _objc_class_hash(Class cl);
+
+#define MAP_TABLE_NAME objc_class
+#define MAP_TABLE_COMPARE_FUNCTION _objc_classes_are_equal
+#define MAP_TABLE_HASH_KEY _objc_class_hash
+#define MAP_TABLE_HASH_VALUE _objc_class_hash
+#define MAP_TABLE_VALUE_TYPE Class
+
+#include "hashtable.h"
 
 /**
- * We store the classes in an array as well for subclasses lookup, for example.
+ * A hash map with the classes.
  */
-objc_array objc_classes_array;
-
-/**
- * Class extension linked list.
- */
-objc_class_extension *class_extensions;
+objc_class_table *objc_classes;
 
 /**
  * A lock that is used for manipulating with classes - e.g. adding a class
@@ -36,8 +46,8 @@ objc_rw_lock objc_runtime_lock;
 /**
  * A cached forwarding selectors.
  */
-static SEL objc_forwarding_selector = NULL;
-static SEL objc_drops_unrecognized_forwarding_selector = NULL;
+static SEL objc_forwarding_selector;
+static SEL objc_drops_unrecognized_forwarding_selector;
 
 /**
  * A function that is returned when the receiver is nil.
@@ -45,16 +55,6 @@ static SEL objc_drops_unrecognized_forwarding_selector = NULL;
 static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 	return nil;
 }
-
-/**
- * A method wrapper for the _objc_nil_receiver_function.
- */
-static struct objc_method _objc_nil_receiver_method = {
-	NULL, /** No need for a selector. */
-	NULL, /** No need for types. */
-	_objc_nil_receiver_function, /** Implementation. */
-	0 /** Version */
-};
 
 /**
  * Class structures are versioned. If a class prototype of a different
@@ -65,240 +65,66 @@ static struct objc_method _objc_nil_receiver_method = {
 
 
 #pragma mark -
-#pragma mark -
 #pragma mark Private Functions
 
-/**
- * Returns the extra space needed in the class structure by
- * the class extensions.
- */
-OBJC_INLINE unsigned int _extra_class_space_for_extensions(void);
-OBJC_INLINE unsigned int _extra_class_space_for_extensions(void){
-	static unsigned int cached_class_result = 0;
-	objc_class_extension *ext;
-	
-	if (cached_class_result != 0 || class_extensions == NULL){
-		/* The result has already been cached, or no extensions are installed */
-		return cached_class_result;
-	}
-	
-	ext = class_extensions;
-	while (ext != NULL){
-		cached_class_result += ext->extra_class_space;
-		ext = ext->next_extension;
-	}
-	
-	return cached_class_result;
+OBJC_INLINE BOOL _objc_classes_are_equal(Class cl1, Class cl2){
+	// We really can use just pointer comparison
+	return cl1 == cl2;
 }
 
-/**
- * Returns the extra space needed in each object structure by
- * the class extensions.
- */
-OBJC_INLINE unsigned int _extra_object_space_for_extensions(void);
-OBJC_INLINE unsigned int _extra_object_space_for_extensions(void){
-	static unsigned int cached_object_result = 0;
-	objc_class_extension *ext;
-	
-	if (cached_object_result != 0 || class_extensions == NULL){
-		/* The result has already been cached, or no extensions are installed. */
-		return cached_object_result;
-	}
-	
-	ext = class_extensions;
-	while (ext != NULL){
-		cached_object_result += ext->extra_object_space;
-		ext = ext->next_extension;
-	}
-	
-	return cached_object_result;
+OBJC_INLINE uint32_t _objc_class_hash(Class cl){
+	// Hash the name
+	return objc_hash_string(cl->name);
 }
+
 
 /**
  * Returns the size required for instances of class 'cl'. This
  * includes the extra space required by extensions.
  */
-OBJC_INLINE unsigned int _instance_size(Class cl);
 OBJC_INLINE unsigned int _instance_size(Class cl){
-	return cl->instance_size + _extra_object_space_for_extensions();
-}
-
-/**
- * Creates a new objc_array in place of *method_list unless it's already 
- * created. In that case, it is a no-op function.
- */
-OBJC_INLINE void _initialize_method_list(objc_array *method_list);
-OBJC_INLINE void _initialize_method_list(objc_array *method_list){
-	if (*method_list != NULL){
-		/* Already allocated */
-		return;
+	if (cl->flags.is_meta){
+		cl = objc_class_for_name(cl->name);
 	}
-	
-	*method_list = objc_array_create();
+	return cl->instance_size;
 }
 
 /**
  * Searches for a method in a method list and returns it, or NULL 
  * if it hasn't been found.
  */
-OBJC_INLINE Method _lookup_method_in_method_list(objc_array method_list, SEL selector);
-OBJC_INLINE Method _lookup_method_in_method_list(objc_array method_list, SEL selector){
-	objc_array_enumerator en;
-	
+OBJC_INLINE Method _lookup_method_in_method_list(objc_method_list *method_list, SEL selector){
 	if (method_list == NULL){
 		return NULL;
 	}
 	
-	en = objc_array_get_enumerator(method_list);
-	while (en != NULL) {
-		Method *methods = en->item;
-		while (*methods != NULL){
-			if (objc_selectors_equal(selector, (*methods)->selector)){
-				return *methods;
-			}
-			++methods;
-		}
-		en = en->next;
-	}
-		
-	return NULL;
-}
-
-/**
- * Searches for an instance method among class extensions.
- */
-OBJC_INLINE Method _lookup_extension_instance_method(Class cl, SEL selector);
-OBJC_INLINE Method _lookup_extension_instance_method(Class cl, SEL selector){
-	Method m = NULL;
-	objc_class_extension *ext;
-	
-	ext = class_extensions;
-	while (ext != NULL){
-		if (ext->instance_lookup_function != NULL){
-			m = ext->instance_lookup_function(cl, selector);
-			if (m != NULL){
+	while (method_list != NULL) {
+		int i;
+		for (i = 0; i < method_list->size; ++i){
+			Method m = &method_list->method_list[i];
+			if (m->selector == selector){
 				return m;
 			}
 		}
-		
-		ext = ext->next_extension;
+		method_list = method_list->next;
 	}
 	
-	return m;
-}
-
-/**
- * Searches for a class method among class extensions.
- */
-OBJC_INLINE Method _lookup_extension_class_method(Class cl, SEL selector);
-OBJC_INLINE Method _lookup_extension_class_method(Class cl, SEL selector){
-	Method m = NULL;
-	objc_class_extension *ext;
-	
-	ext = class_extensions;
-	while (ext != NULL){
-		if (ext->class_lookup_function != NULL){
-			m = ext->class_lookup_function(cl, selector);
-			if (m != NULL){
-				return m;
-			}
-		}
-		
-		ext = ext->next_extension;
-	}
-	
-	return m;
-}
-
-/**
- * Looks up a method for a selector in a cache.
- */
-OBJC_INLINE Method _lookup_cached_method(objc_cache cache, SEL selector);
-OBJC_INLINE Method _lookup_cached_method(objc_cache cache, SEL selector){
-	if (cache == NULL){
-		return NULL;
-	}
-	return objc_cache_fetch(cache, selector);
-}
-
-/**
- * Adds a method to a cache. If *cache == NULL, it gets created.
- */
-OBJC_INLINE void _cache_method(objc_cache *cache, Method m);
-OBJC_INLINE void _cache_method(objc_cache *cache, Method m){
-	if (*cache == NULL){
-		*cache = objc_cache_create();
-	}
-	objc_cache_insert(*cache, m);
-}
-
-/**
- * Searches for a class method for a selector.
- */
-OBJC_INLINE Method _lookup_class_method(Class cl, SEL selector);
-OBJC_INLINE Method _lookup_class_method(Class cl, SEL selector){
-	Method m;
-	
-	if (cl == Nil || selector == NULL){
-		return NULL;
-	}
-	
-	while (cl != NULL){
-		m = _lookup_extension_class_method(cl, selector);
-		if (m != NULL){
-			/* An extension returned a valid method. */
-			return m;
-		}
-		
-		m = _lookup_method_in_method_list(cl->class_methods, selector);
-		if (m != NULL){
-			return m;
-		}
-		cl = cl->super_class;
-	}
+	// Nothing found.
 	return NULL;
-}
-
-/**
- * Looks up a class method implementation within a class. 
- * NULL if it hasn't been found, yet no-op function in case
- * the receiver is nil.
- */
-OBJC_INLINE IMP _lookup_class_method_impl(Class cl, SEL selector);
-OBJC_INLINE IMP _lookup_class_method_impl(Class cl, SEL selector){
-	Method m = _lookup_cached_method(cl->class_cache, selector);
-	if (m != NULL){
-		return m->implementation;
-	}
-	
-	m = _lookup_class_method(cl, selector);
-	if (m == NULL){
-		return NULL;
-	}
-	
-	_cache_method(&cl->class_cache, m);
-	return m->implementation;
 }
 
 /**
  * Searches for an instance method for a selector.
  */
-OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector);
-OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector){
+OBJC_INLINE Method _lookup_method(Class class, SEL selector){
 	Method m;
 	
-	if (class == Nil || selector == NULL){
+	if (class == Nil || selector == 0){
 		return NULL;
 	}
 	
 	while (class != NULL){
-		m = _lookup_extension_instance_method(class, selector);
-		if (m != NULL){
-			/* An extension returned a valid method. */
-			return m;
-		}
-		
-		m = _lookup_method_in_method_list(class->instance_methods, selector);
+		m = _lookup_method_in_method_list(class->methods, selector);
 		if (m != NULL){
 			return m;
 		}
@@ -307,31 +133,44 @@ OBJC_INLINE Method _lookup_instance_method(Class class, SEL selector){
 	return NULL;
 }
 
+OBJC_INLINE Method _lookup_cached_method(Class cl, SEL selector){
+	if (cl != Nil && selector != 0 && cl->cache != NULL){
+		return (Method)SparseArrayLookup((SparseArray*)cl->cache, selector);
+	}
+	return NULL;
+}
+
+OBJC_INLINE void _cache_method(Class cl, Method m){
+	// TODO locking on creation
+	// TODO not method, use a slot
+	if (cl != Nil && m != NULL && cl->cache != NULL){
+		SparseArrayInsert((SparseArray*)cl->cache, m->selector, m);
+	}
+}
+
 /**
  * Looks up an instance method implementation within a class.
  * NULL if it hasn't been found, yet no-op function in case
  * the receiver is nil.
  */
-OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector);
-OBJC_INLINE IMP _lookup_instance_method_impl(Class cl, SEL selector){
-	Method m = _lookup_cached_method(cl->instance_cache, selector);
+OBJC_INLINE IMP _lookup_method_impl(Class cl, SEL selector){
+	Method m = _lookup_cached_method(cl, selector);
 	if (m != NULL){
 		return m->implementation;
 	}
 	
-	m = _lookup_instance_method(cl, selector);
+	m = _lookup_method(cl, selector);
 	if (m == NULL){
 		return NULL;
 	}
 	
-	_cache_method(&cl->instance_cache, m);
+	_cache_method(cl, m);
 	return m->implementation;
 }
 
 /**
  * Returns whether cl is a subclass of superclass_candidate.
  */
-OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate);
 OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidate){
 	while (cl != Nil) {
 		if (cl->super_class == superclass_candidate){
@@ -342,22 +181,6 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 	return NO;
 }
 
-/**
- * Flushes *cache by destroying it and creating a new one.
- */
-OBJC_INLINE void _flush_cache(objc_cache *cache);
-OBJC_INLINE void _flush_cache(objc_cache *cache){
-	if (cache == NULL){
-		/* This is wrong. *cache may be NULL, cache no. */
-		objc_abort("Cache == NULL in _flush_cache!");
-	}
-	
-	if (*cache != NULL){
-		objc_cache old_cache = *cache;
-		*cache = NULL;
-		objc_cache_destroy(old_cache);
-	}
-}
 
 /**
  * Adds methods from the array 'm' into the method_list. The m array doesn't
@@ -366,118 +189,27 @@ OBJC_INLINE void _flush_cache(objc_cache *cache){
  * The m array is copied over to be NULL-terminated, but the Method 'objects'
  * are not.
  */
-OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, unsigned int count);
-OBJC_INLINE void _add_methods_to_method_list(objc_array method_list, Method *m, unsigned int count){
-	/*
-	 * +1 is for the NULL termination.
-	 */
-	Method *methods_copy = objc_alloc((count + 1) * sizeof(Method));
-	unsigned int i;
-	for (i = 0; i < count; ++i){
-		methods_copy[i] = m[i];
+OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
+	
+	// TODO locking
+	objc_method_list *list = objc_method_list_create(count);
+	for (int i = 0; i < count; ++i){
+		list->method_list[i] = *m[i];
 	}
-	methods_copy[i] = NULL;
 	
-	/*
-	 * Just like Apple's run-time, we do not check for duplicates.
-	 * As the method list gets appended at the end, a duplicated
-	 * method would simply be ignored by the run-time as the
-	 * original would be found before that in the method lookup.
-	 * This mechanism allows to override a function of a superclass,
-	 * however.
-	 */
-	
-	objc_array_append(method_list, methods_copy);
+	cl->methods = objc_method_list_prepend(cl->methods, list);
 }
 
-/**
- * Goes through the class list and flushes cache of each subclass of cl.
- *
- * class_methods indicates, whether to flush class-method cache, or instance-method cache.
- */
-OBJC_INLINE void _flush_caches_of_subclasses_of_class(Class cl, BOOL class_methods);
-OBJC_INLINE void _flush_caches_of_subclasses_of_class(Class cl, BOOL class_methods){
-	objc_array_enumerator en = objc_array_get_enumerator(objc_classes_array);
-	while (en != NULL){
-		Class subclass = en->item;
-		if (_class_is_subclass_of_class(subclass, cl)){
-			/* The class is subclass of this class -> flush. */
-			_flush_cache(class_methods ? subclass->class_cache : subclass->instance_cache);
-		}
-		en = en->next;
-	}
-	
-	/* Flush cache of the class as well. */
-	if (class_methods){
-		objc_class_flush_class_cache(cl);
-	}else{
-		objc_class_flush_instance_cache(cl);
-	}
-}
-
-/**
- * Goes through the methods and checks if it has been implemented by any
- * of the superclasses.
- */
-OBJC_INLINE BOOL _any_method_implemented_by_superclasses(Method *m, unsigned int count, Class cl, BOOL class_methods);
-OBJC_INLINE BOOL _any_method_implemented_by_superclasses(Method *m, unsigned int count, Class cl, BOOL class_methods){
-	unsigned int i;
-	
-	if (cl->super_class == Nil){
-		/* All done, it's the root class. */
-		return NO;
-	}
-	
-	for (i = 0; i < count; ++i){
-		Method method = _lookup_instance_method(cl->super_class, m[i]->selector);
-		if (method != NULL){
-			return YES;
-		}
-	}
-	
-	return NO;
-}
-
-/**
- * Adds class methods to class cl.
- */
-OBJC_INLINE void _add_class_methods(Class cl, Method *m, unsigned int count);
-OBJC_INLINE void _add_class_methods(Class cl, Method *m, unsigned int count){
-	if (cl == NULL || m == NULL){
-		return;
-	}
-	
-	_initialize_method_list(&cl->class_methods);
-	_add_methods_to_method_list(cl->class_methods, m, count);
-	
-	/**
-	 * Unfortunately, as the cl's superclass might
-	 * have implemented this method, which might
-	 * have been cached by its subclasses.
-	 *
-	 * First, we figure out, it it really is this scenario.
-	 *
-	 * If it is, we need to find all subclasses and flush
-	 * their caches.
-	 */
-	
-	if (_any_method_implemented_by_superclasses(m, count, cl, YES)){
-		/* Need to indeed flush caches. */
-		_flush_caches_of_subclasses_of_class(cl, YES);
-	}
-}
 
 /**
  * Adds instance methods to class cl.
  */
-OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count);
-OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count){
+OBJC_INLINE void _add_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
 	}
 	
-	_initialize_method_list(&cl->instance_methods);
-	_add_methods_to_method_list(cl->instance_methods, m, count);
+	_add_methods_to_class(cl, m, count);
 	
 	/**
 	 * Unfortunately, as the cl's superclass might
@@ -489,17 +221,12 @@ OBJC_INLINE void _add_instance_methods(Class cl, Method *m, unsigned int count){
 	 * If it is, we need to find all subclasses and flush
 	 * their caches.
 	 */
-	
-	if (_any_method_implemented_by_superclasses(m, count, cl, NO)){
-		/* Need to indeed flush caches. */
-		_flush_caches_of_subclasses_of_class(cl, NO);
-	}
+	// TODO
 }
 
 /**
  * Crashes the program because forwarding isn't supported by the class of the object.
  */
-OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector);
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
@@ -518,7 +245,6 @@ OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
  * asking the object whether to drop the message (a nil-receiver
  * method is returned), or whether to raise an exception.
  */
-OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector);
 OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 	if (objc_selectors_equal(selector, objc_forwarding_selector) || objc_selectors_equal(selector, objc_drops_unrecognized_forwarding_selector)){
 		/* Make sure the app really crashes and doesn't create an infinite cycle. */
@@ -527,16 +253,11 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 		/* Forwarding. */
 		IMP forwarding_imp;
 		
-		if (objc_forwarding_selector == NULL){
-			objc_forwarding_selector = objc_selector_register("forwardedMethodForSelector:");
+		if (objc_forwarding_selector == 0){
+			// TODO
 		}
 		
-		if (OBJC_OBJ_IS_CLASS(obj)){
-			forwarding_imp = _lookup_class_method_impl((Class)obj, objc_forwarding_selector);
-		}else{
-			forwarding_imp = _lookup_instance_method_impl(obj->isa, objc_forwarding_selector);
-		}
-		
+		forwarding_imp = _lookup_method_impl(obj->isa, objc_forwarding_selector);
 		if (forwarding_imp == NULL){
 			objc_log("Class %s doesn't respond to selector %s.\n", obj->isa->name, objc_selector_get_name(selector));
 			return NULL;
@@ -547,88 +268,18 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 }
 
 /**
- * Second part of the forwarding mechanism. Should the unhandled
- * message be ignored (dropped)? If YES, the run-time goes on, otherwise
- * aborts.
- */
-OBJC_INLINE BOOL _drops_unrecognized_message(id obj, SEL selector);
-OBJC_INLINE BOOL _drops_unrecognized_message(id obj, SEL selector){
-	if (objc_selectors_equal(selector, objc_forwarding_selector)
-	    || objc_selectors_equal(selector, objc_drops_unrecognized_forwarding_selector)){
-		/* Make sure the app really crashes and doesn't create an infinite cycle. */
-		return NO;
-	}else{
-		/* Forwarding. */
-		IMP drops_imp;
-		
-		if (objc_drops_unrecognized_forwarding_selector == NULL){
-			objc_drops_unrecognized_forwarding_selector = objc_selector_register("dropsUnrecognizedMessage:");
-		}
-		
-		if (OBJC_OBJ_IS_CLASS(obj)){
-			drops_imp = _lookup_class_method_impl((Class)obj, objc_drops_unrecognized_forwarding_selector);
-		}else{
-			drops_imp = _lookup_instance_method_impl(obj->isa, objc_drops_unrecognized_forwarding_selector);
-		}
-		
-		if (drops_imp == NULL){
-			objc_log("Class %s doesn't implement call dropping mechanism.\n", obj->isa->name);
-			return NO;
-		}
-		
-		return ((BOOL(*)(id,SEL,SEL))drops_imp)(obj, objc_drops_unrecognized_forwarding_selector, selector);
-	}
-}
-
-/**
- * Calls class extension object_initializer functions.
- */
-OBJC_INLINE void _complete_object(id obj);
-OBJC_INLINE void _complete_object(id obj){
-	objc_class_extension *ext = class_extensions;
-	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
-	while (ext != NULL){
-		if (ext->object_initializer != NULL){
-			ext->object_initializer(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
-		}
-		ext = ext->next_extension;
-	}
-}
-
-/**
- * Calls class extension object_deallocator functions.
- */
-OBJC_INLINE void _finalize_object(id obj);
-OBJC_INLINE void _finalize_object(id obj){
-	objc_class_extension *ext;
-	void *obj_ext_beginning = objc_object_extensions_beginning(obj);
-	ext = class_extensions;
-	while (ext != NULL){
-		if (ext->object_destructor != NULL){
-			ext->object_destructor(obj, (void*)((char*)obj_ext_beginning + ext->object_extra_space_offset));
-		}
-		ext = ext->next_extension;
-	}
-}
-
-/**
  * Looks for an ivar named name in ivar_list.
  */
-OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name);
-OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name){
-	objc_array_enumerator en;
-	
+OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_ivar_list *ivar_list, const char *name){
 	if (ivar_list == NULL){
 		return NULL;
 	}
 	
-	en = objc_array_get_enumerator(ivar_list);
-	while (en != NULL) {
-		Ivar ivar = en->item;
-		if (objc_strings_equal(name, ivar->name)){
-			return ivar;
+	for (int i = 0; i < ivar_list->size; ++i){
+		Ivar var = &ivar_list->ivar_list[i];
+		if (objc_strings_equal(var->name, name)){
+			return var;
 		}
-		en = en->next;
 	}
 	
 	return NULL;
@@ -637,7 +288,6 @@ OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_array ivar_list, const char *name
 /**
  * Finds an Ivar in class with name.
  */
-OBJC_INLINE Ivar _ivar_named(Class cl, const char *name);
 OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
 	if (name == NULL){
 		return NULL;
@@ -657,42 +307,35 @@ OBJC_INLINE Ivar _ivar_named(Class cl, const char *name){
  * Returns number of ivars on class cl. Used only
  * by the functions copying ivar lists.
  */
-OBJC_INLINE unsigned int _ivar_count(Class cl);
 OBJC_INLINE unsigned int _ivar_count(Class cl){
-	unsigned int count = 0;
-	objc_array_enumerator en;
-	objc_array ivar_list = cl->ivars;
+	objc_ivar_list *ivar_list = cl->ivars;
 	if (ivar_list == NULL){
-		return count;
+		return 0;
+	}else{
+		return ivar_list->size;
 	}
-	
-	en = objc_array_get_enumerator(ivar_list);
-	while (en != NULL) {
-		++count;
-		en = en->next;
-	}
-	return count;
 }
 
 /**
  * Copies over ivars declared on cl into list.
  */
-OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count);
 OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count){
 	unsigned int counter = 0;
-	objc_array ivar_list = cl->ivars;
-	objc_array_enumerator en;
+	objc_ivar_list *ivar_list = cl->ivars;
+	
 	if (ivar_list == NULL){
 		/* NULL-termination */
 		list[0] = NULL;
 		return;
 	}
 	
-	en = objc_array_get_enumerator(ivar_list);
-	while (en != NULL && counter < max_count) {
-		list[counter] = en->item;
+	for (int i = 0; i < ivar_list->size; ++i){
+		if (counter >= max_count) {
+			break;
+		}
+		
+		list[counter] = &ivar_list->ivar_list[i];
 		++counter;
-		en = en->next;
 	}
 	
 	/* NULL termination */
@@ -704,38 +347,22 @@ OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_coun
  *
  * If the method is not found, forwarding takes place.
  */
-OBJC_INLINE Method _lookup_method(id obj, SEL selector);
-OBJC_INLINE Method _lookup_method(id obj, SEL selector){
+OBJC_INLINE Method _lookup_object_method(id obj, SEL selector){
 	Method method = NULL;
 	
 	if (obj == nil){
-		/** ++ to invalidate inline cache. */
-		++_objc_nil_receiver_method.version;
-		return &_objc_nil_receiver_method;
+		// TODO
+		return NULL;
 	}
 	
-	if (OBJC_OBJ_IS_CLASS(obj)){
-		/* Class method */
-		method = _lookup_cached_method(((Class)obj)->class_cache, selector);
-		if (method != NULL){
-			return method;
-		}
-		
-		method = _lookup_class_method((Class)obj, selector);
-		if (method != NULL){
-			_cache_method(&((Class)obj)->class_cache, method);
-		}
-	}else{
-		/* Instance method. */
-		method = _lookup_cached_method(obj->isa->instance_cache, selector);
-		if (method != NULL){
-			return method;
-		}
-		
-		method = _lookup_instance_method(obj->isa, selector);
-		if (method != NULL){
-			_cache_method(&obj->isa->instance_cache, method);
-		}
+	method = _lookup_cached_method(obj->isa, selector);
+	if (method != NULL){
+		return method;
+	}
+	
+	method = _lookup_method(obj->isa, selector);
+	if (method != NULL){
+		_cache_method(obj->isa, method);
 	}
 	
 	if (method == NULL){
@@ -751,10 +378,9 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 			return forwarded_method;
 		}
 		
-		if (forwarded_method == NULL && _drops_unrecognized_message(obj, selector)){
-			/** ++ to invalidate inline cache. */
-			++_objc_nil_receiver_method.version;
-			return &_objc_nil_receiver_method;
+		if (forwarded_method == NULL){
+			// TODO
+			return NULL;
 		}
 		
 		_forwarding_not_supported_abort(obj, selector);
@@ -767,7 +393,6 @@ OBJC_INLINE Method _lookup_method(id obj, SEL selector){
 /**
  * The same scenario as above, but in this case a call to the superclass.
  */
-OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector);
 OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	Method method;
 	
@@ -776,22 +401,18 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	}
 	
 	if (sup->receiver == nil){
-		return &_objc_nil_receiver_method;
+		// TODO
+		return NULL;
 	}
 	
-	if (OBJC_OBJ_IS_CLASS(sup->receiver)){
-		/* Class method */
-		method = _lookup_class_method(sup->class, selector);
-	}else{
-		/* Instance method. */
-		method = _lookup_instance_method(sup->class, selector);
-	}
+	method = _lookup_method(sup->class, selector);
 	
 	if (method == NULL){
 		/* Not found! Prepare for forwarding. */
-		objc_log("Called super to class %s, which doesn't implement selector %s.\n", sup->class->name, selector == NULL ? "(null)" : selector->name);
+		objc_log("Called super to class %s, which doesn't implement selector %s.\n", sup->class->name, objc_selector_get_name(selector));
 		if (_forward_method_invocation(sup->receiver, selector)){
-			return &_objc_nil_receiver_method;
+			// TODO
+			return NULL;
 		}else{
 			_forwarding_not_supported_abort(sup->receiver, selector);
 			return NULL;
@@ -802,31 +423,9 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 }
 
 /**
- * Calls the class_initializer on each extension for cl.
- */
-OBJC_INLINE void _register_class_with_extensions(Class cl);
-OBJC_INLINE void _register_class_with_extensions(Class cl){
-	objc_class_extension *ext;
-	char *extra_space;
-	
-	/* Pass the class through all extensions */
-	ext = class_extensions;
-	extra_space = (char*)cl->extra_space;
-	if (extra_space != NULL){
-		while (ext != NULL) {
-			if (ext->class_initializer != NULL){
-				ext->class_initializer(cl, (void*)extra_space);
-			}
-			extra_space += ext->extra_class_space;
-			ext = ext->next_extension;
-		}
-	}
-}
-
-/**
  * Validates the class prototype.
  */
-OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype);
+/*
 OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	if (prototype->name == NULL || objc_strlen(prototype->name) == 0){
 		objc_log("Trying to register a prototype of a class with NULL or empty name.\n");
@@ -860,18 +459,19 @@ OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
 	
 	return YES;
 }
+ */
 
 /**
  * Adds an ivar to class from ivar prototype list.
  */
-OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars);
-OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
+/*
+ OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 	if (cl->super_class != Nil){
 		cl->instance_size = cl->super_class->instance_size;
 	}
 	
 	if (ivars == NULL){
-		/** No ivars. */
+		// No ivars.
 		return;
 	}
 	
@@ -884,33 +484,34 @@ OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
 		++ivars;
 	}
 }
+*/
 
 /**
  * Registers a prototype and returns the resulting Class.
  */
-OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype);
-OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
+/*
+ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	Class cl;
 	unsigned int extra_space;
 	
-	/** First, validation. */
+	// First, validation.
 	if (!_validate_prototype(prototype)){
 		return Nil;
 	}
 	
 	if (prototype->version != OBJC_MAX_CLASS_VERSION_SUPPORTED){
-		/**
+		**
 		 * This is the place where in the future, if the class
 		 * prototype gets modified, any compatibility transformations
 		 * should be performed.
-		 */
+		 *
 		objc_log("This run-time doesn't have implemented class prototype conversion %u -> %u.\n", prototype->version, OBJC_MAX_CLASS_VERSION_SUPPORTED);
 		objc_abort("Cannot convert class prototype.\n");
 	}
 	
 	cl = (Class)prototype;
 	
-	/**
+	**
 	 * What needs to be done:
 	 *
 	 * 1) Lookup and connect superclass.
@@ -921,7 +522,7 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	 * 6) Allocate extra space and register with extensions.
 	 * 7) Mark as not in construction.
 	 * 8) Add to the class lists.
-	 */
+	 *
 	
 	if (prototype->super_class_name != NULL){
 		cl->super_class = objc_class_holder_lookup(objc_classes, prototype->super_class_name);
@@ -950,33 +551,7 @@ OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
 	
 	return cl;
 }
-
-/**
- * Returns the allocator for class. If a class extension
- * returns a valid allocator, then it is returned.
- * Otherwise objc_zero_alloc.
- */
-OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size);
-OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size){
-	objc_allocator_f allocator = objc_zero_alloc;
-	objc_class_extension *ext;
-	
-	ext = class_extensions;
-	while (ext != NULL) {
-		objc_allocator_f ext_allocator;
-		if (ext->object_allocator_for_class != NULL){
-			ext_allocator = ext->object_allocator_for_class(cl, size);
-			if (ext_allocator != NULL){
-				allocator = ext_allocator;
-				break;
-			}
-		}
-		ext = ext->next_extension;
-	}
-	
-	return allocator;
-}
-
+*/
 
 /***** PUBLIC FUNCTIONS *****/
 /* Documentation in the header file. */
@@ -984,68 +559,32 @@ OBJC_INLINE objc_allocator_f _allocator_for_class(Class cl, unsigned int size){
 #pragma mark -
 #pragma mark Adding methods
 
-void objc_class_add_class_method(Class cl, Method m){
+
+void objc_class_add_method(Class cl, Method m){
 	if (cl == NULL || m == NULL){
 		return;
 	}
 	
-	_add_class_methods(cl, &m, 1);
+	_add_methods(cl, &m, 1);
 }
-void objc_class_add_class_methods(Class cl, Method *m, unsigned int count){
-	_add_class_methods(cl, m, count);
-}
-void objc_class_add_instance_method(Class cl, Method m){
-	if (cl == NULL || m == NULL){
-		return;
-	}
-	
-	_add_instance_methods(cl, &m, 1);
-}
-void objc_class_add_instance_methods(Class cl, Method *m, unsigned int count){
-	_add_instance_methods(cl, m, count);
+void objc_class_add_methods(Class cl, Method *m, unsigned int count){
+	_add_methods(cl, m, count);
 }
 
 #pragma mark -
 #pragma mark Replacing methods
 
-IMP objc_class_replace_instance_method_implementation(Class cls, SEL name, IMP imp, const char *types){
+IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const char *types){
 	Method m;
 	
-	if (cls == Nil || name == NULL || imp == NULL || types == NULL){
+	if (cls == Nil || name == 0 || imp == NULL || types == NULL){
 		return NULL;
 	}
 	
-	m = _lookup_method_in_method_list(cls->instance_methods, name);
+	m = _lookup_method_in_method_list(cls->methods, name);
 	if (m == NULL){
-		Method new_method = objc_method_create(name, types, imp);
-		_add_instance_methods(cls, &new_method, 1);
-		
-		/**
-		 * Method flushing is handled by the function adding methods.
-		 */
-	}else{
-		m->implementation = imp;
-		++m->version;
-		
-		/**
-		 * There's no need to flush any caches as the whole
-		 * Method pointer is cached -> hence the IMP
-		 * pointer changes even inside the cache.
-		 */
-	}
-	return m == NULL ? NULL : m->implementation;
-}
-IMP objc_class_replace_class_method_implementation(Class cls, SEL name, IMP imp, const char *types){
-	Method m;
-	
-	if (cls == Nil || name == NULL || imp == NULL || types == NULL){
-		return NULL;
-	}
-	
-	m = _lookup_method_in_method_list(cls->class_methods, name);
-	if (m == NULL){
-		Method new_method = objc_method_create(name, types, imp);
-		_add_class_methods(cls, &new_method, 1);
+		Method new_method = objc_method_create(name, imp);
+		_add_methods(cls, &new_method, 1);
 		
 		/**
 		 * Method flushing is handled by the function adding methods.
@@ -1068,7 +607,6 @@ IMP objc_class_replace_class_method_implementation(Class cls, SEL name, IMP imp,
 
 Class objc_class_create(Class superclass, const char *name) {
 	Class newClass;
-	unsigned int extra_space;
 	
 	/** Check if the run-time has been initialized. */
 	if (!objc_runtime_has_been_initialized){
@@ -1084,26 +622,26 @@ Class objc_class_create(Class superclass, const char *name) {
 		 * The reason is simple: what if the superclass added
 		 * a variable after the subclass did so?
 		 */
-		objc_abort("Trying to create a subclass of unfinished class.");
+		objc_abort("Trying to create a subclass of an unfinished class.");
 	}
 	
-	objc_rw_lock_wlock(objc_runtime_lock);
-	if (objc_class_holder_lookup(objc_classes, name) != NULL){
+	// Need to create fake_class for hash table insertion
+	struct objc_class fake_class = {
+		.name = name
+	};
+	
+	objc_rw_lock_wlock(&objc_runtime_lock);
+	if (objc_class_table_get(objc_classes, &fake_class) != NULL){
 		/* i.e. a class with this name already exists */
 		objc_log("A class with this name already exists (%s).\n", name);
-		objc_rw_lock_unlock(objc_runtime_lock);
+		objc_rw_lock_unlock(&objc_runtime_lock);
 		return NULL;
 	}
 	
-	newClass = (Class)(objc_alloc(sizeof(struct objc_class)));
+	newClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)));
 	newClass->isa = newClass; /* A loop to self to detect class method calls. */
 	newClass->super_class = superclass;
 	newClass->name = objc_strcpy(name);
-	newClass->class_methods = NULL; /* Lazy-loading */
-	newClass->instance_methods = NULL; /* Lazy-loading */
-	newClass->instance_cache = NULL;
-	newClass->class_cache = NULL;
-	newClass->ivars = NULL;
 	
 	/*
 	 * The instance size needs to be 0, as the root class
@@ -1116,17 +654,10 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	newClass->flags.in_construction = YES;
 	
-	extra_space = _extra_class_space_for_extensions();
-	if (extra_space != 0){
-		newClass->extra_space = objc_zero_alloc(extra_space);
-	}else{
-		newClass->extra_space = NULL;
-	}
+	objc_class_table_set(objc_classes, newClass, newClass);
+	// TODO - add the class to some kind of array
 	
-	objc_class_holder_insert(objc_classes, newClass);
-	objc_array_append(objc_classes_array, newClass);
-	
-	objc_rw_lock_unlock(objc_runtime_lock);
+	objc_rw_lock_unlock(&objc_runtime_lock);
 	
 	return newClass;
 }
@@ -1136,8 +667,6 @@ void objc_class_finish(Class cl){
 		return;
 	}
 	
-	_register_class_with_extensions(cl);
-	
 	/* That's it! Just mark it as not in construction */
 	cl->flags.in_construction = NO;
 }
@@ -1145,37 +674,22 @@ void objc_class_finish(Class cl){
 #pragma mark -
 #pragma mark Responding to selectors
 
-BOOL objc_class_responds_to_instance_selector(Class cl, SEL selector){
-	return _lookup_instance_method(cl, selector) != NULL;
-}
-BOOL objc_class_responds_to_class_selector(Class cl, SEL selector){
-	return _lookup_class_method(cl, selector) != NULL;
+BOOL objc_class_responds_to_selector(Class cl, SEL selector){
+	return _lookup_method(cl, selector) != NULL;
 }
 
 
 #pragma mark -
 #pragma mark Regular lookup functions
 
-Method objc_lookup_class_method(Class cl, SEL selector){
-	return _lookup_class_method(cl, selector);
+Method objc_lookup_method(Class cl, SEL selector){
+	return _lookup_method(cl, selector);
 }
-IMP objc_lookup_class_method_impl(Class cl, SEL selector){
+IMP objc_lookup_method_impl(Class cl, SEL selector){
 	/** No forwarding here! This is simply to lookup 
 	 * a method implementation.
 	 */
-	return _lookup_class_method_impl(cl, selector);
-}
-Method objc_lookup_instance_method(id obj, SEL selector){
-	if (obj == nil){
-		return NULL;
-	}
-	return _lookup_instance_method(obj->isa, selector);
-}
-IMP objc_lookup_instance_method_impl(id obj, SEL selector){
-	if (obj == nil){
-		return NULL;
-	}
-	return _lookup_instance_method_impl(obj->isa, selector);
+	return _lookup_method_impl(cl, selector);
 }
 
 #pragma mark -
@@ -1196,7 +710,6 @@ Class objc_object_set_class(id obj, Class new_class){
 
 id objc_class_create_instance(Class cl){
 	id obj;
-	objc_allocator_f allocator;
 	unsigned int size;
 	
 	if (cl->flags.in_construction){
@@ -1205,47 +718,25 @@ id objc_class_create_instance(Class cl){
 	}
 	
 	size = _instance_size(cl);
-	allocator = _allocator_for_class(cl, size);
 	
-	obj = (id)allocator(size);
+	obj = (id)objc_zero_alloc(size);
 	obj->isa = cl;
-	
-	_complete_object(obj);
 	
 	return obj;
 }
 void objc_object_deallocate(id obj){
-	objc_deallocator_f deallocator = objc_dealloc;
-	objc_class_extension *ext;
 	unsigned int size_of_obj;
 	
 	if (obj == nil){
 		return;
 	}
 	
-	size_of_obj = _instance_size(obj->isa) + _extra_object_space_for_extensions();
-	
-	_finalize_object(obj);
-	
-	ext = class_extensions;
-	while (ext != NULL) {
-		objc_deallocator_f ext_deallocator;
-		if (ext->object_deallocator_for_object != NULL){
-			ext_deallocator = ext->object_deallocator_for_object(obj, size_of_obj);
-			if (ext_deallocator != NULL){
-				deallocator = ext_deallocator;
-				break;
-			}
-		}
-		ext = ext->next_extension;
-	}
-	
-	deallocator(obj);
+	size_of_obj = _instance_size(obj->isa);
+	objc_dealloc(obj);
 }
 
 id objc_object_copy(id obj){
 	id copy;
-	objc_allocator_f allocator;
 	unsigned int size;
 	
 	if (obj == nil){
@@ -1253,34 +744,24 @@ id objc_object_copy(id obj){
 	}
 	
 	size = _instance_size(obj->isa);
-	allocator = _allocator_for_class(obj->isa, size);
-	
-	copy = allocator(size);
+	copy = objc_zero_alloc(size);
 	
 	objc_copy_memory(obj, copy, size);
 	
 	return copy;
 }
-void objc_complete_object(id instance){
-	_complete_object(instance);
-}
-void objc_finalize_object(id instance){
-	_finalize_object(instance);
-}
-
-
 
 #pragma mark -
 #pragma mark Object lookup
 
 Method objc_object_lookup_method(id obj, SEL selector){
-	return _lookup_method(obj, selector);
+	return _lookup_object_method(obj, selector);
 }
 Method objc_object_lookup_method_super(objc_super *sup, SEL selector){
 	return _lookup_method_super(sup, selector);
 }
 IMP objc_object_lookup_impl(id obj, SEL selector){
-	return _lookup_method(obj, selector)->implementation;
+	return _lookup_object_method(obj, selector)->implementation;
 }
 IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
 	return _lookup_method_super(sup, selector)->implementation;
@@ -1309,39 +790,11 @@ Method *objc_class_get_class_method_list(Class cl){
 	if (cl == Nil){
 		return NULL;
 	}
-	return objc_method_list_flatten(cl->class_methods);
-}
-Method *objc_class_get_instance_method_list(Class cl){
-	if (cl == Nil){
-		return NULL;
-	}
-	return objc_method_list_flatten(cl->instance_methods);
+	return objc_method_list_flatten(cl->methods);
 }
 Class *objc_class_get_list(void){
-	unsigned int count = 0;
-	unsigned int i = 0;
-	objc_array_enumerator en;
-	Class *classes;
-	
-	en = objc_array_get_enumerator(objc_classes_array);
-	while (en != NULL){
-		++count;
-		en = en->next;
-	}
-	
-	classes = (Class*)objc_alloc(sizeof(Class) * (count + 1));
-	
-	en = objc_array_get_enumerator(objc_classes_array);
-	while (en != NULL && i < count) {
-		classes[i] = en->item;
-		++i;
-		en = en->next;
-	}
-	
-	/* NULL termination. */
-	classes[count] = NULL;
-	
-	return classes;
+	// TODO
+	return NULL;
 }
 Class objc_class_for_name(const char *name){
 	Class c;
@@ -1355,7 +808,11 @@ Class objc_class_for_name(const char *name){
 		return Nil;
 	}
 	
-	c = objc_class_holder_lookup(objc_classes, name);
+	struct objc_class fake_class = {
+		.name = name
+	};
+	
+	c = objc_class_table_get(objc_classes, &fake_class);
 	if (c == NULL || c->flags.in_construction){
 		/* NULL, or still in construction */
 		return Nil;
@@ -1386,10 +843,18 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 		return NULL;
 	}
 	
-	variable = (Ivar)objc_alloc(sizeof(struct objc_ivar));
+	// TODO lock
+	if (cls->ivars == NULL){
+		cls->ivars = objc_ivar_list_create(1);
+	}else{
+		cls->ivars = objc_ivar_list_expand_by(cls->ivars, 1);
+	}
+	
+	variable = &cls->ivars->ivar_list[cls->ivars->size - 1];
 	variable->name = objc_strcpy(name);
 	variable->type = objc_strcpy(types);
 	variable->size = size;
+	variable->align = alignment;
 	
 	/* The offset is the aligned end of the instance size. */
 	variable->offset = cls->instance_size;
@@ -1398,12 +863,7 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 	}
 	
 	cls->instance_size = variable->offset + size;
-	
-	if (cls->ivars == NULL){
-		cls->ivars = objc_array_create();
-	}
-	objc_array_append(cls->ivars, variable);
-	
+		
 	return variable;
 }
 Ivar objc_class_get_ivar(Class cls, const char *name){
@@ -1470,10 +930,11 @@ void objc_object_set_variable(id obj, Ivar ivar, void *value){
 #pragma mark -
 #pragma mark Prototype-related
 
+/*
 Class objc_class_register_prototype(struct objc_class_prototype *prototype){
 	Class cl;
 	
-	/** Check if the run-time has been initialized. */
+	** Check if the run-time has been initialized. *
 	if (!objc_runtime_has_been_initialized){
 		objc_runtime_init();
 	}
@@ -1486,7 +947,7 @@ Class objc_class_register_prototype(struct objc_class_prototype *prototype){
 void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]){
 	unsigned int i = 0;
 	
-	/** Check if the run-time has been initialized. */
+	** Check if the run-time has been initialized. *
 	if (!objc_runtime_has_been_initialized){
 		objc_runtime_init();
 	}
@@ -1498,26 +959,9 @@ void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]){
 	}
 	objc_rw_lock_unlock(objc_runtime_lock);
 }
+ */
 
 
-/***** EXTENSION-RELATED *****/
-#pragma mark -
-#pragma mark Extension-related
-
-void objc_class_add_extension(objc_class_extension *extension){
-	if (objc_classes != NULL){
-		objc_abort("The run-time has already been initialized."
-				" No class extensions may be installed at this point anymore.");
-	}
-	
-	if (class_extensions == NULL){
-		class_extensions = extension;
-	}else{
-		/* Prepend the extension */
-		extension->next_extension = class_extensions;
-		class_extensions = extension;
-	}
-}
 
 /**** CACHE-RELATED ****/
 #pragma mark -
@@ -1538,25 +982,14 @@ void objc_class_add_extension(objc_class_extension *extension){
  * deleted *after* a new one has been created and placed instead.
  */
 
-void objc_class_flush_caches(Class cl){
+void objc_class_flush_cache(Class cl){
 	if (cl == Nil){
 		return;
 	}
 	
-	_flush_cache(&cl->class_cache);
-	_flush_cache(&cl->instance_cache);
-}
-void objc_class_flush_instance_cache(Class cl){
-	if (cl == Nil){
-		return;
-	}
-	_flush_cache(&cl->instance_cache);
-}
-void objc_class_flush_class_cache(Class cl){
-	if (cl == Nil){
-		return;
-	}
-	_flush_cache(&cl->class_cache);
+	// TODO - proper
+	SparseArrayDestroy(cl->cache);
+	cl->cache = NULL;
 }
 
 /***** INITIALIZATION *****/
@@ -1567,20 +1000,10 @@ void objc_class_flush_class_cache(Class cl){
  * Initializes the class extensions and internal class structures.
  */
 void objc_class_init(void){
-	/* Cache the extension offsets */
-	objc_class_extension *ext = class_extensions;
-	unsigned int class_extra_space = 0;
-	unsigned int object_extra_space = 0;
-	while (ext != NULL) {
-		ext->class_extra_space_offset = class_extra_space;
-		ext->object_extra_space_offset = object_extra_space;
-		class_extra_space += ext->extra_class_space;
-		object_extra_space += ext->extra_object_space;
-		ext = ext->next_extension;
-	}
+	objc_rw_lock_init(&objc_runtime_lock);
 	
-	objc_runtime_lock = objc_rw_lock_create();
+	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
 	
-	objc_classes = objc_class_holder_create();
-	objc_classes_array = objc_array_create();
+	// TODO
+	//objc_classes_array = objc_array_create();
 }

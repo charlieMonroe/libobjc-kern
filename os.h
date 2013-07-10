@@ -31,10 +31,24 @@ typedef struct {
 	// TODO
 } objc_rw_lock;
 
+#define objc_log printf
+
+static inline void objc_dealloc(void *mem){
+	free(mem);
+}
+
 // TODO
 static inline void panic(const char *reason){
 	printf("%s", reason);
 	abort();
+}
+
+static inline void objc_abort(const char *reason){
+	panic(reason);
+}
+
+static inline void *objc_realloc(void *mem, size_t size){
+	return realloc(mem, size);
 }
 
 static inline void *objc_zero_alloc(size_t size){

@@ -15,9 +15,6 @@ extern BOOL objc_runtime_has_been_initialized;
  */
 extern void objc_selector_init(void);
 
-/* A pointer to a structure containing all classes */
-extern void *objc_classes;
-
 /**
  * Inits basic structures for classes.
  */

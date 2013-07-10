@@ -19,7 +19,7 @@
 /**
  * The initial capacity for the hash table.
  */
-#define OBJC_TABLE_INITIAL_CAPACITY 1024
+#define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY 1024
 
 // Forward declarations needed for the hash table
 static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2);
@@ -266,7 +266,7 @@ void objc_selector_init(void){
 	  * Init the hash table that is used for getting selector
 	  * name for SEL.
 	  */
-	objc_selector_hashtable = objc_selector_table_create(OBJC_TABLE_INITIAL_CAPACITY);
+	objc_selector_hashtable = objc_selector_table_create(OBJC_SELECTOR_TABLE_INITIAL_CAPACITY);
 	
 	/**
 	 * Init RW lock for locking the string allocator. The
