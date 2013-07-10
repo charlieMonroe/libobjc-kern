@@ -176,10 +176,7 @@ struct objc_class {
 	objc_category_list *categories;
 	objc_protocol_list *protocols;
 	objc_property_list *properties;
-	
-	// TODO
-	// Do we want subclasses and siblings like the GNUStep?
-	
+		
 	/* Cache/Dispatch table */
 	void *cache;
 	
@@ -196,5 +193,6 @@ struct objc_class {
 };
 
 #include "list_types.h"
+#include "loader.h"
 
 #endif /* OBJC_TYPES_H_ */

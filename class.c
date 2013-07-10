@@ -667,7 +667,8 @@ Class objc_class_create(Class superclass, const char *name) {
 	newClass->flags.in_construction = YES;
 	
 	objc_class_table_set(objc_classes, name, newClass);
-	// TODO - add the class to some kind of array
+	
+	// It is inserted into the class tree on class_finish
 	
 	objc_rw_lock_unlock(&objc_runtime_lock);
 	
@@ -897,7 +898,7 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 		return NULL;
 	}
 	
-	// TODO lock
+	objc_rw_lock_wlock(&objc_runtime_lock);
 	if (cls->ivars == NULL){
 		cls->ivars = objc_ivar_list_create(1);
 	}else{
@@ -918,6 +919,8 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 	
 	cls->instance_size = variable->offset + size;
 		
+	objc_rw_lock_unlock(&objc_runtime_lock);
+	
 	return variable;
 }
 Ivar objc_class_get_ivar(Class cls, const char *name){
@@ -1057,7 +1060,4 @@ void objc_class_init(void){
 	objc_rw_lock_init(&objc_runtime_lock);
 	
 	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
-	
-	// TODO
-	//objc_classes_array = objc_array_create();
 }
