@@ -51,8 +51,13 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
  * declared in a private header/source files.
  */
 struct objc_selector {
-	const char *name; /* Name of the selector. */
-	const char *types; /* Types of the selector. */
+	/* 
+	 * Name of the selector, followed by \0,
+	 * followed by the types, followed by \0.
+	 *
+	 * For example: "init\0@@:\0"
+	 */
+	const char *name;
 	
 	/*
 	 * On registering, the selUID is populated and is
