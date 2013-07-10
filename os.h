@@ -17,9 +17,12 @@
  * that forces the compiler to always inline the functions.
  */
 // Not to be used in this runtime, to be removed later
-#define OBJC_ALWAYS_INLINE 
 
 #define PAGE_SIZE 4096
+
+#define UNREACHABLE(x) __builtin_unreachable()
+#define PUBLIC __attribute__ ((visibility("default")))
+#define PRIVATE  __attribute__ ((visibility("hidden")))
 
 // TODO
 #define objc_lock void
@@ -31,7 +34,7 @@ typedef struct {
 // TODO
 static inline void panic(const char *reason){
 	printf("%s", reason);
-	exit(1);
+	abort();
 }
 
 static inline void *objc_zero_alloc(size_t size){

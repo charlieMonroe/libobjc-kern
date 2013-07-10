@@ -1,6 +1,7 @@
 
 #include "selector.h"
 #include "utils.h" /* For strcpy */
+#include "sarray2.h"
 
 /**
  * Since the SEL is a 16-bit integer, all we need to
@@ -12,30 +13,17 @@
  * to keep an additional hash table that hashes name -> SEL.
  */
 
+#pragma mark -
+#pragma mark STATIC_VARIABLES_AND_MACROS
+
 /**
  * The initial capacity for the hash table.
  */
 #define OBJC_TABLE_INITIAL_CAPACITY 1024
 
-
-static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2){
-	if (sel1 == NULL && sel2 == NULL){
-		// Who really can say?
-		return YES;
-	}
-	if (sel1 == NULL || sel2 == NULL){
-		// Just one of them
-		return NO;
-	}
-	
-	BOOL result = sel1->selUID == sel2->selUID ? YES : NO;
-	return result;
-}
-
-static inline uint32_t _objc_selector_hash(Selector sel){
-	objc_assert(sel != NULL, "Can't hash NULL selector!");
-	return objc_hash_string(sel->name);
-}
+// Forward declarations needed for the hash table
+static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2);
+static inline uint32_t _objc_selector_hash(Selector sel);
 
 #define MAP_TABLE_NAME objc_selector
 #define MAP_TABLE_COMPARE_FUNCTION _objc_selector_structs_are_equal
@@ -45,15 +33,78 @@ static inline uint32_t _objc_selector_hash(Selector sel){
 
 #include "hashtable.h"
 
-static objc_rw_lock string_allocator_lock;
+/** String allocator stuff.*/
 static char *string_allocator = NULL;
 static size_t string_allocator_bytes_remaining = 0;
 
+static objc_rw_lock objc_selector_lock;
+
+struct objc_selector_table_struct *objc_selector_hashtable;
+static SparseArray *objc_selector_sparse;
+
+
+#pragma mark -
+#pragma mark PRIVATE_FUNCTIONS
+
+/**
+ * Returns YES if both selector structures are equal
+ * based on string comparison of names.
+ */
+static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2){
+	if (sel1 == NULL && sel2 == NULL){
+		// Who really can say?
+		return YES;
+	}
+	if (sel1 == NULL || sel2 == NULL){
+		// Just one of them
+		return NO;
+	}
+		
+	/**
+	 * WARNING: Need to compare strings, not just selUID
+	 * since the hashtable uses this even for lookup, where
+	 * the selUID is unknown (and hence 0).
+	 */
+	return objc_strings_equal(sel1->name, sel2->name);
+}
+
+/**
+ * Hashes the selector using its name field.
+ */
+static inline uint32_t _objc_selector_hash(Selector sel){
+	objc_assert(sel != NULL, "Can't hash NULL selector!");
+	return objc_hash_string(sel->name);
+}
+
+static inline const char *_objc_selector_get_types(Selector sel){
+	return sel->name + objc_strlen(sel->name) + 1;
+}
+
+/**
+ * Uses direct page allocation for string allocation.
+ *
+ * Requires objc_selector_lock to be locked.
+ */
 static char *_objc_selector_allocate_string(size_t size){
-	objc_rw_lock_wlock(&string_allocator_lock);
+	/**
+	 * No locking necessary, since this gets called
+	 * only from places, where the objc_selector_lock
+	 * is already locked.
+	 */
 	
 	if (string_allocator_bytes_remaining < size){
-		// This also covers the case when string_allocator is NULL
+		/**
+		 * This means that we need more bytes than are left
+		 * on that page.
+		 *
+		 * We of course could keep pointer to the old page,
+		 * and try to fill the remaining few bytes, but it will 
+		 * be most often just a really few bytes since the selector
+		 * and type strings are usually quite small.
+		 *
+		 * This also covers the string_allocator == NULL case.
+		 */
+		
 		string_allocator = objc_alloc_page();
 		string_allocator_bytes_remaining = PAGE_SIZE;
 		
@@ -66,11 +117,15 @@ static char *_objc_selector_allocate_string(size_t size){
 	string_allocator += size;
 	string_allocator_bytes_remaining -= size;
 	
-	objc_rw_lock_unlock(&string_allocator_lock);
-	
 	return result;
 }
 
+/**
+ * Creates a new string including both name and types
+ * and copies both strings over.
+ *
+ * Requires objc_selector_lock to be locked.
+ */
 static char *_objc_selector_copy_name_and_types(const char *name, const char *types){
 	size_t name_size = objc_strlen(name);
 	size_t types_size = objc_strlen(types);
@@ -84,34 +139,33 @@ static char *_objc_selector_copy_name_and_types(const char *name, const char *ty
 	return result;
 }
 
-
-
-// TODO initialize
-struct objc_selector_table_struct *objc_selector_hashtable;
-static void *selector_sparse;
-
+/**
+ * Inserts selector into the hashtable and sparse array.
+ *
+ * Requires objc_selector_lock to be locked.
+ */
 static BOOL objc_selector_register_direct(Selector selector) {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
-	// TODO remove
-	static int counter = 1;
-	selector->selUID = counter;
-	++counter;
+	static int objc_selector_counter = 1;
+	int original_value = __sync_fetch_and_add(&objc_selector_counter, 1);
+	selector->selUID = original_value;
 	
 	if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
 		printf("Failed to insert selector %s!\n", selector->name);
 		return NO;
 	}
 	
-	//
-	// TODO
-	// Insert into sparse array
+	SparseArrayInsert(objc_selector_sparse, selector->selUID, selector);
 	
 	return YES;
 }
 
 
-/* Public functions, documented in the header file. */
+/******* PUBLIC FUNCTIONS *******/
+#pragma mark -
+#pragma mark PUBLIC_FUNCTIONS
+
 SEL objc_selector_register(const char *name, const char *types){
 	objc_assert(name != NULL, "Cannot register a selector with NULL name!");
 	objc_assert(types != NULL, "Cannot register a selector with NULL types!");
@@ -127,20 +181,38 @@ SEL objc_selector_register(const char *name, const char *types){
 	
 	Selector selector = objc_selector_table_get(objc_selector_hashtable, &fake_sel);
 	if (selector == NULL){
-		selector = objc_alloc(sizeof(struct objc_selector));
-		selector->name = _objc_selector_copy_name_and_types(name, types);
-		selector->selUID = 0; // Will be populated when registered
+		/**
+		 * Lock for rw access, try to look up again if some
+		 * other thread hasn't inserted the selector and
+		 * if not, allocate the structure and insert it.
+		 */
 		
-		if (selector->name == NULL){
-			// Probably run out of memory
-			return 0;
+		objc_rw_lock_wlock(&objc_selector_lock);
+		
+		selector = objc_selector_table_get(objc_selector_hashtable, &fake_sel);
+		if (selector == NULL){
+			/**
+			 * Still NULL -> no other thread inserted it
+			 * in the meanwhile.
+			 */
+			
+			selector = objc_alloc(sizeof(struct objc_selector));
+			selector->name = _objc_selector_copy_name_and_types(name, types);
+			selector->selUID = 0; // Will be populated when registered
+			
+			if (selector->name == NULL){
+				// Probably run out of memory
+				return 0;
+			}
+			
+			if (!objc_selector_register_direct(selector)){
+				return 0;
+			}
 		}
 		
-		if (!objc_selector_register_direct(selector)){
-			return 0;
-		}
+		objc_rw_lock_unlock(&objc_selector_lock);
 	}else{
-		const char *selector_types = selector->name + objc_strlen(selector->name) + 1;
+		const char *selector_types = _objc_selector_get_types(selector);
 		objc_assert(objc_strings_equal(types, selector_types), "Trying to register a"
 			    " selector with the same name but different types!\n");
 	}
@@ -154,32 +226,57 @@ const char *objc_selector_get_name(SEL selector){
 	}
 	
 	/**
-	Selector selector = objc_selector_table_get(objc_selector_hashtable, selector);
-	objc_assert(selector != NULL, "Trying to get name from an unregistered selector.");
-	return selector->name;
+	 * No locking necessary since we don't remove selectors
+	 * from the run-time, which means the sparse array isn't
+	 * going anywhere.
 	 */
-	// TODO get it from the sparse array
-	return "";
+	
+	Selector sel_struct = (Selector)SparseArrayLookup(objc_selector_sparse, selector);
+	objc_assert(sel_struct != NULL, "Trying to get name from an unregistered selector.");
+	return sel_struct->name;
 }
 
 const char *objc_selector_get_types(SEL selector){
 	if (selector == 0){
 		return "";
 	}
-	/*
-	Selector selector = objc_selector_hashtable_lookup(selector_cache, name);
-	objc_assert(selector != NULL, "Trying to get types from an unregistered selector.");
-	return selector->types;
+	
+	/**
+	 * No locking necessary since we don't remove selectors
+	 * from the run-time, which means the sparse array isn't
+	 * going anywhere.
 	 */
-	// TODO get it from the sparse array
-	return "";
+	
+	Selector sel_struct = (Selector)SparseArrayLookup(objc_selector_sparse, selector);
+	objc_assert(sel_struct != NULL, "Trying to get types from an unregistered selector.");
+	
+	// The types are in the same string as name, separated by \0
+	return _objc_selector_get_types(sel_struct);
 }
+
+
+/******* INIT FUNCTION *******/
+#pragma mark -
+#pragma mark INIT_FUNCTION
 
 void objc_selector_init(void){
 	// Assert that the runtime initialization lock is locked.
 	
+	/**
+	  * Init the hash table that is used for getting selector
+	  * name for SEL.
+	  */
 	objc_selector_hashtable = objc_selector_table_create(OBJC_TABLE_INITIAL_CAPACITY);
-	objc_rw_lock_init(&string_allocator_lock);
-	// TODO init sparse
+	
+	/**
+	 * Init RW lock for locking the string allocator. The
+	 * allocator itself is lazily allocated.
+	 */
+	objc_rw_lock_init(&objc_selector_lock);
+	
+	/**
+	 * Sparse array holding the SEL -> Selector mapping.
+	 */
+	objc_selector_sparse = SparseArrayNew();
 }
 
