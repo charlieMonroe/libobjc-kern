@@ -22,12 +22,12 @@
 #define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY 1024
 
 // Forward declarations needed for the hash table
-static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2);
+static inline BOOL _objc_selector_struct_name_is_equal_to(void *key, Selector sel);
 static inline uint32_t _objc_selector_hash(Selector sel);
 
 #define MAP_TABLE_NAME objc_selector
-#define MAP_TABLE_COMPARE_FUNCTION _objc_selector_structs_are_equal
-#define MAP_TABLE_HASH_KEY _objc_selector_hash
+#define MAP_TABLE_COMPARE_FUNCTION _objc_selector_struct_name_is_equal_to
+#define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_selector_hash
 #define MAP_TABLE_VALUE_TYPE Selector
 
@@ -50,22 +50,8 @@ static SparseArray *objc_selector_sparse;
  * Returns YES if both selector structures are equal
  * based on string comparison of names.
  */
-static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2){
-	if (sel1 == NULL && sel2 == NULL){
-		// Who really can say?
-		return YES;
-	}
-	if (sel1 == NULL || sel2 == NULL){
-		// Just one of them
-		return NO;
-	}
-		
-	/**
-	 * WARNING: Need to compare strings, not just selUID
-	 * since the hashtable uses this even for lookup, where
-	 * the selUID is unknown (and hence 0).
-	 */
-	return objc_strings_equal(sel1->name, sel2->name);
+static inline BOOL _objc_selector_struct_name_is_equal_to(void *key, Selector sel){
+	return objc_strings_equal(sel->name, (const char*)key);
 }
 
 /**
@@ -171,15 +157,7 @@ SEL objc_selector_register(const char *name, const char *types){
 	objc_assert(types != NULL, "Cannot register a selector with NULL types!");
 	objc_assert(objc_strlen(types) > 2, "Not enough types for registering selector.");
 	
-	struct objc_selector fake_sel = {
-		// We don't need to do anything about
-		// types since the hash function stops at \0
-		// anyway
-		.name = name,
-		.selUID = 0
-	};
-	
-	Selector selector = objc_selector_table_get(objc_selector_hashtable, &fake_sel);
+	Selector selector = objc_selector_table_get(objc_selector_hashtable, name);
 	if (selector == NULL){
 		/**
 		 * Lock for rw access, try to look up again if some
@@ -189,7 +167,7 @@ SEL objc_selector_register(const char *name, const char *types){
 		
 		objc_rw_lock_wlock(&objc_selector_lock);
 		
-		selector = objc_selector_table_get(objc_selector_hashtable, &fake_sel);
+		selector = objc_selector_table_get(objc_selector_hashtable, name);
 		if (selector == NULL){
 			/**
 			 * Still NULL -> no other thread inserted it

@@ -18,12 +18,12 @@
 #define OBJC_CLASS_TABLE_INITIAL_CAPACITY 256
 
 // Forward declarations needed for the hash table
-static inline BOOL _objc_classes_are_equal(Class cl1, Class cl2);
+static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl);
 static inline uint32_t _objc_class_hash(Class cl);
 
 #define MAP_TABLE_NAME objc_class
-#define MAP_TABLE_COMPARE_FUNCTION _objc_classes_are_equal
-#define MAP_TABLE_HASH_KEY _objc_class_hash
+#define MAP_TABLE_COMPARE_FUNCTION _objc_class_name_is_equal_to
+#define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
 
@@ -33,6 +33,24 @@ static inline uint32_t _objc_class_hash(Class cl);
  * A hash map with the classes.
  */
 objc_class_table *objc_classes;
+
+/**
+ * The class tree leverages the fact that each class
+ * has a sibling and child pointer in the structure,
+ * pointing to an arbitrary child, or sibling respectively.
+ *
+ * This class_tree points to one of the root classes,
+ * whichever gets registered first, and the rest of the
+ * root classes is appended via the sibling pointer.
+ *
+ * Note, however, that each sibling level is actually
+ * a circular linked list so that inserting siblings is
+ * fairly easy.
+ *
+ * The class doesn't get added to the tree until it is
+ * finished (or loaded via loader).
+ */
+static Class class_tree;
 
 /**
  * A lock that is used for manipulating with classes - e.g. adding a class
@@ -67,9 +85,8 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 #pragma mark -
 #pragma mark Private Functions
 
-OBJC_INLINE BOOL _objc_classes_are_equal(Class cl1, Class cl2){
-	// We really can use just pointer comparison
-	return cl1 == cl2;
+OBJC_INLINE BOOL _objc_class_name_is_equal_to(void *key, Class cl){
+	return objc_strings_equal(cl->name, (const char*)key);
 }
 
 OBJC_INLINE uint32_t _objc_class_hash(Class cl){
@@ -625,13 +642,8 @@ Class objc_class_create(Class superclass, const char *name) {
 		objc_abort("Trying to create a subclass of an unfinished class.");
 	}
 	
-	// Need to create fake_class for hash table insertion
-	struct objc_class fake_class = {
-		.name = name
-	};
-	
 	objc_rw_lock_wlock(&objc_runtime_lock);
-	if (objc_class_table_get(objc_classes, &fake_class) != NULL){
+	if (objc_class_table_get(objc_classes, name) != NULL){
 		/* i.e. a class with this name already exists */
 		objc_log("A class with this name already exists (%s).\n", name);
 		objc_rw_lock_unlock(&objc_runtime_lock);
@@ -654,7 +666,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	
 	newClass->flags.in_construction = YES;
 	
-	objc_class_table_set(objc_classes, newClass, newClass);
+	objc_class_table_set(objc_classes, name, newClass);
 	// TODO - add the class to some kind of array
 	
 	objc_rw_lock_unlock(&objc_runtime_lock);
@@ -665,6 +677,38 @@ void objc_class_finish(Class cl){
 	if (cl == Nil){
 		objc_abort("Cannot finish a NULL class!\n");
 		return;
+	}
+	
+	// Insert the class into the tree.
+	if (cl->super_class == Nil){
+		// Root class
+		if (class_tree == Nil){
+			// The first one, yay!
+			class_tree = cl;
+			cl->sibling_list = class_tree; // A circular reference
+		}else{
+			// Inserting into the circular linked list
+			cl->sibling_list = class_tree->sibling_list;
+			class_tree->sibling_list = cl;
+		}
+	}else{
+		/**
+		 * It is a subclass, so need to insert it into the
+		 * subclass list of the superclass as well as into
+		 * the siblings list of the subclasses.
+		 */
+		
+		Class super_class = cl->super_class;
+		if (cl->subclass_list == Nil){
+			// First subclass
+			super_class->subclass_list = cl;
+			cl->sibling_list = cl; // Circular
+		}else{
+			// There already are subclasses, join the circle
+			Class sibling = super_class->subclass_list;
+			cl->sibling_list = sibling->sibling_list;
+			sibling->sibling_list = cl;
+		}
 	}
 	
 	/* That's it! Just mark it as not in construction */
@@ -793,8 +837,22 @@ Method *objc_class_get_class_method_list(Class cl){
 	return objc_method_list_flatten(cl->methods);
 }
 Class *objc_class_get_list(void){
-	// TODO
-	return NULL;
+	size_t class_count = objc_classes->table_used;
+	
+	// NULL-terminated
+	Class *classes = objc_alloc((class_count + 1) * sizeof(Class));
+	
+	int count = 0;
+	struct objc_class_table_enumerator *e = NULL;
+	Class next;
+	while (count < class_count &&
+	       (next = objc_class_next(objc_classes, &e))){
+		classes[count++] = next;
+	}
+	
+	// NULL-termination
+	classes[count] = NULL;
+	return classes;
 }
 Class objc_class_for_name(const char *name){
 	Class c;
@@ -807,12 +865,8 @@ Class objc_class_for_name(const char *name){
 	if (name == NULL){
 		return Nil;
 	}
-	
-	struct objc_class fake_class = {
-		.name = name
-	};
-	
-	c = objc_class_table_get(objc_classes, &fake_class);
+
+	c = objc_class_table_get(objc_classes, name);
 	if (c == NULL || c->flags.in_construction){
 		/* NULL, or still in construction */
 		return Nil;

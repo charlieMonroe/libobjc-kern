@@ -66,7 +66,6 @@ struct objc_selector {
 	SEL selUID;
 };
 
-// TODO - include types? They're already in the selector...
 struct objc_method {
 	IMP implementation;
 	SEL selector;
@@ -110,7 +109,7 @@ struct objc_property {
 	const char *getter_types;
 	const char *setter_types;
 	
-	// TODO flags
+	// TODO declare flags
 	unsigned int flags;
 	
 };
@@ -183,6 +182,9 @@ struct objc_class {
 	
 	/* Cache/Dispatch table */
 	void *cache;
+	
+	Class subclass_list;
+	Class sibling_list;
 	
 	unsigned int instance_size;
 	unsigned int version; /** Right now 0. */

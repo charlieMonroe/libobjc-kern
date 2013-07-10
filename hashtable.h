@@ -304,7 +304,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 
 static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 {
-	uint32_t hash = MAP_TABLE_HASH_KEY((MAP_TABLE_VALUE_TYPE)key);
+	uint32_t hash = MAP_TABLE_HASH_KEY(key);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
 	// Value does not exist.
 	if (cell->value != NULL)
