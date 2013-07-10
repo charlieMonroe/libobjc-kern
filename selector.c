@@ -28,7 +28,9 @@ static inline BOOL _objc_selector_structs_are_equal(Selector sel1, Selector sel2
 		// Just one of them
 		return NO;
 	}
-	return sel1->selUID == sel2->selUID;
+	
+	BOOL result = sel1->selUID == sel2->selUID ? YES : NO;
+	return result;
 }
 
 static inline uint32_t _objc_selector_hash(Selector sel){
@@ -52,8 +54,9 @@ static BOOL objc_selector_register_direct(Selector selector) {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
 	// TODO remove
-	static int counter = 0;
-	selector->selUID = counter++;
+	static int counter = 1;
+	selector->selUID = counter;
+	++counter;
 	
 	if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
 		printf("Failed to insert selector %s!\n", selector->name);
@@ -91,9 +94,8 @@ SEL objc_selector_register(const char *name, const char *types){
 			return 0;
 		}
 	}else{
-		printf("Trying to register %s for the second time! \n", selector->name);
 		objc_assert(objc_strings_equal(types, selector->types), "Trying to register a"
-			    " selector with the same name but different types!");
+			    " selector with the same name but different types!\n");
 	}
 	
 	return selector->selUID;
