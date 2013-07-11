@@ -24,6 +24,8 @@
 #define PUBLIC __attribute__ ((visibility("default")))
 #define PRIVATE  __attribute__ ((visibility("hidden")))
 
+
+
 // TODO
 #define objc_lock void
 #define objc_array void
@@ -76,6 +78,21 @@ static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	return 0;
 }
+
+#define LOCK(x) objc_rw_lock_wlock(x)
+#define UNLOCK(x) objc_rw_lock_unlock(x)
+
+
+__attribute__((unused)) static void objc_release_lock(void *x){
+	objc_rw_lock *lock = *(objc_rw_lock**)x;
+	UNLOCK(lock);
+}
+
+#define LOCK_FOR_SCOPE(lock) \
+__attribute__((cleanup(objc_release_lock)))\
+__attribute__((unused)) objc_rw_lock *lock_pointer = lock;\
+LOCK(lock)
+
 
 #define objc_assert(condition, description) \
 		if (!(condition)){\

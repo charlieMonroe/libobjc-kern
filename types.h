@@ -186,7 +186,7 @@ struct objc_class {
 	objc_property_list *properties;
 		
 	/* Cache/Dispatch table */
-	void *cache;
+	void *dtable;
 	
 	Class subclass_list;
 	Class sibling_list;
@@ -199,7 +199,17 @@ struct objc_class {
 		BOOL in_construction : 1;
 		BOOL initialized : 1; // +initialized called
 		BOOL user_created : 1;
+		BOOL has_custom_arr : 1; // Implements -retain, -release, or -autorelease
 	} flags;
+};
+
+
+struct objc_slot {
+	Class owner, cachedFor;
+	const char *types;
+	SEL selector;
+	IMP method;
+	unsigned int version;
 };
 
 #include "list_types.h"

@@ -95,8 +95,8 @@ OBJC_INLINE Method _lookup_method(Class class, SEL selector){
 }
 
 OBJC_INLINE Method _lookup_cached_method(Class cl, SEL selector){
-	if (cl != Nil && selector != 0 && cl->cache != NULL){
-		return (Method)SparseArrayLookup((SparseArray*)cl->cache, selector);
+	if (cl != Nil && selector != 0 && cl->dtable != NULL){
+		return (Method)SparseArrayLookup((SparseArray*)cl->dtable, selector);
 	}
 	return NULL;
 }
@@ -104,8 +104,8 @@ OBJC_INLINE Method _lookup_cached_method(Class cl, SEL selector){
 OBJC_INLINE void _cache_method(Class cl, Method m){
 	// TODO locking on creation
 	// TODO not method, use a slot
-	if (cl != Nil && m != NULL && cl->cache != NULL){
-		SparseArrayInsert((SparseArray*)cl->cache, m->sel_uid, m);
+	if (cl != Nil && m != NULL && cl->dtable != NULL){
+		SparseArrayInsert((SparseArray*)cl->dtable, m->sel_uid, m);
 	}
 }
 
@@ -860,6 +860,6 @@ void objc_class_flush_cache(Class cl){
 	}
 	
 	// TODO - proper
-	SparseArrayDestroy(cl->cache);
-	cl->cache = NULL;
+	SparseArrayDestroy(cl->dtable);
+	cl->dtable = NULL;
 }
