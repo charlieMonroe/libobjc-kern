@@ -68,7 +68,15 @@ struct objc_selector {
 
 struct objc_method {
 	IMP implementation;
-	SEL selector;
+	
+	// Need to include name and type
+	// since the 16-bit selector sel_uid
+	// is unknown at compile time and
+	// is populated at load time.
+	const char *selector_name;
+	const char *selector_types;
+	
+	SEL sel_uid;
 	
 	unsigned int version;
 };

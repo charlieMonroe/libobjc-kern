@@ -31,4 +31,13 @@ extern const char *objc_selector_get_name(SEL selector);
  */
 extern const char *objc_selector_get_types(SEL selector);
 
+
+// TODO move to private
+/**
+ * Registers all selectors within the class or method list.
+ */
+extern void objc_register_selectors_from_method_list(objc_method_list *list);
+extern void objc_register_selectors_from_class(Class cl);
+extern void objc_register_selector_array(struct objc_selector *selectors, unsigned int count);
+
 #endif /* OBJC_SELECTOR_H_ */

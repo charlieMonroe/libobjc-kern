@@ -63,7 +63,7 @@ OBJC_INLINE Method _lookup_method_in_method_list(objc_method_list *method_list, 
 		int i;
 		for (i = 0; i < method_list->size; ++i){
 			Method m = &method_list->method_list[i];
-			if (m->selector == selector){
+			if (m->sel_uid == selector){
 				return m;
 			}
 		}
@@ -105,7 +105,7 @@ OBJC_INLINE void _cache_method(Class cl, Method m){
 	// TODO locking on creation
 	// TODO not method, use a slot
 	if (cl != Nil && m != NULL && cl->cache != NULL){
-		SparseArrayInsert((SparseArray*)cl->cache, m->selector, m);
+		SparseArrayInsert((SparseArray*)cl->cache, m->sel_uid, m);
 	}
 }
 

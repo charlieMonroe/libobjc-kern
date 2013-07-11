@@ -9,7 +9,18 @@ Method objc_method_create(SEL selector, IMP implementation){
 	objc_assert(implementation != NULL, "Trying to create a method with NULL implementation!");
 	
 	Method m = objc_alloc(sizeof(struct objc_method));
-	m->selector = selector;
+	m->sel_uid = selector;
+	
+	/**
+	 * Even though the selector_name and selector_types
+	 * fields are used only during loading, there's really
+	 * no reason not to include them here anyway since
+	 * they are just pointers to the actual Selector structure
+	 * anyway.
+	 */
+	m->selector_name = objc_selector_get_name(selector);
+	m->selector_types = objc_selector_get_types(selector);
+	
 	m->implementation = implementation;
 	m->version = 0;
 	return m;

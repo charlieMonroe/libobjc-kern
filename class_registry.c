@@ -2,6 +2,7 @@
 #include "types.h"
 #include "runtime.h"
 #include "utils.h"
+#include "selector.h"
 #include "sarray2.h"
 
 /**
@@ -220,6 +221,29 @@ Class objc_class_for_name(const char *name){
 	}
 	
 	return c;
+}
+
+void objc_register_class(Class cl){
+	if (objc_class_table_get(objc_classes, cl->name) != Nil){
+		objc_log("Class %s has been defined in multiple modules."
+			 " Which one will be used is undefined.\n", cl->name);
+		return;
+	}
+	
+	objc_class_table_set(objc_classes, cl->name, cl);
+	
+	objc_register_selectors_from_class(cl);
+	objc_register_selectors_from_class(cl->isa);
+	
+	// TODO dtable
+	
+	if (cl->super_class == Nil){
+		// Root class
+		cl->isa->super_class = cl;
+	}
+	
+	// TODO other stuff
+	
 }
 
 /***** INITIALIZATION *****/

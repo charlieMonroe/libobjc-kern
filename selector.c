@@ -133,6 +133,19 @@ static char *_objc_selector_copy_name_and_types(const char *name, const char *ty
 static BOOL objc_selector_register_direct(Selector selector) {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
+	if (selector->sel_uid != 0){
+		// Already registered
+		return NO;
+	}
+	
+	Selector registered_sel = objc_selector_table_get(objc_selector_hashtable, selector->name);
+	if (registered_sel != NULL){
+		// Just update the information in the original selector
+		selector->name = registered_sel->name;
+		selector->sel_uid = registered_sel->sel_uid;
+		return NO;
+	}
+	
 	static int objc_selector_counter = 1;
 	int original_value = __sync_fetch_and_add(&objc_selector_counter, 1);
 	selector->sel_uid = original_value;
@@ -230,6 +243,28 @@ const char *objc_selector_get_types(SEL selector){
 	
 	// The types are in the same string as name, separated by \0
 	return _objc_selector_get_types(sel_struct);
+}
+
+void objc_register_selectors_from_method_list(objc_method_list *list){
+	for (int i = 0; i < list->size; ++i){
+		Method m = &list->method_list[i];
+		m->sel_uid = objc_selector_register(m->selector_name, m->selector_types);
+	}
+}
+
+void objc_register_selectors_from_class(Class cl){
+	objc_method_list *list = cl->methods;
+	while (list != NULL){
+		objc_register_selectors_from_method_list(list);
+		list = list->next;
+	}
+}
+
+void objc_register_selector_array(struct objc_selector *selectors, unsigned int count){
+	for (int i = 0; i < count; ++i){
+		Selector selector = &selectors[i];
+		objc_selector_register_direct(selector);
+	}
 }
 
 

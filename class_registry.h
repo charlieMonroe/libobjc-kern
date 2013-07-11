@@ -36,13 +36,12 @@ extern Class *objc_class_get_list(void);
 extern Class objc_class_for_name(const char *name);
 
 /**
- * Registers count of classes with the runtime.
+ * Registers a class with the runtime.
  *
- * If resolve_super is YES, it will treat the super_class
- * pointer as const char * pointer and will try to resolve
- * the class name.
+ * Used for loading classes from a binary image.
+ * Assumes runtime lock is locked.
  */
-extern void objc_register_classes(Class *classes, int count, BOOL resolve_super);
+extern void objc_register_class(Class cl);
 
 
 #endif // OBJC_CLASS_REGISTRY_H
