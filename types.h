@@ -63,7 +63,7 @@ struct objc_selector {
 	 * On registering, the selUID is populated and is
 	 * the pointer into the selector table.
 	 */
-	SEL selUID;
+	SEL sel_uid;
 };
 
 struct objc_method {
@@ -187,8 +187,10 @@ struct objc_class {
 	unsigned int version; /** Right now 0. */
 	
 	struct {
-		BOOL is_meta : 1;
+		BOOL meta : 1;
 		BOOL in_construction : 1;
+		BOOL initialized : 1; // +initialized called
+		BOOL user_created : 1;
 	} flags;
 };
 

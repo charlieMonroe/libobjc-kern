@@ -135,14 +135,14 @@ static BOOL objc_selector_register_direct(Selector selector) {
 	
 	static int objc_selector_counter = 1;
 	int original_value = __sync_fetch_and_add(&objc_selector_counter, 1);
-	selector->selUID = original_value;
+	selector->sel_uid = original_value;
 	
 	if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
 		printf("Failed to insert selector %s!\n", selector->name);
 		return NO;
 	}
 	
-	SparseArrayInsert(objc_selector_sparse, selector->selUID, selector);
+	SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
 	
 	return YES;
 }
@@ -176,7 +176,7 @@ SEL objc_selector_register(const char *name, const char *types){
 			
 			selector = objc_alloc(sizeof(struct objc_selector));
 			selector->name = _objc_selector_copy_name_and_types(name, types);
-			selector->selUID = 0; // Will be populated when registered
+			selector->sel_uid = 0; // Will be populated when registered
 			
 			if (selector->name == NULL){
 				// Probably run out of memory
@@ -195,7 +195,7 @@ SEL objc_selector_register(const char *name, const char *types){
 			    " selector with the same name but different types!\n");
 	}
 	
-	return selector->selUID;
+	return selector->sel_uid;
 }
 
 const char *objc_selector_get_name(SEL selector){

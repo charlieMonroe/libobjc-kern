@@ -7,59 +7,12 @@
 #include "utils.h"
 #include "selector.h"
 #include "method.h"
+#include "class_registry.h"
 #include "sarray2.h"
+
 
 #pragma mark -
 #pragma mark STATIC_VARIABLES_AND_MACROS
-
-/**
- * The initial capacity for the hash table.
- */
-#define OBJC_CLASS_TABLE_INITIAL_CAPACITY 256
-
-// Forward declarations needed for the hash table
-static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl);
-static inline uint32_t _objc_class_hash(Class cl);
-
-#define MAP_TABLE_NAME objc_class
-#define MAP_TABLE_COMPARE_FUNCTION _objc_class_name_is_equal_to
-#define MAP_TABLE_HASH_KEY objc_hash_string
-#define MAP_TABLE_HASH_VALUE _objc_class_hash
-#define MAP_TABLE_VALUE_TYPE Class
-
-#include "hashtable.h"
-
-/**
- * A hash map with the classes.
- */
-objc_class_table *objc_classes;
-
-/**
- * The class tree leverages the fact that each class
- * has a sibling and child pointer in the structure,
- * pointing to an arbitrary child, or sibling respectively.
- *
- * This class_tree points to one of the root classes,
- * whichever gets registered first, and the rest of the
- * root classes is appended via the sibling pointer.
- *
- * Note, however, that each sibling level is actually
- * a circular linked list so that inserting siblings is
- * fairly easy.
- *
- * The class doesn't get added to the tree until it is
- * finished (or loaded via loader).
- */
-static Class class_tree;
-
-/**
- * A lock that is used for manipulating with classes - e.g. adding a class
- * to the run-time, etc.
- *
- * All actions performed with this lock locked, should be rarely performed,
- * or at least performed seldomly.
- */
-objc_rw_lock objc_runtime_lock;
 
 /**
  * A cached forwarding selectors.
@@ -85,22 +38,13 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
 #pragma mark -
 #pragma mark Private Functions
 
-OBJC_INLINE BOOL _objc_class_name_is_equal_to(void *key, Class cl){
-	return objc_strings_equal(cl->name, (const char*)key);
-}
-
-OBJC_INLINE uint32_t _objc_class_hash(Class cl){
-	// Hash the name
-	return objc_hash_string(cl->name);
-}
-
 
 /**
  * Returns the size required for instances of class 'cl'. This
  * includes the extra space required by extensions.
  */
 OBJC_INLINE unsigned int _instance_size(Class cl){
-	if (cl->flags.is_meta){
+	if (cl->flags.meta){
 		cl = objc_class_for_name(cl->name);
 	}
 	return cl->instance_size;
@@ -622,99 +566,8 @@ IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const
 #pragma mark -
 #pragma mark Creating classes
 
-Class objc_class_create(Class superclass, const char *name) {
-	Class newClass;
-	
-	/** Check if the run-time has been initialized. */
-	if (!objc_runtime_has_been_initialized){
-		objc_runtime_init();
-	}
-	
-	if (name == NULL || *name == '\0'){
-		objc_abort("Trying to create a class with NULL or empty name.");
-	}
-	
-	if (superclass != Nil && superclass->flags.in_construction){
-		/** Cannot create a subclass of an unfinished class.
-		 * The reason is simple: what if the superclass added
-		 * a variable after the subclass did so?
-		 */
-		objc_abort("Trying to create a subclass of an unfinished class.");
-	}
-	
-	objc_rw_lock_wlock(&objc_runtime_lock);
-	if (objc_class_table_get(objc_classes, name) != NULL){
-		/* i.e. a class with this name already exists */
-		objc_log("A class with this name already exists (%s).\n", name);
-		objc_rw_lock_unlock(&objc_runtime_lock);
-		return NULL;
-	}
-	
-	newClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)));
-	newClass->isa = newClass; /* A loop to self to detect class method calls. */
-	newClass->super_class = superclass;
-	newClass->name = objc_strcpy(name);
-	
-	/*
-	 * The instance size needs to be 0, as the root class
-	 * is responsible for adding an isa ivar.
-	 */
-	newClass->instance_size = 0;
-	if (superclass != Nil){
-		newClass->instance_size = superclass->instance_size;
-	}
-	
-	newClass->flags.in_construction = YES;
-	
-	objc_class_table_set(objc_classes, name, newClass);
-	
-	// It is inserted into the class tree on class_finish
-	
-	objc_rw_lock_unlock(&objc_runtime_lock);
-	
-	return newClass;
-}
-void objc_class_finish(Class cl){
-	if (cl == Nil){
-		objc_abort("Cannot finish a NULL class!\n");
-		return;
-	}
-	
-	// Insert the class into the tree.
-	if (cl->super_class == Nil){
-		// Root class
-		if (class_tree == Nil){
-			// The first one, yay!
-			class_tree = cl;
-			cl->sibling_list = class_tree; // A circular reference
-		}else{
-			// Inserting into the circular linked list
-			cl->sibling_list = class_tree->sibling_list;
-			class_tree->sibling_list = cl;
-		}
-	}else{
-		/**
-		 * It is a subclass, so need to insert it into the
-		 * subclass list of the superclass as well as into
-		 * the siblings list of the subclasses.
-		 */
-		
-		Class super_class = cl->super_class;
-		if (cl->subclass_list == Nil){
-			// First subclass
-			super_class->subclass_list = cl;
-			cl->sibling_list = cl; // Circular
-		}else{
-			// There already are subclasses, join the circle
-			Class sibling = super_class->subclass_list;
-			cl->sibling_list = sibling->sibling_list;
-			sibling->sibling_list = cl;
-		}
-	}
-	
-	/* That's it! Just mark it as not in construction */
-	cl->flags.in_construction = NO;
-}
+
+
 
 #pragma mark -
 #pragma mark Responding to selectors
@@ -836,44 +689,6 @@ Method *objc_class_get_class_method_list(Class cl){
 		return NULL;
 	}
 	return objc_method_list_flatten(cl->methods);
-}
-Class *objc_class_get_list(void){
-	size_t class_count = objc_classes->table_used;
-	
-	// NULL-terminated
-	Class *classes = objc_alloc((class_count + 1) * sizeof(Class));
-	
-	int count = 0;
-	struct objc_class_table_enumerator *e = NULL;
-	Class next;
-	while (count < class_count &&
-	       (next = objc_class_next(objc_classes, &e))){
-		classes[count++] = next;
-	}
-	
-	// NULL-termination
-	classes[count] = NULL;
-	return classes;
-}
-Class objc_class_for_name(const char *name){
-	Class c;
-	
-	/** Check if the run-time has been initialized. */
-	if (!objc_runtime_has_been_initialized){
-		objc_runtime_init();
-	}
-	
-	if (name == NULL){
-		return Nil;
-	}
-
-	c = objc_class_table_get(objc_classes, name);
-	if (c == NULL || c->flags.in_construction){
-		/* NULL, or still in construction */
-		return Nil;
-	}
-	
-	return c;
 }
 
 
@@ -1047,17 +862,4 @@ void objc_class_flush_cache(Class cl){
 	// TODO - proper
 	SparseArrayDestroy(cl->cache);
 	cl->cache = NULL;
-}
-
-/***** INITIALIZATION *****/
-#pragma mark -
-#pragma mark Initializator-related
-
-/**
- * Initializes the class extensions and internal class structures.
- */
-void objc_class_init(void){
-	objc_rw_lock_init(&objc_runtime_lock);
-	
-	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
 }

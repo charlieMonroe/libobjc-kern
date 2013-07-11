@@ -47,24 +47,7 @@ extern void objc_class_add_methods(Class cl, Method *m, unsigned int count);
 extern IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const char *types);
 
 
-#pragma mark -
-#pragma mark Creating classes
 
-/**
-  * Creates a new class with name that is a subclass of superclass.
-  * 
-  * The returned class isn't registered with the run-time yet,
-  * you need to use the objc_registerClass function.
-  *
-  * Memory management note: the name is copied.
-  */
-extern Class objc_class_create(Class superclass, const char *name);
-
-/**
- * This function marks the class as finished (i.e. not in construction).
- * You need to call this before creating any instances.
- */
-extern void objc_class_finish(Class cl);
 
 
 
@@ -160,12 +143,6 @@ extern Class objc_object_get_class(id obj);
  */
 extern unsigned int objc_class_instance_size(Class cl);
 
-/**
- * Returns a list of classes registered with the run-time. The list
- * is NULL-terminated and the caller is responsible for freeing
- * it using the objc_dealloc function.
- */
-extern Class *objc_class_get_list(void);
 
 /**
  * The following two functions return a list of methods
@@ -179,14 +156,6 @@ extern Class *objc_class_get_list(void);
  */
 extern Method *objc_class_get_method_list(Class cl);
 
-/**
- * Finds a class registered with the run-time and returns it,
- * or Nil, if no such class is registered.
- *
- * Note that if the class is currently being in construction,
- * Nil is returned anyway.
- */
-extern Class objc_class_for_name(const char *name);
 
 
 #pragma mark -
