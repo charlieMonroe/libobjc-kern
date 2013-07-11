@@ -201,33 +201,10 @@ extern void objc_object_set_variable(id obj, Ivar ivar, void *value);
 extern void *objc_object_get_variable(id object, Ivar ivar);
 
 
-#pragma mark -
-#pragma mark Prototype-related
-
-/**
- * This is a way to register a class prototype. The protoype must:
- *
- * - have ->isa == NULL. It gets connected in this method.
- * - name must be non-NULL.
- * - instance_methods and class_methods fields must be
- *	struct objc_method_prototype **, NULL-terminated lists,
- *	ivars in a NULL-terminated Ivar * list.
- * - must be in construction.
- *
- * All lists passed must be NULL-terminated. The run-time
- * registers all selectors, modifies the method prototypes to
- * Methods.
- *
- * Returned value is either Nil, if such a class already exists,
- * or the same pointer as the prototype. (All modifications are
- * in-place.)
- */
-/*
-struct objc_class_prototype;
-extern Class objc_class_register_prototype(struct objc_class_prototype *prototype);
-extern void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]);
- */
-
+__attribute__((always_inline)) Class objc_object_get_class_inline(id obj){
+	// TODO check for in-pointer classes
+	return obj->isa;
+}
 
 #pragma mark -
 #pragma mark Cache-related

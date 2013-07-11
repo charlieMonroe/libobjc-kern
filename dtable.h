@@ -1,6 +1,7 @@
 #include "os.h"
 #include "sarray2.h"
 #include "types.h"
+#include "sync.h"
 
 typedef SparseArray* dtable_t;
 #define objc_dtable_lookup SparseArrayLookup
@@ -38,9 +39,6 @@ static inline int classHasInstalledDtable(struct objc_class *cls)
 	return (cls->dtable != uninstalled_dtable);
 }
 
-int objc_sync_enter(id object);
-int objc_sync_exit(id object);
-
 /**
  * Returns the dtable for a given class.  If we are currently in an +initialize
  * method then this will block if called from a thread other than the one
@@ -56,7 +54,7 @@ static inline dtable_t dtable_for_class(Class cls)
 	dtable_t dtable = uninstalled_dtable;
 
 	{
-		LOCK_FOR_SCOPE(&initialize_lock);
+		OBJC_LOCK_FOR_SCOPE(&initialize_lock);
 		if (classHasInstalledDtable(cls))
 		{
 			return cls->dtable;

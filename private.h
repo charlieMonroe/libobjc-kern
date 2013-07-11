@@ -5,8 +5,7 @@
 #ifndef OBJC_PRIVATE_H_
 #define OBJC_PRIVATE_H_
 
-#include "runtime.h" /* Needed for objc_runtime_setup_struct. */
-#include "class.h" /* Needed for Class. */
+#include "types.h" // For BOOL
 
 extern BOOL objc_runtime_has_been_initialized;
 

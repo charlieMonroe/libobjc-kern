@@ -79,20 +79,24 @@ static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	return 0;
 }
 
-#define LOCK(x) objc_rw_lock_wlock(x)
-#define UNLOCK(x) objc_rw_lock_unlock(x)
+#define OBJC_LOCK(x) objc_rw_lock_wlock(x)
+#define OBJC_UNLOCK(x) objc_rw_lock_unlock(x)
 
 
 __attribute__((unused)) static void objc_release_lock(void *x){
 	objc_rw_lock *lock = *(objc_rw_lock**)x;
-	UNLOCK(lock);
+	OBJC_UNLOCK(lock);
 }
 
-#define LOCK_FOR_SCOPE(lock) \
-__attribute__((cleanup(objc_release_lock)))\
-__attribute__((unused)) objc_rw_lock *lock_pointer = lock;\
-LOCK(lock)
+#define OBJC_LOCK_FOR_SCOPE(lock) \
+		__attribute__((cleanup(objc_release_lock)))\
+		__attribute__((unused)) objc_rw_lock *lock_pointer = lock;\
+		OBJC_LOCK(lock)
 
+#define OBJC_LOCK_OBJECT_FOR_SCOPE(obj) \
+		__attribute__((cleanup(objc_release_object_lock)))\
+		__attribute__((unused)) id lock_object_pointer = obj;\
+		objc_sync_enter(obj);
 
 #define objc_assert(condition, description) \
 		if (!(condition)){\

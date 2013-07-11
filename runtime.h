@@ -26,4 +26,6 @@ extern objc_rw_lock objc_runtime_lock;
 #define OBJC_LOCK_RUNTIME() objc_rw_lock_wlock(&objc_runtime_lock)
 #define OBJC_UNLOCK_RUNTIME() objc_rw_lock_unlock(&objc_runtime_lock)
 
+#define OBJC_LOCK_RUNTIME_FOR_SCOPE() OBJC_LOCK_FOR_SCOPE(&objc_runtime_lock)
+
 #endif /* OBJC_RUNTIME_H_ */

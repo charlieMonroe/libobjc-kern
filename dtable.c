@@ -1,9 +1,11 @@
 
-#include "os.h"
 #include "dtable.h"
 #include "selector.h"
-#include "types.h"
 #include "slot_pool.h"
+#include "runtime.h"
+#include "class.h"
+#include "class_registry.h"
+#include "message.h"
 
 PRIVATE dtable_t uninstalled_dtable;
 
@@ -12,15 +14,13 @@ PRIVATE InitializingDtable *temporary_dtables;
 /** Lock used to protect the temporary dtables list. */
 PRIVATE objc_rw_lock initialize_lock;
 
-struct objc_slot* objc_get_slot(Class cls, SEL selector);
-
 /**
  * Returns YES if the class implements a method for the specified selector, NO
  * otherwise.
  */
 static BOOL ownsMethod(Class cls, SEL sel)
 {
-	struct objc_slot *slot = objc_get_slot(cls, sel);
+	struct objc_slot *slot = objc_class_get_slot(cls, sel);
 	if ((NULL != slot) && (slot->owner == cls))
 	{
 		return YES;
@@ -44,19 +44,19 @@ static void checkARCAccessors(Class cls)
 		// TODO necessary?
 		isARC = objc_selector_register("_ARCCompliantRetainRelease", "@@:");
 	}
-	struct objc_slot *slot = objc_get_slot(cls, retain);
+	struct objc_slot *slot = objc_class_get_slot(cls, retain);
 	if ((0 != slot) && !ownsMethod(slot->owner, isARC))
 	{
 		cls->flags.has_custom_arr = YES;
 		return;
 	}
-	slot = objc_get_slot(cls, release);
+	slot = objc_class_get_slot(cls, release);
 	if ((NULL != slot) && !ownsMethod(slot->owner, isARC))
 	{
 		cls->flags.has_custom_arr = YES;
 		return;
 	}
-	slot = objc_get_slot(cls, autorelease);
+	slot = objc_class_get_slot(cls, autorelease);
 	if ((NULL != slot) && !ownsMethod(slot->owner, isARC))
 	{
 		cls->flags.has_custom_arr = YES;
@@ -181,14 +181,12 @@ static void mergeMethodsFromSuperclass(Class super, Class cls, SparseArray *meth
 	}
 }
 
-Class class_getSuperclass(Class);
-
 PRIVATE void objc_update_dtable_for_class(Class cls)
 {
 	// Only update real dtables
 	if (!classHasDtable(cls)) { return; }
 
-	LOCK_RUNTIME_FOR_SCOPE();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 
 	SparseArray *methods = SparseArrayNew();
 	collectMethodsForMethodListToSparseArray((void*)cls->methods, methods, YES);
@@ -205,7 +203,7 @@ PRIVATE void add_method_list_to_class(Class cls,
 	// Only update real dtables
 	if (!classHasDtable(cls)) { return; }
 
-	LOCK_RUNTIME_FOR_SCOPE();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 
 	SparseArray *methods = SparseArrayNew();
 	collectMethodsForMethodListToSparseArray(list, methods, NO);
@@ -221,13 +219,13 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	// Don't create a dtable for a class that already has one
 	if (classHasDtable(class)) { return dtable_for_class(class); }
 
-	LOCK_RUNTIME_FOR_SCOPE();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 
 	// Make sure that another thread didn't create the dtable while we were
 	// waiting on the lock.
 	if (classHasDtable(class)) { return dtable_for_class(class); }
 
-	Class super = class_getSuperclass(class);
+	Class super = objc_class_get_superclass(class);
 	dtable_t dtable;
 
 
@@ -271,9 +269,6 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	return dtable;
 }
 
-
-Class class_table_next(void **e);
-
 PRIVATE dtable_t objc_copy_dtable_for_class(dtable_t old, Class cls)
 {
 	return SparseArrayCopy(old);
@@ -283,8 +278,6 @@ PRIVATE void free_dtable(dtable_t dtable)
 {
 	SparseArrayDestroy(dtable);
 }
-
-void objc_resolve_class(Class);
 
 __attribute__((unused)) static void objc_release_object_lock(id *x)
 {
@@ -305,7 +298,7 @@ __attribute__((unused)) static void objc_release_object_lock(id *x)
  */
 static void remove_dtable(InitializingDtable* meta_buffer)
 {
-	LOCK(&initialize_lock);
+	OBJC_LOCK(&initialize_lock);
 	InitializingDtable *buffer = meta_buffer->next;
 	// Install the dtable:
 	meta_buffer->class->dtable = meta_buffer->dtable;
@@ -324,7 +317,7 @@ static void remove_dtable(InitializingDtable* meta_buffer)
 		}
 		prev->next = buffer->next;
 	}
-	UNLOCK(&initialize_lock);
+	OBJC_UNLOCK(&initialize_lock);
 }
 
 /**
@@ -332,7 +325,7 @@ static void remove_dtable(InitializingDtable* meta_buffer)
  */
 PRIVATE void objc_send_initialize(id object)
 {
-	Class class = classForObject(object);
+	Class class = objc_object_get_class_inline(object);
 	// If the first message is sent to an instance (weird, but possible and
 	// likely for things like NSConstantString, make sure +initialize goes to
 	// the class not the metaclass.  
@@ -371,12 +364,12 @@ PRIVATE void objc_send_initialize(id object)
 	// dtable_for_class is called from something holding the runtime lock while
 	// we're still holding the initialize lock.  We should ensure that we never
 	// acquire the runtime lock after acquiring the initialize lock.
-	LOCK_RUNTIME();
-	LOCK_OBJECT_FOR_SCOPE((id)meta);
-	LOCK(&initialize_lock);
+	OBJC_LOCK_RUNTIME();
+	OBJC_LOCK_OBJECT_FOR_SCOPE((id)meta);
+	OBJC_LOCK(&initialize_lock);
 	if (class->flags.initialized)
 	{
-		UNLOCK(&initialize_lock);
+		OBJC_UNLOCK(&initialize_lock);
 		return;
 	}
 	
@@ -396,7 +389,7 @@ PRIVATE void objc_send_initialize(id object)
 	// If another thread holds the runtime lock, it can now proceed until it
 	// gets into a dtable_for_class call, and then block there waiting for us
 	// to finish setting up the temporary dtable.
-	UNLOCK_RUNTIME();
+	OBJC_UNLOCK_RUNTIME();
 
 	static SEL initializeSel = 0;
 	if (0 == initializeSel)
@@ -417,7 +410,7 @@ PRIVATE void objc_send_initialize(id object)
 		}
 		class->dtable = class_dtable;
 		checkARCAccessors(class);
-		UNLOCK(&initialize_lock);
+		OBJC_UNLOCK(&initialize_lock);
 		return;
 	}
 
@@ -434,7 +427,7 @@ PRIVATE void objc_send_initialize(id object)
 	// We now release the initialize lock.  We'll reacquire it later when we do
 	// the cleanup, but at this point we allow other threads to get the
 	// temporary dtable and call +initialize in other threads.
-	UNLOCK(&initialize_lock);
+	OBJC_UNLOCK(&initialize_lock);
 	// We still hold the class lock at this point.  dtable_for_class will block
 	// there after acquiring the temporary dtable.
 

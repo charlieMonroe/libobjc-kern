@@ -43,5 +43,10 @@ extern Class objc_class_for_name(const char *name);
  */
 extern void objc_register_class(Class cl);
 
+/**
+ * TODO
+ */
+extern BOOL objc_resolve_class(Class cl);
+
 
 #endif // OBJC_CLASS_REGISTRY_H

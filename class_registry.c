@@ -246,6 +246,11 @@ void objc_register_class(Class cl){
 	
 }
 
+BOOL objc_resolve_class(Class cl){
+	// TODO
+	return NO;
+}
+
 /***** INITIALIZATION *****/
 #pragma mark -
 #pragma mark Initializator-related

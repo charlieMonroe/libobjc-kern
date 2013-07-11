@@ -9,6 +9,7 @@
 #include "method.h"
 #include "class_registry.h"
 #include "sarray2.h"
+#include "runtime.h"
 
 
 #pragma mark -
