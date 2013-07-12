@@ -125,7 +125,6 @@ static BOOL installMethodInDtable(Class class,
 				installedFor = installedFor->super_class)
 		{
 			
-			printf("Checking class %s, superclass ptr %p\n", installedFor->name, installedFor->super_class);
 			if (installedFor == owner)
 			{
 				return NO;

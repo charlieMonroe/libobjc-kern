@@ -76,17 +76,6 @@ void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd){
 	objc_object_deallocate((id)self);
 }
 
-/** Forwarding "support". The default implementation simply returns NULL and NO. */
-
-/** Same IMP for I and C. */
-Method _IC_MRObject_forwardedMethodForSelector_(MRObject_instance_t *self, SEL _cmd, SEL selector){
-	return NULL;
-}
-
-BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd, SEL selector){
-	return NO;
-}
-
 #pragma mark -
 #pragma mark __MRConstString
 

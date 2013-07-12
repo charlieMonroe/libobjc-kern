@@ -17,9 +17,6 @@ extern id _I_MRObject_retain_(MRObject_instance_t *self, SEL _cmd);
 extern void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd);
 extern void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd);
 
-extern Method _IC_MRObject_forwardedMethodForSelector_(MRObject_instance_t *self, SEL _cmd, SEL selector);
-extern BOOL _IC_MRObject_dropsUnrecognizedMessage_(MRObject_instance_t *self, SEL _cmd, SEL selector);
-
 extern const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd);
 extern unsigned int _I___MRConstString_length_(__MRConstString_instance_t *self, SEL _cmd);
 

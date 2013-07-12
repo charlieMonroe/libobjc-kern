@@ -17,7 +17,5 @@ static inline struct objc_slot *new_slot_for_method_in_class(Method method,
 	slot->method = method->implementation;
 	slot->version = 1;
 	
-	printf("Allocing slot for class %s, superclass ptr %p, selector %s \n", class->name, class->super_class, objc_selector_get_name(method->selector));
-	
 	return slot;
 }

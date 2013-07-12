@@ -151,7 +151,7 @@ static BOOL objc_selector_register_direct(Selector selector) {
 	selector->sel_uid = original_value;
 	
 	if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
-		printf("Failed to insert selector %s!\n", selector->name);
+		objc_log("Failed to insert selector %s!\n", selector->name);
 		return NO;
 	}
 	
