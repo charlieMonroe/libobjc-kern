@@ -41,7 +41,8 @@ extern Class objc_class_for_name(const char *name);
  * Used for loading classes from a binary image.
  * Assumes runtime lock is locked.
  */
-extern void objc_register_class(Class cl);
+extern void objc_class_register_class(Class cl);
+extern void objc_class_register_classes(Class *cl, unsigned int count);
 
 /**
  * TODO

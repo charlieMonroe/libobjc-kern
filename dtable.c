@@ -77,7 +77,7 @@ static void collectMethodsForMethodListToSparseArray(
 	}
 	for (unsigned i=0 ; i<list->size ; i++)
 	{
-		SparseArrayInsert(sarray, list->method_list[i].sel_uid,
+		SparseArrayInsert(sarray, list->method_list[i].selector,
 				(void*)&list->method_list[i]);
 	}
 }
@@ -96,7 +96,7 @@ static BOOL installMethodInDtable(Class class,
                                   BOOL replaceExisting)
 {
 	objc_assert(uninstalled_dtable != dtable, "");
-	uint16_t sel_id = method->sel_uid;
+	uint16_t sel_id = method->selector;
 	struct objc_slot *slot = SparseArrayLookup(dtable, sel_id);
 	if (NULL != slot)
 	{
@@ -118,10 +118,12 @@ static BOOL installMethodInDtable(Class class,
 		// Check whether the owner of this method is a subclass of the one that
 		// owns this method.  If it is, then we don't want to install this
 		// method irrespective of other cases, because it has been overridden.
-		for (Class installedFor = slot->owner ;
+		for (struct objc_class *installedFor = slot->owner ;
 				Nil != installedFor ;
 				installedFor = installedFor->super_class)
 		{
+			
+			printf("Checking class %s, superclass ptr %p\n", installedFor->name, installedFor->super_class);
 			if (installedFor == owner)
 			{
 				return NO;

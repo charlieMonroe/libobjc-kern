@@ -7,22 +7,24 @@
 
 #include "types.h" // For BOOL
 
-extern BOOL objc_runtime_has_been_initialized;
+BOOL objc_runtime_has_been_initialized;
 
 /**
  * Initializes structures necessary for selector registration.
  */
-extern void objc_selector_init(void);
+void objc_selector_init(void);
 
 /**
  * Inits basic structures for classes.
  */
-extern void objc_class_init(void);
+void objc_class_init(void);
 
 /**
  * Registers some basic classes with the run-time.
  */
-extern void objc_install_base_classes(void);
+void objc_install_base_classes(void);
+
+void init_dispatch_tables(void);
 
 
 #endif /* OBJC_PRIVATE_H_ */

@@ -40,7 +40,7 @@ typedef struct objc_slot *Slot;
 typedef struct objc_object *id;
 
 /* A definition of a SEL. */
-typedef unsigned short SEL;
+typedef uint16_t SEL;
 
 /* A definition of a method implementation function pointer. */
 typedef id(*IMP)(id target, SEL _cmd, ...);
@@ -64,7 +64,7 @@ struct objc_selector {
 	 * On registering, the selUID is populated and is
 	 * the pointer into the selector table.
 	 */
-	SEL sel_uid;
+	uint16_t sel_uid;
 };
 
 struct objc_method {
@@ -77,7 +77,7 @@ struct objc_method {
 	const char *selector_name;
 	const char *selector_types;
 	
-	SEL sel_uid;
+	SEL selector;
 	
 	unsigned int version;
 };

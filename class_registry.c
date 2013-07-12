@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "selector.h"
 #include "sarray2.h"
+#include "dtable.h"
 
 /**
  * The initial capacity for the hash table.
@@ -184,7 +185,7 @@ void objc_class_finish(Class cl){
 	metaClass->isa = metaMeta;
 	metaClass->flags.in_construction = NO;
 	
-	objc_class_table_set(objc_classes, cl->name, cl);
+	objc_class_insert(objc_classes, cl);
 	_objc_insert_class_into_class_tree(cl);
 	
 	OBJC_UNLOCK_RUNTIME();
@@ -223,14 +224,14 @@ Class objc_class_for_name(const char *name){
 	return c;
 }
 
-void objc_register_class(Class cl){
+void objc_class_register_class(Class cl){
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
 			 " Which one will be used is undefined.\n", cl->name);
 		return;
 	}
 	
-	objc_class_table_set(objc_classes, cl->name, cl);
+	objc_class_insert(objc_classes, cl);
 	
 	objc_register_selectors_from_class(cl);
 	objc_register_selectors_from_class(cl->isa);
@@ -242,8 +243,19 @@ void objc_register_class(Class cl){
 		cl->isa->super_class = cl;
 	}
 	
+	cl->dtable = uninstalled_dtable;
+	add_method_list_to_class(cl, cl->methods);
+	cl->isa->dtable = uninstalled_dtable;
+	add_method_list_to_class(cl->isa, cl->isa->methods);
+	
 	// TODO other stuff
 	
+}
+
+void objc_class_register_classes(Class *cl, unsigned int count){
+	for (int i = 0; i < count; ++i){
+		objc_class_register_class(cl[i]);
+	}
 }
 
 BOOL objc_resolve_class(Class cl){

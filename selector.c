@@ -248,7 +248,7 @@ const char *objc_selector_get_types(SEL selector){
 void objc_register_selectors_from_method_list(objc_method_list *list){
 	for (int i = 0; i < list->size; ++i){
 		Method m = &list->method_list[i];
-		m->sel_uid = objc_selector_register(m->selector_name, m->selector_types);
+		m->selector = objc_selector_register(m->selector_name, m->selector_types);
 	}
 }
 

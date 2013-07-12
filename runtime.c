@@ -26,8 +26,9 @@ void objc_runtime_init(void){
 	
 	/* Initialize inner structures */
 	objc_selector_init();
-//	objc_class_init();
-//	objc_install_base_classes();
+	init_dispatch_tables();
+	objc_class_init();
+	objc_install_base_classes();
 	
 	objc_runtime_has_been_initialized = YES;
 	objc_runtime_is_initializing = NO;

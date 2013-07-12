@@ -18,12 +18,12 @@ id _C_MRObject_new_(id self, SEL _cmd){
 	static SEL alloc_SEL;
 	static SEL init_SEL;
 	
-	if (alloc_SEL == NULL){
-		alloc_SEL = objc_selector_register("alloc");
+	if (alloc_SEL == null_selector){
+		alloc_SEL = objc_selector_register("alloc", "@@:");
 	}
 	
-	if (init_SEL == NULL){
-		init_SEL = objc_selector_register("init");
+	if (init_SEL == null_selector){
+		init_SEL = objc_selector_register("init", "@@:");
 	}
 	
 	self = ((id(*)(id, SEL))objc_object_lookup_impl(self, alloc_SEL))(self, alloc_SEL);
@@ -51,8 +51,8 @@ void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 		/** Dealloc */
 		static SEL dealloc_selector;
 		IMP dealloc_IMP;
-		if (dealloc_selector == NULL){
-			dealloc_selector = objc_selector_register("dealloc");
+		if (dealloc_selector == null_selector){
+			dealloc_selector = objc_selector_register("dealloc", "v@:");
 		}
 		
 		dealloc_IMP = objc_object_lookup_impl((id)self, dealloc_selector);

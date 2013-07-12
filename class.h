@@ -201,7 +201,7 @@ extern void objc_object_set_variable(id obj, Ivar ivar, void *value);
 extern void *objc_object_get_variable(id object, Ivar ivar);
 
 
-__attribute__((always_inline)) Class objc_object_get_class_inline(id obj){
+__attribute__((always_inline)) static inline Class objc_object_get_class_inline(id obj){
 	// TODO check for in-pointer classes
 	return obj->isa;
 }

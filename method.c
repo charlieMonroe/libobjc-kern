@@ -9,7 +9,7 @@ Method objc_method_create(SEL selector, IMP implementation){
 	objc_assert(implementation != NULL, "Trying to create a method with NULL implementation!");
 	
 	Method m = objc_alloc(sizeof(struct objc_method));
-	m->sel_uid = selector;
+	m->selector = selector;
 	
 	/**
 	 * Even though the selector_name and selector_types
