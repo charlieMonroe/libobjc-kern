@@ -45,13 +45,13 @@ static inline void objc_dealloc(void *mem){
 }
 
 // TODO
-static inline void panic(const char *reason){
-	printf("%s", reason);
-	abort();
+#define panic(reason...) {\
+	printf(reason);\
+	abort();\
 }
 
-static inline void objc_abort(const char *reason){
-	panic(reason);
+#define objc_abort(reason...) {\
+	panic(reason);\
 }
 
 static inline void *objc_realloc(void *mem, size_t size){

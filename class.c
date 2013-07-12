@@ -49,31 +49,6 @@ OBJC_INLINE unsigned int _instance_size(Class cl){
 		return sizeof(struct objc_class);
 	}
 	
-	if (cl->instance_size == 0){
-		// Probably just haven't calculated the instance size
-		unsigned int size = 0;
-		Class superclass = cl->super_class;
-		if (superclass != Nil){
-			size = _instance_size(superclass);
-		}
-		
-		if (cl->ivars != NULL){
-			for (int i = 0; i < cl->ivars->size; ++i){
-				Ivar ivar = &cl->ivars->ivar_list[i];
-				unsigned int offset = size;
-				if (size % ivar->align != 0){
-					unsigned int padding = (ivar->align - (size % ivar->align));
-					offset += padding;
-					size += padding;
-				}
-				ivar->offset = offset;
-				size += ivar->size;
-			}
-		}
-		
-		cl->instance_size = size;
-	}
-	
 	return cl->instance_size;
 }
 

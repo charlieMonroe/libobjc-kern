@@ -102,6 +102,50 @@ static inline void _objc_insert_class_into_class_tree(Class cl){
 	}
 }
 
+// Forward declaration
+static void _objc_class_fixup_instance_size(Class cl);
+
+static unsigned int _objc_class_calculate_instance_size(Class cl){
+	unsigned int size = 0;
+	Class superclass = cl->super_class;
+	if (superclass != Nil){
+		if (superclass->instance_size == 0
+		    && superclass->ivars != NULL
+		    && superclass->ivars->size > 0){
+			_objc_class_fixup_instance_size(superclass);
+		}
+		size = superclass->instance_size;
+	}
+	
+	if (cl->ivars != NULL){
+		for (int i = 0; i < cl->ivars->size; ++i){
+			Ivar ivar = &cl->ivars->ivar_list[i];
+			unsigned int offset = size;
+			if (size % ivar->align != 0){
+				unsigned int padding = (ivar->align - (size % ivar->align));
+				offset += padding;
+				size += padding;
+			}
+			ivar->offset = offset;
+			size += ivar->size;
+		}
+	}
+	return size;
+}
+
+static void _objc_class_fixup_instance_size(Class cl){
+	objc_assert(cl != Nil, "Cannot fixup instance size of Nil class!\n");
+	
+	if (cl->flags.meta){
+		// Meta class has the size of the class structure
+		cl->instance_size = sizeof(struct objc_class);
+	}else{
+		cl->instance_size = _objc_class_calculate_instance_size(cl);
+	}
+	
+	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n", cl->name, cl->flags.meta ? " (meta)" : "", cl->instance_size);
+}
+
 
 Class objc_class_create(Class superclass, const char *name) {
 	if (name == NULL || *name == '\0'){
@@ -254,6 +298,8 @@ void objc_class_register_class(Class cl){
 	cl->flags.in_construction = NO;
 	cl->isa->flags.in_construction = NO;
 	
+	_objc_class_fixup_instance_size(cl);
+	_objc_class_fixup_instance_size(cl->isa);
 	
 	// TODO other stuff
 	
