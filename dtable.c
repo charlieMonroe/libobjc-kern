@@ -437,6 +437,14 @@ PRIVATE void objc_send_initialize(id object)
 
 	checkARCAccessors(class);
 
+	// Note that the initialize method needs to be installed directly on the
+	// class we want to send the message to!
+	if ((class->flags.meta && (initializeSlot->owner != class))
+	    || (!class->flags.meta && (initializeSlot->owner != class->isa))){
+		objc_debug_log("Not sending +initialize message to class %s since the +initialize method is implemented on %s\n", class->name, initializeSlot->owner->name);
+		return;
+	}
+	
 	// Store the buffer in the temporary dtables list.  Note that it is safe to
 	// insert it into a global list, even though it's a temporary variable,
 	// because we will clean it up after this function.

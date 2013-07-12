@@ -7,6 +7,7 @@
 
 extern id _C_MRObject_alloc_(id self, SEL _cmd);
 extern id _C_MRObject_new_(id self, SEL _cmd);
+extern void _C_MRObject_initialize_(id self, SEL _cmd);
 extern id _C_MRObject_retain_noop_(Class self, SEL _cmd);
 extern void _C_MRObject_release_noop_(Class self, SEL _cmd);
 

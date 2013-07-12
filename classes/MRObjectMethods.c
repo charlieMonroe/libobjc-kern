@@ -15,6 +15,10 @@ id _C_MRObject_alloc_(id self, SEL _cmd){
 	return (id)instance;
 }
 
+void _C_MRObject_initialize_(id self, SEL _cmd){
+	objc_debug_log("Initializing class %s\n", self->isa->name);
+}
+
 id _C_MRObject_new_(id self, SEL _cmd){
 	static SEL alloc_SEL;
 	static SEL init_SEL;

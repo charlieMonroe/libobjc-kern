@@ -30,6 +30,12 @@ static struct objc_method_list_struct MRObject_class_method_list = {
 			0
 		},
 		{
+			(IMP)_C_MRObject_initialize_,
+			"initialize",
+			"v@:",
+			0
+		},
+		{
 			(IMP)_C_MRObject_retain_noop_,
 			"retain",
 			"@@:",
