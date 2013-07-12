@@ -106,6 +106,15 @@ static inline int classHasDtable(struct objc_class *cls)
  * modifying a class's method list.
  */
 void objc_update_dtable_for_class(Class);
+
+
+/**
+ * Installs the actual dtable on the class of obj and
+ * calls the +initialize method if the class 
+ * implements it.
+ */
+void objc_install_dtable_for_object(id obj);
+
 /**
  * Adds a single method list to a class.  This is used when loading categories,
  * and is faster than completely rebuilding the dtable.

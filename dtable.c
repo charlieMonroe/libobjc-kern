@@ -451,3 +451,18 @@ PRIVATE void objc_send_initialize(id object)
 	initializeSlot->method((id)class, initializeSel);
 }
 
+PRIVATE void objc_install_dtable_for_object(id receiver){
+	Class cl = receiver->isa;
+	
+	objc_debug_log("Installing dtable on class %s%s.\n", cl->name, cl->flags.meta ? " (meta)" : "");
+	
+	dtable_t dtable = dtable_for_class(cl);
+	/* Install the dtable if it hasn't already been initialized. */
+	if (dtable == uninstalled_dtable){
+		// TODO
+		objc_send_initialize(receiver);
+		dtable = dtable_for_class(cl);
+	}
+}
+
+

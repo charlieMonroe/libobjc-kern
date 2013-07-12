@@ -33,39 +33,16 @@ id objc_msg_send(id receiver, SEL selector, ...){
 	
 	Slot sl = objc_class_get_slot(receiver->isa, selector);
 	if (sl == NULL || sl->method == NULL){
-		objc_debug_log("Installing dtable on class %s%s.\n", receiver->isa->name, receiver->isa->flags.meta ? " (meta)" : "");
+		objc_install_dtable_for_object(receiver);
 		
-		Class cl = receiver->isa;
-		dtable_t dtable = dtable_for_class(cl);
-		/* Install the dtable if it hasn't already been initialized. */
-		if (dtable == uninstalled_dtable){
-			// TODO
-			objc_send_initialize(*receiver);
-			dtable = dtable_for_class(cl);
-			sl = objc_dtable_lookup(dtable, selector);
-		}else{
-			// Check again incase another thread updated the dtable while we
-			// weren't looking
-			sl = objc_dtable_lookup(dtable, selector);
-		}
-		if (NULL == sl){
+		// Now that the dtable has been installed, try it again
+		sl = objc_class_get_slot(receiver->isa, selector);
+		if (sl == NULL){
 			// TODO forwarding
 			objc_assert(NO, "TODO forwarding");
 		}
 		
-		
-		
-		/*// Find the implementation and fixup the cache
-		// TODO more elegant solution
-		Method m = objc_object_lookup_method(receiver, selector);
-		return m->implementation(receiver, selector);
-		
-		
-		add_method_list_to_class(receiver->isa, receiver->isa->methods);
-	
-		// Get the slot again
-		sl = objc_class_get_slot(receiver->isa, selector);*/
-		objc_assert(sl != NULL, "Eh?");
+		objc_assert(sl != NULL, "Shouldn't be here - the forwarding should have taken care of this case!");
 	}
 	return sl->method(receiver, selector);
 }
