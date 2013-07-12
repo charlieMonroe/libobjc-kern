@@ -46,8 +46,34 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
  */
 OBJC_INLINE unsigned int _instance_size(Class cl){
 	if (cl->flags.meta){
-		cl = objc_class_for_name(cl->name);
+		return sizeof(struct objc_class);
 	}
+	
+	if (cl->instance_size == 0){
+		// Probably just haven't calculated the instance size
+		unsigned int size = 0;
+		Class superclass = cl->super_class;
+		if (superclass != Nil){
+			size = _instance_size(superclass);
+		}
+		
+		if (cl->ivars != NULL){
+			for (int i = 0; i < cl->ivars->size; ++i){
+				Ivar ivar = &cl->ivars->ivar_list[i];
+				unsigned int offset = size;
+				if (size % ivar->align != 0){
+					unsigned int padding = (ivar->align - (size % ivar->align));
+					offset += padding;
+					size += padding;
+				}
+				ivar->offset = offset;
+				size += ivar->size;
+			}
+		}
+		
+		cl->instance_size = size;
+	}
+	
 	return cl->instance_size;
 }
 
@@ -384,137 +410,6 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	return method;
 }
 
-/**
- * Validates the class prototype.
- */
-/*
-OBJC_INLINE BOOL _validate_prototype(struct objc_class_prototype *prototype){
-	if (prototype->name == NULL || objc_strlen(prototype->name) == 0){
-		objc_log("Trying to register a prototype of a class with NULL or empty name.\n");
-		return NO;
-	}
-	
-	if (objc_class_holder_lookup(objc_classes, prototype->name) != NULL){
-		objc_log("Trying to register a prototype of class %s, but such a class has already been registered.\n", prototype->name);
-		return NO;
-	}
-	
-	if (prototype->super_class_name != NULL && objc_class_holder_lookup(objc_classes, prototype->super_class_name) == NULL){
-		objc_log("Trying to register a prototype of class %s, but its superclass %s hasn't been registered yet.\n", prototype->name, prototype->super_class_name);
-		return NO;
-	}
-	
-	if (prototype->isa != NULL){
-		objc_log("Trying to register a prototype of class %s that has non-NULL isa pointer.\n", prototype->name);
-		return NO;
-	}
-	
-	if (prototype->instance_cache != NULL || prototype->class_cache != NULL){
-		objc_log("Trying to register a prototype of class %s that already has a non-NULL cache.\n", prototype->name);
-		return NO;
-	}
-	
-	if (prototype->version > OBJC_MAX_CLASS_VERSION_SUPPORTED){
-		objc_log("Trying to register a prototype of class %s of a future version (%u).\n", prototype->name, prototype->version);
-		return NO;
-	}
-	
-	return YES;
-}
- */
-
-/**
- * Adds an ivar to class from ivar prototype list.
- */
-/*
- OBJC_INLINE void _add_ivars_from_prototype(Class cl, Ivar *ivars){
-	if (cl->super_class != Nil){
-		cl->instance_size = cl->super_class->instance_size;
-	}
-	
-	if (ivars == NULL){
-		// No ivars.
-		return;
-	}
-	
-	cl->ivars = objc_array_create();
-	
-	while (*ivars != NULL) {
-		objc_array_append(cl->ivars, *ivars);
-		cl->instance_size += (*ivars)->size;
-		
-		++ivars;
-	}
-}
-*/
-
-/**
- * Registers a prototype and returns the resulting Class.
- */
-/*
- OBJC_INLINE Class _register_prototype(struct objc_class_prototype *prototype){
-	Class cl;
-	unsigned int extra_space;
-	
-	// First, validation.
-	if (!_validate_prototype(prototype)){
-		return Nil;
-	}
-	
-	if (prototype->version != OBJC_MAX_CLASS_VERSION_SUPPORTED){
-		**
-		 * This is the place where in the future, if the class
-		 * prototype gets modified, any compatibility transformations
-		 * should be performed.
-		 *
-		objc_log("This run-time doesn't have implemented class prototype conversion %u -> %u.\n", prototype->version, OBJC_MAX_CLASS_VERSION_SUPPORTED);
-		objc_abort("Cannot convert class prototype.\n");
-	}
-	
-	cl = (Class)prototype;
-	
-	**
-	 * What needs to be done:
-	 *
-	 * 1) Lookup and connect superclass.
-	 * 2) Connect isa.
-	 * 3) Transform class method prototypes to objc_array.
-	 * 4) Ditto with instance methods.
-	 * 5) Add ivars and calculate instance size.
-	 * 6) Allocate extra space and register with extensions.
-	 * 7) Mark as not in construction.
-	 * 8) Add to the class lists.
-	 *
-	
-	if (prototype->super_class_name != NULL){
-		cl->super_class = objc_class_holder_lookup(objc_classes, prototype->super_class_name);
-	}
-	
-	cl->isa = cl;
-	
-	cl->class_methods = objc_method_transform_method_prototypes(prototype->class_methods);
-	cl->instance_methods = objc_method_transform_method_prototypes(prototype->instance_methods);
-	
-	_add_ivars_from_prototype(cl, prototype->ivars);
-	
-	extra_space = _extra_class_space_for_extensions();
-	if (extra_space != 0){
-		cl->extra_space = objc_zero_alloc(extra_space);
-	}else{
-		cl->extra_space = NULL;
-	}
-	
-	_register_class_with_extensions(cl);
-	
-	cl->flags.in_construction = NO;
-	
-	objc_class_holder_insert(objc_classes, cl);
-	objc_array_append(objc_classes_array, cl);
-	
-	return cl;
-}
-*/
-
 /***** PUBLIC FUNCTIONS *****/
 /* Documentation in the header file. */
 
@@ -616,6 +511,10 @@ id objc_class_create_instance(Class cl){
 		return nil;
 	}
 	
+	if (cl->flags.meta){
+		cl = objc_class_for_name(cl->name);
+	}
+	
 	size = _instance_size(cl);
 	
 	obj = (id)objc_zero_alloc(size);
@@ -624,13 +523,12 @@ id objc_class_create_instance(Class cl){
 	return obj;
 }
 void objc_object_deallocate(id obj){
-	unsigned int size_of_obj;
+	objc_debug_log("Deallocating instance %p\n", obj);
 	
 	if (obj == nil){
 		return;
 	}
 	
-	size_of_obj = _instance_size(obj->isa);
 	objc_dealloc(obj);
 }
 

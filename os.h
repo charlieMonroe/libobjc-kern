@@ -25,6 +25,11 @@
 #define PRIVATE  __attribute__ ((visibility("hidden")))
 
 
+#define OBJC_DEBUG_LOG 1
+
+#define objc_debug_log(...) \
+	if (OBJC_DEBUG_LOG) { printf("DEBUG: "); printf(__VA_ARGS__); }
+
 
 // TODO
 #define objc_lock void

@@ -18,11 +18,16 @@ __attribute__((constructor))
 void objc_runtime_init(void){
 	if (objc_runtime_is_initializing || objc_runtime_has_been_initialized){
 		/* Make sure that we don't initialize twice */
+		objc_debug_log("Trying to initialize runtime for the second time.\n");
 		return;
 	}
 	
+	objc_debug_log("Initializing runtime.\n");
+	
 	/* Run-time has been initialized */
 	objc_runtime_is_initializing = YES;
+	
+	objc_rw_lock_init(&objc_runtime_lock);
 	
 	/* Initialize inner structures */
 	objc_selector_init();

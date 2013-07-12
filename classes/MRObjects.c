@@ -202,6 +202,8 @@ void objc_install_base_classes(void){
 		&__MRConstString_class
 	};
 	
+	objc_debug_log("Registering base classes with the runtime.\n");
+	
 	objc_class_register_classes(classes, 2);
 	
 }

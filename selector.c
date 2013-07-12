@@ -155,6 +155,8 @@ static BOOL objc_selector_register_direct(Selector selector) {
 		return NO;
 	}
 	
+	objc_debug_log("Registering selector %s to sel_uid %d.\n", selector->name, selector->sel_uid);
+	
 	SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
 	
 	return YES;
@@ -274,6 +276,8 @@ void objc_register_selector_array(struct objc_selector *selectors, unsigned int 
 
 void objc_selector_init(void){
 	// Assert that the runtime initialization lock is locked.
+	
+	objc_debug_log("Initializing selectors.\n");
 	
 	/**
 	  * Init the hash table that is used for getting selector

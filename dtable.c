@@ -85,6 +85,8 @@ static void collectMethodsForMethodListToSparseArray(
 
 PRIVATE void init_dispatch_tables ()
 {
+	objc_debug_log("Initializing dispatch tables.\n");
+	
 	objc_rw_lock_init(&initialize_lock);
 	uninstalled_dtable = SparseArrayNew();
 }

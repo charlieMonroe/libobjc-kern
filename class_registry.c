@@ -231,6 +231,8 @@ void objc_class_register_class(Class cl){
 		return;
 	}
 	
+	objc_debug_log("Registering class %s with the runtime.\n", cl->name);
+	
 	objc_class_insert(objc_classes, cl);
 	
 	objc_register_selectors_from_class(cl);
@@ -241,12 +243,17 @@ void objc_class_register_class(Class cl){
 	if (cl->super_class == Nil){
 		// Root class
 		cl->isa->super_class = cl;
+		cl->isa->isa = cl->isa;
 	}
 	
 	cl->dtable = uninstalled_dtable;
 	add_method_list_to_class(cl, cl->methods);
 	cl->isa->dtable = uninstalled_dtable;
 	add_method_list_to_class(cl->isa, cl->isa->methods);
+	
+	cl->flags.in_construction = NO;
+	cl->isa->flags.in_construction = NO;
+	
 	
 	// TODO other stuff
 	
@@ -271,7 +278,7 @@ BOOL objc_resolve_class(Class cl){
  * Initializes the class extensions and internal class structures.
  */
 void objc_class_init(void){
-	objc_rw_lock_init(&objc_runtime_lock);
+	objc_debug_log("Initializing classes.\n");
 	
 	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
 }

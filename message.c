@@ -22,6 +22,7 @@ id objc_msg_send(id receiver, SEL selector, ...){
 	// TODO passing arguments
 	
 	if (receiver == nil){
+		objc_debug_log("objc_msg_send - nil receiver.\n");
 		return nil;
 	}
 	
@@ -32,6 +33,8 @@ id objc_msg_send(id receiver, SEL selector, ...){
 	
 	Slot sl = objc_class_get_slot(receiver->isa, selector);
 	if (sl == NULL || sl->method == NULL){
+		objc_debug_log("Installing dtable on class %s%s.\n", receiver->isa->name, receiver->isa->flags.meta ? " (meta)" : "");
+		
 		Class cl = receiver->isa;
 		dtable_t dtable = dtable_for_class(cl);
 		/* Install the dtable if it hasn't already been initialized. */

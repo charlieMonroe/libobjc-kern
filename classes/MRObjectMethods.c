@@ -5,6 +5,7 @@
 #include "../class.h"
 #include "../selector.h"
 #include "../utils.h"
+#include "../message.h"
 
 #pragma mark MRObject
 
@@ -50,20 +51,12 @@ void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 	if (retain_cnt == 0){
 		/** Dealloc */
 		static SEL dealloc_selector;
-		IMP dealloc_IMP;
 		if (dealloc_selector == null_selector){
 			dealloc_selector = objc_selector_register("dealloc", "v@:");
 		}
-		
-		dealloc_IMP = objc_object_lookup_impl((id)self, dealloc_selector);
-		if (dealloc_IMP == NULL){
-			objc_log("%s doesn't implement the dealloc method.", objc_class_get_name(self->isa));
-			objc_abort("Class doesn't implement the dealloc method.");
-		}else{
-			dealloc_IMP((id)self, dealloc_selector);
-		}
+		objc_msg_send((id)self, dealloc_selector);
 	}else if (retain_cnt < 0){
-		objc_abort("Over-releasing an object!");
+		objc_abort("Over-releasing an object %p!", self);
 	}
 }
 
