@@ -26,5 +26,7 @@ void objc_install_base_classes(void);
 
 void init_dispatch_tables(void);
 
+void objc_arc_init(void);
+
 
 #endif /* OBJC_PRIVATE_H_ */

@@ -5,6 +5,7 @@
 #include "selector.h"
 #include "utils.h"
 #include "runtime.h"
+#include "arc.h"
 
 PRIVATE int spinlocks[spinlock_count];
 
@@ -39,12 +40,12 @@ id objc_getProperty(id obj, SEL _cmd, ptrdiff_t offset, BOOL isAtomic)
 		ret = *(id*)addr;
 		ret = objc_retain(ret);
 		unlock_spinlock(lock);
-		ret = objc_autoreleaseReturnValue(ret);
+		ret = objc_autorelease_return_value(ret);
 	}
 	else
 	{
 		ret = *(id*)addr;
-		ret = objc_retainAutoreleaseReturnValue(ret);
+		ret = objc_retain_autorelease_return_value(ret);
 	}
 	return ret;
 }
@@ -619,7 +620,7 @@ BOOL class_addProperty(Class cls,
 			+ sizeof(struct objc_property));
 	l->size = 1;
 	objc_copy_memory(&l->property_list, &p, sizeof(struct objc_property));
-	LOCK_RUNTIME_FOR_SCOPE();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	l->next = cls->properties;
 	cls->properties = l;
 	return YES;
@@ -640,7 +641,7 @@ void class_replaceProperty(Class cls,
 	const char *iVarname = 0;
 	struct objc_property p = propertyFromAttrs(attributes, attributeCount, &iVarname);
 	p.name = name;
-	LOCK_RUNTIME_FOR_SCOPE();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	constructPropertyAttributes(&p, iVarname);
 	objc_copy_memory(old, &p, sizeof(struct objc_property));
 }
