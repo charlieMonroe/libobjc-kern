@@ -146,48 +146,6 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 
 
 /**
- * Adds methods from the array 'm' into the method_list. The m array doesn't
- * have to be NULL-terminated, and has to contain 'count' methods.
- *
- * The m array is copied over to be NULL-terminated, but the Method 'objects'
- * are not.
- */
-OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
-	
-	// TODO locking
-	objc_method_list *list = objc_method_list_create(count);
-	for (int i = 0; i < count; ++i){
-		list->method_list[i] = *m[i];
-	}
-	
-	cl->methods = objc_method_list_prepend(cl->methods, list);
-}
-
-
-/**
- * Adds instance methods to class cl.
- */
-OBJC_INLINE void _add_methods(Class cl, Method *m, unsigned int count){
-	if (cl == NULL || m == NULL){
-		return;
-	}
-	
-	_add_methods_to_class(cl, m, count);
-	
-	/**
-	 * Unfortunately, as the cl's superclass might
-	 * have implemented this method, which might
-	 * have been cached by its subclasses.
-	 *
-	 * First, we figure out, it it really is this scenario.
-	 *
-	 * If it is, we need to find all subclasses and flush
-	 * their caches.
-	 */
-	// TODO
-}
-
-/**
  * Crashes the program because forwarding isn't supported by the class of the object.
  */
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
@@ -384,60 +342,6 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 	
 	return method;
 }
-
-/***** PUBLIC FUNCTIONS *****/
-/* Documentation in the header file. */
-
-#pragma mark -
-#pragma mark Adding methods
-
-
-void objc_class_add_method(Class cl, Method m){
-	if (cl == NULL || m == NULL){
-		return;
-	}
-	
-	_add_methods(cl, &m, 1);
-}
-void objc_class_add_methods(Class cl, Method *m, unsigned int count){
-	_add_methods(cl, m, count);
-}
-
-#pragma mark -
-#pragma mark Replacing methods
-
-IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const char *types){
-	Method m;
-	
-	if (cls == Nil || name == 0 || imp == NULL || types == NULL){
-		return NULL;
-	}
-	
-	m = _lookup_method_in_method_list(cls->methods, name);
-	if (m == NULL){
-		Method new_method = objc_method_create(name, imp);
-		_add_methods(cls, &new_method, 1);
-		
-		/**
-		 * Method flushing is handled by the function adding methods.
-		 */
-	}else{
-		m->implementation = imp;
-		++m->version;
-		
-		/**
-		 * There's no need to flush any caches as the whole
-		 * Method pointer is cached -> hence the IMP
-		 * pointer changes even inside the cache.
-		 */
-	}
-	return m == NULL ? NULL : m->implementation;
-}
-
-#pragma mark -
-#pragma mark Creating classes
-
-
 
 
 #pragma mark -
@@ -672,68 +576,3 @@ void objc_object_set_variable(id obj, Ivar ivar, void *value){
 	objc_copy_memory(value, (char*)obj + ivar->offset, ivar->size);
 }
 
-/***** PROTOTYPE-RELATED *****/
-#pragma mark -
-#pragma mark Prototype-related
-
-/*
-Class objc_class_register_prototype(struct objc_class_prototype *prototype){
-	Class cl;
-	
-	** Check if the run-time has been initialized. *
-	if (!objc_runtime_has_been_initialized){
-		objc_runtime_init();
-	}
-	
-	objc_rw_lock_wlock(objc_runtime_lock);
-	cl = _register_prototype(prototype);
-	objc_rw_lock_unlock(objc_runtime_lock);
-	return cl;
-}
-void objc_class_register_prototypes(struct objc_class_prototype *prototypes[]){
-	unsigned int i = 0;
-	
-	** Check if the run-time has been initialized. *
-	if (!objc_runtime_has_been_initialized){
-		objc_runtime_init();
-	}
-	
-	objc_rw_lock_wlock(objc_runtime_lock);
-	while (prototypes[i] != NULL){
-		_register_prototype(prototypes[i]);
-		++i;
-	}
-	objc_rw_lock_unlock(objc_runtime_lock);
-}
- */
-
-
-
-/**** CACHE-RELATED ****/
-#pragma mark -
-#pragma mark Cache-related
-
-/**
- * Flushing caches is a little tricky. As the structure is
- * read-lock-free, there can be multiple readers present.
- *
- * To solve this, the structure must handle this. The default
- * implementation solves this by simply marking the structure
- * as 'to be deallocated'. At the beginning of each read from
- * the cache, reader count is increased, at the end decreased.
- * 
- * Once the reader count is zero and the structure is marked
- * as to be deallocated, it is actually deallocated. This can be
- * done simply because the cache structure is marked to be
- * deleted *after* a new one has been created and placed instead.
- */
-
-void objc_class_flush_cache(Class cl){
-	if (cl == Nil){
-		return;
-	}
-	
-	// TODO - proper
-	SparseArrayDestroy(cl->dtable);
-	cl->dtable = NULL;
-}

@@ -119,12 +119,15 @@ struct objc_class MRObject_metaclass = {
 	}
 };
 
+static unsigned int MRObject_class_ivar_offsets[2] = { 0, 0 };
+
 struct objc_class MRObject_class = {
 	.isa = &MRObject_metaclass, /** isa pointer going to the meta class. */
 	.super_class = Nil, /** Root class */
 	.name = "MRObject",
-	.methods = &MRObject_instance_method_list, /** Class methods */
-	.ivars = &MRObject_ivar_list, /** Instance methods */
+	.methods = &MRObject_instance_method_list, /** Methods */
+	.ivars = &MRObject_ivar_list, /** Ivars */
+	.ivar_offsets = (unsigned int*)&MRObject_class_ivar_offsets,
 	.flags = {
 		.in_construction = 1
 	}
@@ -188,12 +191,15 @@ struct objc_class __MRConstString_metaclass = {
 	}
 };
 
+static unsigned int __MRConstString_class_ivar_offsets[2] = { 0, 0 };
+
 struct objc_class __MRConstString_class = {
 	.isa = &__MRConstString_metaclass, /** isa pointer gets connected when registering. */
 	.super_class = &MRObject_class, /** Superclass */
 	.name = "__MRConstString",
 	.methods = &__MRConstString_instance_method_list, /** Class methods */
 	.ivars = &__MRConstString_ivar_list,
+	.ivar_offsets = (unsigned int*)&__MRConstString_class_ivar_offsets,
 	.flags = {
 		.in_construction = 1
 	}

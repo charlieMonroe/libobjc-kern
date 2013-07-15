@@ -17,41 +17,6 @@
 #define OBJC_OBJ_IS_INSTANCE(obj) (!(obj->isa->flags.is_meta))
 
 #pragma mark -
-#pragma mark Adding methods
-
-/**
- * The following functions add methods or a single method to the class.
- *
- * If a method with the same selector is already attached to the class,
- * this doesn't override it. This is due to the method lists being a linked
- * list and the new methods being attached to the end of the list
- * as well as maintaining behavior of other run-times.
- *
- * Caller is responsible for the method 'objects' to be kept in memory,
- * however, the method array does get copied. In particular, when you
- * call the add_*_methods function, you are responsible for each *m,
- * however, you may free(m) when done.
- */
-extern void objc_class_add_method(Class cl, Method m);
-extern void objc_class_add_methods(Class cl, Method *m, unsigned int count);
-
-
-#pragma mark -
-#pragma mark Replacing methods
-
-/**
- * Replaces a method implementation for another one.
- *
- * Returns the old implementation.
- */
-extern IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const char *types);
-
-
-
-
-
-
-#pragma mark -
 #pragma mark Responding to selectors
 
 /**
@@ -205,16 +170,5 @@ __attribute__((always_inline)) static inline Class objc_object_get_class_inline(
 	// TODO check for in-pointer classes
 	return obj->isa;
 }
-
-#pragma mark -
-#pragma mark Cache-related
-
-/**
- * These cache-related functions flush the caches of a class,
- * which then requires the lookup function to search for the
- * method implementation once again.
- *
- */
-extern void objc_class_flush_cache(Class cl);
 
 #endif /* OBJC_CLASS_H_ */
