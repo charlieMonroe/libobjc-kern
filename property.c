@@ -40,12 +40,12 @@ id objc_getProperty(id obj, SEL _cmd, ptrdiff_t offset, BOOL isAtomic)
 		ret = *(id*)addr;
 		ret = objc_retain(ret);
 		unlock_spinlock(lock);
-		ret = objc_autorelease_return_value(ret);
+		ret = objc_autorelease(ret);
 	}
 	else
 	{
 		ret = *(id*)addr;
-		ret = objc_retain_autorelease_return_value(ret);
+		ret = objc_retain_autorelease(ret);
 	}
 	return ret;
 }

@@ -31,19 +31,49 @@
 #	error You must define MAP_TABLE_HASH_VALUE
 #endif
 
-#ifndef MAP_PLACEHOLDER_VALUE
-	#define MAP_PLACEHOLDER_VALUE NULL
+#ifndef MAP_TABLE_PLACEHOLDER_VALUE
+	#define MAP_TABLE_PLACEHOLDER_VALUE NULL
 #endif
 
 #ifndef MAP_TABLE_KEY_TYPE
 	#define MAP_TABLE_KEY_TYPE void *
 #endif
-#ifndef MAP_NULL_EQUALITY_FUNCTION
+
+#ifndef MAP_TABLE_RETURNS_BY_REFERENCE
+	#define MAP_TABLE_RETURNS_BY_REFERENCE 0
+#endif
+
+#if MAP_TABLE_RETURNS_BY_REFERENCE
+	#define MAP_TABLE_REF_TYPE *
+	#define MAP_TABLE_REF &
+#else
+	#define MAP_TABLE_REF_TYPE
+	#define MAP_TABLE_REF
+#endif
+
+#ifndef MAP_TABLE_NULL_EQUALITY_FUNCTION
 static inline int _ptr_is_null(void *ptr){
 	return ptr == NULL;
 }
-#define MAP_NULL_EQUALITY_FUNCTION _ptr_is_null
+#define MAP_TABLE_NULL_EQUALITY_FUNCTION _ptr_is_null
 #endif
+
+#ifndef MAP_TABLE_NO_LOCK
+	#define MAP_TABLE_NO_LOCK 0
+#endif
+
+#if MAP_TABLE_NO_LOCK
+	#define MAP_TABLE_WLOCK(x)
+	#define MAP_TABLE_RLOCK(x)
+	#define MAP_TABLE_UNLOCK(x)
+	#define MAP_TABLE_INIT(x)
+#else
+	#define MAP_TABLE_WLOCK(x) objc_rw_lock_wlock(x)
+	#define MAP_TABLE_RLOCK(x) objc_rw_lock_rlock(x)
+	#define MAP_TABLE_UNLOCK(x) objc_rw_lock_unlock(x)
+	#define MAP_TABLE_INIT(x) objc_rw_lock_init(x);
+#endif
+
 
 /**
  * PREFIX(x) macro adds the table name prefix to the argument.
@@ -73,7 +103,9 @@ typedef struct PREFIX(_table_cell_struct)
  */
 typedef struct PREFIX(_table_struct)
 {
+#if !MAP_TABLE_NO_LOCK
 	objc_rw_lock lock;
+#endif
 	unsigned int table_size;
 	unsigned int table_used;
 	unsigned int enumerator_count;
@@ -97,7 +129,7 @@ struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
 PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity)
 {
 	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)));
-	objc_rw_lock_init(&table->lock);
+	MAP_TABLE_INIT(&table->lock);
 	table->table = PREFIX(alloc_cells)(capacity);
 	table->table_size = capacity;
 	return table;
@@ -142,7 +174,7 @@ static int PREFIX(_table_resize)(PREFIX(_table) *table)
 	for (uint32_t i=0 ; i<copy->table_size ; i++)
 	{
 		MAP_TABLE_VALUE_TYPE value = copy->table[i].value;
-		if (!MAP_NULL_EQUALITY_FUNCTION(value))
+		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(value))
 		{
 			copied++;
 			PREFIX(_insert)(table, value);
@@ -194,7 +226,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 		{
 			emptyCell->value = cell->value;
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
-			cell->value = MAP_PLACEHOLDER_VALUE;
+			cell->value = MAP_TABLE_PLACEHOLDER_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -210,7 +242,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
 			// Clear the hop bit in the original cell
 			cell->secondMaps &= ~(1 << (hop - 1));
-			hopCell->value = MAP_PLACEHOLDER_VALUE;
+			hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -229,7 +261,7 @@ static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 	for (unsigned i = 32; i < table->table_size; i++)
 	{
 		PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash + i);
-		if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
+		if (MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 		{
 			// We've found a free space, try to move it up.
 			return PREFIX(_table_move_gap)(table, hash + i, hash, cell);
@@ -257,16 +289,16 @@ static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 static int PREFIX(_insert)(PREFIX(_table) *table,
 			   MAP_TABLE_VALUE_TYPE value)
 {
-	objc_rw_lock_wlock(&table->lock);
+	MAP_TABLE_WLOCK(&table->lock);
 
 	uint32_t hash = MAP_TABLE_HASH_VALUE(value);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
-	if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
+	if (MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
 		cell->secondMaps = 0;
 		cell->value = value;
 		table->table_used++;
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 		return 1;
 	}
 	/* If this cell is full, try the next one. */
@@ -274,12 +306,12 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	{
 		PREFIX(_table_cell) second =
 		PREFIX(_table_lookup)(table, hash+i);
-		if (MAP_NULL_EQUALITY_FUNCTION(second->value))
+		if (MAP_TABLE_NULL_EQUALITY_FUNCTION(second->value))
 		{
 			cell->secondMaps |= (1 << (i-1));
 			second->value = value;
 			table->table_used++;
-			objc_rw_lock_unlock(&table->lock);
+			MAP_TABLE_UNLOCK(&table->lock);
 			return 1;
 		}
 	}
@@ -292,14 +324,14 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	if (table->table_used > (0.8 * table->table_size))
 	{
 		PREFIX(_table_resize)(table);
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
 	/* If this virtual cell is full, rebalance the hash from this point and
 	 * try again. */
 	if (PREFIX(_table_rebalance)(table, hash))
 	{
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
 	/** If rebalancing failed, resize even if we are <80% full.  This can
@@ -307,12 +339,12 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	 * get a better hash function. */
 	if (PREFIX(_table_resize)(table))
 	{
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
 	
 	fprintf(stderr, "Insert failed\n");
-	objc_rw_lock_unlock(&table->lock);
+	MAP_TABLE_UNLOCK(&table->lock);
 	return 0;
 }
 
@@ -321,7 +353,7 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
 	// Value does not exist.
-	if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
+	if (MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
 		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
@@ -360,7 +392,7 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 	emptyCell->secondMaps &= ~(1 << (hop-1));
 	if (0 == hopCell->secondMaps)
 	{
-		hopCell->value = MAP_PLACEHOLDER_VALUE;
+		hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
 	}
 	else
 	{
@@ -370,33 +402,33 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 __attribute__((unused))
 static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 {
-	objc_rw_lock_wlock(&table->lock);
+	MAP_TABLE_WLOCK(&table->lock);
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
 	if (NULL == cell) { return; }
 	// If the cell contains a value, set it to the placeholder and shuffle up
 	// everything
 	if (0 == cell->secondMaps)
 	{
-		cell->value = MAP_PLACEHOLDER_VALUE;
+		cell->value = MAP_TABLE_PLACEHOLDER_VALUE;
 	}
 	else
 	{
 		PREFIX(_table_move_second)(table, cell);
 	}
 	table->table_used--;
-	objc_rw_lock_unlock(&table->lock);
+	MAP_TABLE_UNLOCK(&table->lock);
 }
 
 __attribute__((unused))
-static MAP_TABLE_VALUE_TYPE PREFIX(_table_get)(PREFIX(_table) *table,
+static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_table_get)(PREFIX(_table) *table,
 		   const void *key)
 {
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
 	if (NULL == cell)
 	{
-		return MAP_PLACEHOLDER_VALUE;
+		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
-	return cell->value;
+	return MAP_TABLE_REF cell->value;
 }
 __attribute__((unused))
 static void PREFIX(_table_set)(PREFIX(_table) *table, const void *key,
@@ -411,7 +443,7 @@ static void PREFIX(_table_set)(PREFIX(_table) *table, const void *key,
 }
 
 __attribute__((unused))
-static MAP_TABLE_VALUE_TYPE
+static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE
 PREFIX(_next)(PREFIX(_table) *table,
 	      struct PREFIX(_table_enumerator) **state)
 {
@@ -420,34 +452,34 @@ PREFIX(_next)(PREFIX(_table) *table,
 		*state = objc_zero_alloc(sizeof(struct PREFIX(_table_enumerator)));
 		// Make sure that we are not reallocating the table when we start
 		// enumerating
-		objc_rw_lock_rlock(&table->lock);
+		MAP_TABLE_WLOCK(&table->lock);
 		(*state)->table = table;
 		(*state)->index = -1;
 		__sync_fetch_and_add(&table->enumerator_count, 1);
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 	}
 	if ((*state)->seen >= (*state)->table->table_used)
 	{
-		objc_rw_lock_rlock(&table->lock);
+		MAP_TABLE_RLOCK(&table->lock);
 		__sync_fetch_and_sub(&table->enumerator_count, 1);
-		objc_rw_lock_unlock(&table->lock);
+		MAP_TABLE_UNLOCK(&table->lock);
 		free(*state);
-		return MAP_PLACEHOLDER_VALUE;
+		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
 	while ((++((*state)->index)) < (*state)->table->table_size)
 	{
-		if (!MAP_NULL_EQUALITY_FUNCTION(((*state)->table->table[(*state)->index].value)))
+		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(((*state)->table->table[(*state)->index].value)))
 		{
 			(*state)->seen++;
-			return (*state)->table->table[(*state)->index].value;
+			return MAP_TABLE_REF (*state)->table->table[(*state)->index].value;
 		}
 	}
 	// Should not be reached, but may be if the table is unsafely modified.
-	objc_rw_lock_rlock(&table->lock);
-	table->enumerator_count--;
-	objc_rw_lock_unlock(&table->lock);
+	MAP_TABLE_RLOCK(&table->lock);
+	__sync_fetch_and_sub(&table->enumerator_count, 1);
+	MAP_TABLE_UNLOCK(&table->lock);
 	free(*state);
-	return MAP_PLACEHOLDER_VALUE;
+	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 
 /**
@@ -456,10 +488,10 @@ PREFIX(_next)(PREFIX(_table) *table,
  * table.
  */
 __attribute__((unused))
-static MAP_TABLE_VALUE_TYPE PREFIX(_current)(PREFIX(_table) *table,
+static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_current)(PREFIX(_table) *table,
 		 struct PREFIX(_table_enumerator) **state)
 {
-	return (*state)->table->table[(*state)->index].value;
+	return MAP_TABLE_REF (*state)->table->table[(*state)->index].value;
 }
 
 #undef PREFIX
