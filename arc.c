@@ -3,6 +3,7 @@
 #include "message.h"
 #include "selector.h"
 #include "private.h"
+#include "utils.h"
 
 /**
  * Each autorelease pool ~ a page. We need the previous and top
@@ -38,7 +39,7 @@ static inline objc_arc_thread_data *_objc_get_arc_thread_data(void){
 }
 
 static int objc_autorelease_object_count = 0;
-static int objc_autorelease_pool_count = 0;
+//static int objc_autorelease_pool_count = 0;
 
 // Initialized in the objc_arc_init();
 static SEL objc_retain_selector = 0;
@@ -263,6 +264,45 @@ id objc_store_strong(id *addr, id value){
 
 #pragma mark -
 #pragma mark Weak Refs
+
+/**
+ * We're using 6 ref ptrs since including the
+ * obj and next ptrs, this puts us at 8 pointers
+ * in the structure, which is 32 bytes for for a
+ * 32-bit computer and 64 bytes for a 64-bit
+ * computer.
+ */
+#define WEAK_REF_SIZE 6
+
+typedef struct objc_weak_ref_struct {
+	id obj;
+	id *refs[WEAK_REF_SIZE];
+	struct objc_weak_ref_struct *next;
+} objc_weak_ref;
+
+static objc_weak_ref objc_null_weak_ref;
+
+static int _objc_weak_ref_equal(const id obj, const objc_weak_ref ref){
+	return ref.obj == obj;
+}
+
+static inline int objc_weak_ref_is_nil(const objc_weak_ref ref){
+	return ref.obj == nil;
+}
+
+static unsigned int _objc_weak_ref_hash(const objc_weak_ref ref){
+	return objc_hash_pointer(ref.obj);
+}
+
+#define MAP_TABLE_NAME objc_weak_ref
+#define MAP_TABLE_COMPARE_FUNCTION _objc_weak_ref_equal
+#define MAP_TABLE_HASH_KEY objc_hash_pointer
+#define MAP_TABLE_HASH_VALUE _objc_weak_ref_hash
+#define MAP_TABLE_KEY_TYPE id
+#define MAP_TABLE_VALUE_TYPE objc_weak_ref
+#define MAP_PLACEHOLDER_VALUE objc_null_weak_ref
+#define MAP_NULL_EQUALITY_FUNCTION objc_weak_ref_is_nil
+#include "hashtable.h"
 
 
 

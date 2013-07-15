@@ -31,6 +31,20 @@
 #	error You must define MAP_TABLE_HASH_VALUE
 #endif
 
+#ifndef MAP_PLACEHOLDER_VALUE
+	#define MAP_PLACEHOLDER_VALUE NULL
+#endif
+
+#ifndef MAP_TABLE_KEY_TYPE
+	#define MAP_TABLE_KEY_TYPE void *
+#endif
+#ifndef MAP_NULL_EQUALITY_FUNCTION
+static inline int _ptr_is_null(void *ptr){
+	return ptr == NULL;
+}
+#define MAP_NULL_EQUALITY_FUNCTION _ptr_is_null
+#endif
+
 /**
  * PREFIX(x) macro adds the table name prefix to the argument.
  */
@@ -128,7 +142,7 @@ static int PREFIX(_table_resize)(PREFIX(_table) *table)
 	for (uint32_t i=0 ; i<copy->table_size ; i++)
 	{
 		MAP_TABLE_VALUE_TYPE value = copy->table[i].value;
-		if (value != NULL)
+		if (!MAP_NULL_EQUALITY_FUNCTION(value))
 		{
 			copied++;
 			PREFIX(_insert)(table, value);
@@ -180,7 +194,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 		{
 			emptyCell->value = cell->value;
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
-			cell->value = NULL;
+			cell->value = MAP_PLACEHOLDER_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -196,7 +210,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
 			// Clear the hop bit in the original cell
 			cell->secondMaps &= ~(1 << (hop - 1));
-			hopCell->value = NULL;
+			hopCell->value = MAP_PLACEHOLDER_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -215,7 +229,7 @@ static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 	for (unsigned i = 32; i < table->table_size; i++)
 	{
 		PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash + i);
-		if (cell->value == NULL)
+		if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
 		{
 			// We've found a free space, try to move it up.
 			return PREFIX(_table_move_gap)(table, hash + i, hash, cell);
@@ -247,7 +261,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 
 	uint32_t hash = MAP_TABLE_HASH_VALUE(value);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
-	if (cell->value == NULL)
+	if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
 	{
 		cell->secondMaps = 0;
 		cell->value = value;
@@ -260,7 +274,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	{
 		PREFIX(_table_cell) second =
 		PREFIX(_table_lookup)(table, hash+i);
-		if (second->value == NULL)
+		if (MAP_NULL_EQUALITY_FUNCTION(second->value))
 		{
 			cell->secondMaps |= (1 << (i-1));
 			second->value = value;
@@ -307,9 +321,9 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
 	// Value does not exist.
-	if (cell->value != NULL)
+	if (MAP_NULL_EQUALITY_FUNCTION(cell->value))
 	{
-		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_VALUE_TYPE)key, cell->value))
+		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
 			return cell;
 		}
@@ -318,7 +332,7 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 		for (int hop = __builtin_ffs(jump) ; hop > 0 ; hop = __builtin_ffs(jump))
 		{
 			PREFIX(_table_cell) hopCell = PREFIX(_table_lookup)(table, hash+hop);
-			if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_VALUE_TYPE)key, hopCell->value))
+			if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, hopCell->value))
 			{
 				return hopCell;
 			}
@@ -346,7 +360,7 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 	emptyCell->secondMaps &= ~(1 << (hop-1));
 	if (0 == hopCell->secondMaps)
 	{
-		hopCell->value = NULL;
+		hopCell->value = MAP_PLACEHOLDER_VALUE;
 	}
 	else
 	{
@@ -363,7 +377,7 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 	// everything
 	if (0 == cell->secondMaps)
 	{
-		cell->value = NULL;
+		cell->value = MAP_PLACEHOLDER_VALUE;
 	}
 	else
 	{
@@ -380,7 +394,7 @@ static MAP_TABLE_VALUE_TYPE PREFIX(_table_get)(PREFIX(_table) *table,
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
 	if (NULL == cell)
 	{
-		return NULL;
+		return MAP_PLACEHOLDER_VALUE;
 	}
 	return cell->value;
 }
@@ -418,11 +432,11 @@ PREFIX(_next)(PREFIX(_table) *table,
 		__sync_fetch_and_sub(&table->enumerator_count, 1);
 		objc_rw_lock_unlock(&table->lock);
 		free(*state);
-		return NULL;
+		return MAP_PLACEHOLDER_VALUE;
 	}
 	while ((++((*state)->index)) < (*state)->table->table_size)
 	{
-		if (((*state)->table->table[(*state)->index].value) != NULL)
+		if (!MAP_NULL_EQUALITY_FUNCTION(((*state)->table->table[(*state)->index].value)))
 		{
 			(*state)->seen++;
 			return (*state)->table->table[(*state)->index].value;
@@ -433,7 +447,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 	table->enumerator_count--;
 	objc_rw_lock_unlock(&table->lock);
 	free(*state);
-	return NULL;
+	return MAP_PLACEHOLDER_VALUE;
 }
 
 /**

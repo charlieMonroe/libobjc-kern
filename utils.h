@@ -97,6 +97,16 @@ OBJC_INLINE unsigned int objc_hash_string(const char *str){
 }
 
 /*
+ * Hashes a pointer;
+ */
+OBJC_INLINE unsigned int objc_hash_pointer(const void *ptr){
+	// Bit-rotate right 4, since the lowest few bits in an object pointer will
+	// always be 0, which is not so useful for a hash value
+	return (unsigned int)(((uintptr_t)ptr >> 4) |
+			      (uintptr_t)((uintptr_t)ptr << (uintptr_t)((sizeof(id) * 8) - 4)));
+}
+
+/*
  * Copies memory from source to destination.
  */
 #define objc_copy_memory memcpy
