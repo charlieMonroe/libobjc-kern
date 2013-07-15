@@ -211,7 +211,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	newMetaClass->flags.user_created = YES;
 	newClass->flags.user_created = YES;
 	
-	// TODO newClass and newMetaClass dtable
+	newClass->dtable = newMetaClass->dtable = uninstalled_dtable;
 	
 	// It is inserted into the class tree and hash table on class_finish
 	
@@ -290,7 +290,7 @@ void objc_class_register_class(Class cl){
 	objc_register_selectors_from_class(cl);
 	objc_register_selectors_from_class(cl->isa);
 	
-	// TODO dtable
+	cl->dtable = cl->isa->dtable = uninstalled_dtable;
 	
 	if (cl->super_class == Nil){
 		// Root class
@@ -310,7 +310,10 @@ void objc_class_register_class(Class cl){
 	_objc_class_fixup_instance_size(cl->isa);
 	
 	// TODO other stuff
-	
+	if (!cl->flags.user_created){
+		// TODO +load
+	}
+	// TODO objc_load_callback
 }
 
 void objc_class_register_classes(Class *cl, unsigned int count){

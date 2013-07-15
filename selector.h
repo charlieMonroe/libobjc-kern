@@ -32,7 +32,6 @@ extern const char *objc_selector_get_name(SEL selector);
 extern const char *objc_selector_get_types(SEL selector);
 
 
-// TODO move to private
 /**
  * Registers all selectors within the class or method list.
  */

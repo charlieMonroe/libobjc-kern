@@ -49,8 +49,6 @@ id _I_MRObject_retain_(MRObject_instance_t *self, SEL _cmd){
 }
 
 void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
-	/** TODO atomic */
-	
 	int retain_cnt = __sync_sub_and_fetch(&self->retainCount, 1);
 	if (retain_cnt == 0){
 		/** Dealloc */

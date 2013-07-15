@@ -26,11 +26,6 @@ id objc_msg_send(id receiver, SEL selector, ...){
 		return nil;
 	}
 	
-	if (receiver->isa->dtable == NULL){
-		// TODO install the initial dtable on classes
-		receiver->isa->dtable = uninstalled_dtable;
-	}
-	
 	Slot sl = objc_class_get_slot(receiver->isa, selector);
 	if (sl == NULL || sl->method == NULL){
 		objc_install_dtable_for_object(receiver);

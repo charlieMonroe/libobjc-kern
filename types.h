@@ -48,8 +48,6 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
 
 /**
  * Actual declarations of the structures follow.
- * TODO: decide whether to make them opaque,
- * declared in a private header/source files.
  */
 struct objc_selector {
 	/* 
@@ -118,10 +116,20 @@ struct objc_property {
 	const char *getter_types;
 	const char *setter_types;
 	
-	// TODO declare flags
-	unsigned int flags;
-	
+	// TODO - merge attributes into
+	// on unsigned int? Would require
+	// to redifine enums in property.h
+	char attributes;
+	char attributes2;
 };
+
+typedef struct {
+	const char *name;
+	const char *value;
+	size_t length;
+	
+	// TODO
+} objc_property_attribute_t;
 
 
 /**
