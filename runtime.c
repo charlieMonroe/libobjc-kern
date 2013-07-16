@@ -2,7 +2,7 @@
 #include "runtime.h"
 #include "os.h"
 #include "types.h"
-#include "private.h"
+#include "init.h"
 
 /**
  * This is marked during objc_init() as YES. After that point, no modifications
@@ -33,6 +33,9 @@ void objc_runtime_init(void){
 	objc_selector_init();
 	init_dispatch_tables();
 	objc_class_init();
+	objc_arc_init();
+	objc_class_extra_init();
+	
 	objc_install_base_classes();
 	
 	objc_runtime_has_been_initialized = YES;

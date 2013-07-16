@@ -200,6 +200,8 @@ struct objc_class {
 	Class subclass_list;
 	Class sibling_list;
 	
+	void *extra_space;
+	
 	unsigned int instance_size;
 	unsigned int version; /** Right now 0. */
 	
