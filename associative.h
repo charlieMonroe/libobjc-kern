@@ -32,6 +32,10 @@ enum
 	OBJC_ASSOCIATION_COPY = 0x303,
 	
 	
+	/**
+	 * A special association for storing weak refs. The weak refs are zeroed on 
+	 * either objc_remove_associated_objects or objc_remove_associated_weak_refs.
+	 */
 	OBJC_ASSOCIATION_WEAK_REF = 0x401
 };
 /**
@@ -65,7 +69,7 @@ void objc_remove_associated_objects(id object);
  * Removes and zeroes out all weak refs and removes them from the associated
  * objects.
  */
-void objc_remove_weak_refs(id object);
+void objc_remove_associated_weak_refs(id object);
 
 
 #endif // OBJC_ASSOCIATIVE_H

@@ -352,7 +352,7 @@ void objc_remove_associated_objects(id object){
 	
 }
 
-void objc_remove_weak_refs(id object){
+void objc_remove_associated_weak_refs(id object){
 	/**
 	 * This function is quite similar to the objc_remove_associated_objects,
 	 * but doesn't actually free any objects, or any of the objc_object_ref_list

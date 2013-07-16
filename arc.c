@@ -284,7 +284,7 @@ id objc_store_weak(id *addr, id obj){
 void objc_delete_weak_refs(id obj){
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
 	
-	objc_remove_weak_refs(obj);
+	objc_remove_associated_weak_refs(obj);
 }
 id objc_load_weak_retained(id *addr){
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
