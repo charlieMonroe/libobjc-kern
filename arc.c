@@ -3,6 +3,7 @@
 #include "message.h"
 #include "selector.h"
 #include "utils.h"
+#include "associative.h"
 
 /**
  * Each autorelease pool ~ a page. We need the previous and top
@@ -254,149 +255,36 @@ id objc_store_strong(id *addr, id value){
 #pragma mark Weak Refs
 
 /**
- * We're using 6 ref ptrs since including the
- * obj and next ptrs, this puts us at 8 pointers
- * in the structure, which is 32 bytes for for a
- * 32-bit computer and 64 bytes for a 64-bit
- * computer.
+ * We are using a special association type to implement weak refs.
+ * This association type zeroes the *addr on objc_remove_associated_objects().
+ *
+ * We need to store the same value for key and value in the associated object.
+ * To simply remove the weak ref, store nil into the value for key.
  */
-#define WEAK_REF_SIZE 6
 
-typedef struct objc_weak_ref_struct {
-	id obj;
-	id *refs[WEAK_REF_SIZE];
-	struct objc_weak_ref_struct *next;
-} objc_weak_ref;
-
-static objc_weak_ref objc_null_weak_ref;
-
-static int _objc_weak_ref_equal(const id obj, const objc_weak_ref ref){
-	return ref.obj == obj;
-}
-
-static inline int objc_weak_ref_is_nil(const objc_weak_ref ref){
-	return ref.obj == nil;
-}
-
-static unsigned int _objc_weak_ref_hash(const objc_weak_ref ref){
-	return objc_hash_pointer(ref.obj);
-}
-
-#define MAP_TABLE_NAME objc_weak_ref
-#define MAP_TABLE_COMPARE_FUNCTION _objc_weak_ref_equal
-#define MAP_TABLE_HASH_KEY objc_hash_pointer
-#define MAP_TABLE_HASH_VALUE _objc_weak_ref_hash
-#define MAP_TABLE_KEY_TYPE id
-#define MAP_TABLE_VALUE_TYPE objc_weak_ref
-#define MAP_TABLE_PLACEHOLDER_VALUE objc_null_weak_ref
-#define MAP_TABLE_NULL_EQUALITY_FUNCTION objc_weak_ref_is_nil
-#define MAP_TABLE_NO_LOCK 1
-#define MAP_TABLE_RETURNS_BY_REFERENCE 1
-#include "hashtable.h"
-
-static objc_weak_ref_table *objc_weak_refs;
 objc_rw_lock objc_weak_refs_lock;
 
-/**
- * Looks for a chain of objc_weak_ref structures associated
- * with obj, returning the one that contains a references to addr,
- * and writing the index in the ->refs field into index, or -1 if not
- * found.
- */
-static inline objc_weak_ref *_objc_weak_ref_for_obj_at_addr_no_lock(id *addr, id obj, int *index){
-	objc_weak_ref *old_ref = objc_weak_ref_table_get(objc_weak_refs, obj);
-	*index = -1;
-	while (NULL != old_ref){
-		for (int i=0; i < WEAK_REF_SIZE; ++i){
-			if (old_ref->refs[i] == addr){
-				*index = i;
-				break;
-			}
-		}
-		old_ref = old_ref->next;
-	}
-	return old_ref;
-}
-
-/**
- * Returns the last objc_weak_ref reference in the chain.
- */
-static inline objc_weak_ref *_objc_weak_ref_last_in_chain(objc_weak_ref *ref){
-	while (ref != NULL) {
-		if (ref->next == NULL){
-			return ref;
-		}
-		ref = ref->next;
-	}
-	return NULL;
-}
-
 id objc_store_weak(id *addr, id obj){
-	id old = *addr;
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
 	
-	int index = 0;
-	objc_weak_ref *ref = _objc_weak_ref_for_obj_at_addr_no_lock(addr, old, &index);
-	if (ref != NULL){
-		ref->refs[index] = 0;
-	}
-	
+	id old = *addr;
 	if (obj == nil){
+		// Remove the reference by setting it to nil
+		objc_set_associated_object(old, addr, nil, OBJC_ASSOCIATION_WEAK_REF);
 		*addr = nil;
 		return nil;
 	}
 	
-	// TODO block classes
-	
-	ref = _objc_weak_ref_for_obj_at_addr_no_lock(NULL, obj, &index);
-	if (ref != NULL && index != -1){
-		// Found a place
-		ref->refs[index] = addr;
-		*addr = obj;
-		return obj;
-	}
-	
-	ref = objc_weak_ref_table_get(objc_weak_refs, obj);
-	if (ref == NULL){
-		// First weak ref for obj
-		objc_weak_ref new_ref = {0};
-		new_ref.obj = obj;
-		new_ref.refs[0] = addr;
-		objc_weak_ref_insert(objc_weak_refs, new_ref);
-	}else{
-		ref = _objc_weak_ref_last_in_chain(ref);
-		ref->next = objc_zero_alloc(sizeof(objc_weak_ref));
-		ref->next->refs[0] = addr;
-	}
-	
+	objc_set_associated_object(obj, addr, (id)addr, OBJC_ASSOCIATION_WEAK_REF);
 	*addr = obj;
+	
 	return obj;
 }
 
-static void _objc_zero_refs(objc_weak_ref *ref, BOOL free){
-	if (ref->next != NULL){
-		_objc_zero_refs(ref->next, YES);
-	}
-	
-	for (int i = 0; i < WEAK_REF_SIZE; ++i){
-		if (ref->refs[i] != NULL){
-			*ref->refs[i] = 0;
-		}
-	}
-	
-	if (free){
-		objc_dealloc(ref);
-	}else{
-		objc_memory_zero(ref, sizeof(objc_weak_ref));
-	}
-	
-}
 void objc_delete_weak_refs(id obj){
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
-	objc_weak_ref *ref = objc_weak_ref_table_get(objc_weak_refs, obj);
-	if (ref != NULL){
-		_objc_zero_refs(ref, NO);
-	}
+	
+	objc_remove_weak_refs(obj);
 }
 id objc_load_weak_retained(id *addr){
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
@@ -426,18 +314,17 @@ void objc_copy_weak(id *dest, id *src){
 }
 void objc_move_weak(id *dest, id *src){
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
+	
+	id obj = *src;
+	
 	*dest = *src;
 	*src = nil;
 	
-	// Just updating the reference
-	
-	int index = 0;
-	objc_weak_ref *ref = _objc_weak_ref_for_obj_at_addr_no_lock(src, *dest, &index);
-	
-	if (ref != NULL){
-		ref->refs[index] = dest;
+	if (obj != nil){
+		// Set nil for the old reference and add the new reference
+		objc_set_associated_object(obj, src, nil, OBJC_ASSOCIATION_WEAK_REF);
+		objc_set_associated_object(obj, dest, (id)dest, OBJC_ASSOCIATION_WEAK_REF);
 	}
-	
 }
 void objc_destroy_weak(id *obj){
 	objc_store_weak(obj, nil);
@@ -452,7 +339,6 @@ id objc_init_weak(id *object, id value){
 
 void objc_arc_init(void){
 	objc_rw_lock_init(&objc_weak_refs_lock);
-	objc_weak_refs = objc_weak_ref_table_create(128);
 	
-	// TODO create key for TLS
+	// TODO create key for TLS for the autorelease pool
 }

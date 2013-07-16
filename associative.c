@@ -47,7 +47,10 @@ typedef struct objc_object_ref_list_struct {
 
 objc_rw_lock objc_associated_objects_lock;
 
-
+/**
+ * Returns a reference to the objc_associative_reference structure in assoc whose
+ * key is key.
+ */
 static inline objc_associative_reference *_objc_reference_in_list(objc_object_ref_list *assoc, void *key){
 	for (int i = 0; i < REF_CNT; ++i){
 		if (assoc->refs[i].key == key){
@@ -81,6 +84,10 @@ static inline objc_associative_reference *_objc_reference_for_object_and_key(id 
 	return NULL;
 }
 
+/**
+ * Returns a reference to the first objc_associative_reference structure in assoc
+ * that is no occupied by any reference.
+ */
 static inline objc_associative_reference *_objc_reference_free_in_list(objc_object_ref_list *assoc){
 	// We're looking for a free spot, which really means that the spot
 	// has a NULL key
@@ -148,7 +155,12 @@ static inline BOOL _objc_is_policy_atomic(objc_association_policy policy){
  * releasing the object unless the policy was assign.
  */
 static inline void _objc_dispose_of_object_according_to_policy(id object, objc_association_policy policy){
-	if (policy != OBJC_ASSOCIATION_ASSIGN){
+	if (policy == OBJC_ASSOCIATION_WEAK_REF){
+		void **address = (void**)object;
+		if (address != NULL){
+			*(void**)address = NULL;
+		}
+	}else if (policy != OBJC_ASSOCIATION_ASSIGN){
 		objc_release(object);
 	}
 }
@@ -338,6 +350,41 @@ void objc_remove_associated_objects(id object){
 		/* */
 	}
 	
+}
+
+void objc_remove_weak_refs(id object){
+	/**
+	 * This function is quite similar to the objc_remove_associated_objects,
+	 * but doesn't actually free any objects, or any of the objc_object_ref_list
+	 * structures, so it can keep the lock and make just one pass.
+	 */
+	
+	objc_rw_lock_wlock(&objc_associated_objects_lock);
+	
+	Class cl = object->isa;
+	void **extra_space = objc_class_extra_with_identifier(cl, OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
+	if (*extra_space != NULL){
+		objc_object_ref_list *assoc = *extra_space;
+		while (assoc != NULL) {
+			if (assoc->obj == object){
+				// This list belongs to the object, remove WEAK_REFs
+				for (int i = 0; i < REF_CNT; ++i){
+					objc_associative_reference *ref = &assoc->refs[i];
+					if (ref->policy == OBJC_ASSOCIATION_WEAK_REF){
+						if (ref->value != NULL){
+							*(void**)ref->value = NULL;
+						}
+						ref->value = nil;
+						ref->key = NULL;
+						ref->policy = 0;
+					}
+				}
+			}
+			assoc = assoc->next;
+		}
+	}
+	
+	objc_rw_lock_unlock(&objc_associated_objects_lock);
 }
 
 

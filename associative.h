@@ -29,7 +29,10 @@ enum
 	/**
 	 * Atomic copy.
 	 */
-	OBJC_ASSOCIATION_COPY = 0x303
+	OBJC_ASSOCIATION_COPY = 0x303,
+	
+	
+	OBJC_ASSOCIATION_WEAK_REF = 0x401
 };
 /**
  * Association policy, used when setting associated objects.
@@ -58,7 +61,11 @@ void objc_set_associated_object(id object, void *key, id value, objc_association
  */
 void objc_remove_associated_objects(id object);
 
-
+/**
+ * Removes and zeroes out all weak refs and removes them from the associated
+ * objects.
+ */
+void objc_remove_weak_refs(id object);
 
 
 #endif // OBJC_ASSOCIATIVE_H
