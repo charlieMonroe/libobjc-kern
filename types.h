@@ -167,10 +167,21 @@ struct objc_category {
 	objc_protocol_list *protocols;
 };
 
+typedef struct {
+	BOOL meta : 1;
+	BOOL in_construction : 1;
+	BOOL initialized : 1; // +initialized called
+	BOOL user_created : 1;
+	BOOL has_custom_arr : 1; // Implements -retain, -release, or -autorelease
+	BOOL fake : 1; // The class is a fake and doesn't have any of the fields beyond the flags
+} objc_class_flags;
 
 /* Actual structure of Class. */
 struct objc_class {
 	Class isa; /* Points to meta class */
+	void *dtable;
+	objc_class_flags flags;
+	
 	Class super_class;
 	const char *name;
 	
@@ -194,9 +205,6 @@ struct objc_class {
 	objc_protocol_list *protocols;
 	objc_property_list *properties;
 		
-	/* Cache/Dispatch table */
-	void *dtable;
-	
 	Class subclass_list;
 	Class sibling_list;
 	
@@ -204,14 +212,6 @@ struct objc_class {
 	
 	unsigned int instance_size;
 	unsigned int version; /** Right now 0. */
-	
-	struct {
-		BOOL meta : 1;
-		BOOL in_construction : 1;
-		BOOL initialized : 1; // +initialized called
-		BOOL user_created : 1;
-		BOOL has_custom_arr : 1; // Implements -retain, -release, or -autorelease
-	} flags;
 };
 
 

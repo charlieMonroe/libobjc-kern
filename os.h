@@ -84,6 +84,9 @@ static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	return 0;
 }
+static inline int objc_rw_lock_destroy(objc_rw_lock *lock){
+	return 0;
+}
 
 #define OBJC_LOCK(x) objc_rw_lock_wlock(x)
 #define OBJC_UNLOCK(x) objc_rw_lock_unlock(x)
