@@ -179,10 +179,10 @@ typedef struct {
 /* Actual structure of Class. */
 struct objc_class {
 	Class isa; /* Points to meta class */
+	Class super_class;
 	void *dtable;
 	objc_class_flags flags;
 	
-	Class super_class;
 	const char *name;
 	
 	/**

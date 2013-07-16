@@ -31,6 +31,7 @@ typedef struct objc_object_ref_list_struct {
  */
 typedef struct {
 	Class isa;
+	Class super_class;
 	void *dtable;
 	objc_class_flags flags;
 	objc_object_ref_list list;
@@ -45,8 +46,8 @@ objc_rw_lock objc_associated_objects_lock;
  */
 Class _objc_find_class_for_object(id object){
 	Class cl = object->isa;
-	while (cl != Nil && !cl->flags.fake) {
-		cl = cl->isa;
+	while (cl != Nil && cl->flags.fake) {
+		cl = cl->super_class;
 	}
 	
 	return cl;
@@ -62,6 +63,7 @@ Class _objc_class_for_object(id object, BOOL create){
 		// TODO locking
 		cl = objc_zero_alloc(sizeof(objc_fake_class));
 		cl->isa = object->isa->isa;
+		cl->super_class = object->isa;
 		cl->dtable = uninstalled_dtable;
 		cl->flags.fake = YES;
 		
@@ -362,6 +364,8 @@ void objc_remove_associated_weak_refs(id object){
 	 */
 	
 	objc_rw_lock_wlock(&objc_associated_objects_lock);
+	
+	// TODO - use the fake classes
 	
 	Class cl = object->isa;
 	void **extra_space = objc_class_extra_with_identifier(cl, OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);

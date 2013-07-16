@@ -194,7 +194,12 @@ __attribute__((always_inline)) static inline Class objc_object_get_class_inline(
 		return cl;
 	}
 	
-	return obj->isa;
+	cl = obj->isa;
+	while (cl != Nil && cl->flags.fake) {
+		cl = cl->super_class;
+	}
+	
+	return cl;
 }
 
 #endif /* OBJC_CLASS_H_ */

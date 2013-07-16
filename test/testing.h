@@ -51,7 +51,7 @@ static Method _I_MyClass_forwardedMethod_(MyClass *self, SEL _cmd, SEL selector)
 }
 
 static BOOL _I_MyClass_dropMessageForSelector_(id self, SEL _cmd, SEL selector){
-	printf("Class %s supports message dropping - dropped call with selector %s.\n", objc_class_get_name(self->isa), objc_selector_get_name(selector));
+	printf("Class %s supports message dropping - dropped call with selector %s.\n", objc_class_get_name(objc_object_get_class(self)), objc_selector_get_name(selector));
 	return YES;
 }
 
@@ -158,7 +158,7 @@ static void _I_MySubclass_increment_(MyClass *self, SEL _cmd, ...){
 	objc_super super;
 	IMP super_imp;
 	super.receiver = (id)self;
-	super.class = objc_class_get_superclass(self->isa);
+	super.class = objc_class_get_superclass(objc_object_get_class(self));
 	super_imp = objc_object_lookup_impl_super(&super, _cmd);
 	super_imp((id)self, _cmd);
 	

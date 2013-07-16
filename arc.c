@@ -87,6 +87,10 @@ static inline void _objc_release(id obj){
 }
 
 static inline id _objc_autorelease(id obj){
+	if (objc_object_is_small_object(obj)){
+		return obj;
+	}
+	
 	if (obj->isa->flags.has_custom_arr){
 		// Let the object's method handle it
 		return objc_send_autorelease_msg(obj);
@@ -300,6 +304,10 @@ id objc_load_weak_retained(id *addr){
 	id obj = *addr;
 	if (obj == nil){
 		return nil;
+	}
+	
+	if (objc_object_is_small_object(obj)){
+		return obj;
 	}
 	
 	// TODO malloc block

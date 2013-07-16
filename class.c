@@ -9,6 +9,7 @@
 #include "class_registry.h"
 #include "sarray2.h"
 #include "runtime.h"
+#include "class.h"
 
 
 Class objc_object_small_classes[7];
@@ -125,6 +126,10 @@ OBJC_INLINE IMP _lookup_method_impl(Class cl, SEL selector){
 		return m->implementation;
 	}
 	
+	while (cl != Nil && cl->flags.fake) {
+		cl = cl->super_class;
+	}
+	
 	m = _lookup_method(cl, selector);
 	if (m == NULL){
 		return NULL;
@@ -154,7 +159,7 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
-	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", obj->isa->name, objc_selector_get_name(selector));
+	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", objc_object_get_class_inline(obj)->name, objc_selector_get_name(selector));
 	objc_abort("Class doesn't support forwarding.");
 }
 
@@ -183,7 +188,7 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 		
 		forwarding_imp = _lookup_method_impl(obj->isa, objc_forwarding_selector);
 		if (forwarding_imp == NULL){
-			objc_log("Class %s doesn't respond to selector %s.\n", obj->isa->name, objc_selector_get_name(selector));
+			objc_log("Class %s doesn't respond to selector %s.\n", objc_object_get_class_inline(obj)->name, objc_selector_get_name(selector));
 			return NULL;
 		}
 		
@@ -284,7 +289,7 @@ OBJC_INLINE Method _lookup_object_method(id obj, SEL selector){
 		return method;
 	}
 	
-	method = _lookup_method(obj->isa, selector);
+	method = _lookup_method(objc_object_get_class_inline(obj), selector);
 	if (method != NULL){
 		_cache_method(obj->isa, method);
 	}
@@ -422,7 +427,7 @@ id objc_object_copy(id obj){
 		return nil;
 	}
 	
-	size = _instance_size(obj->isa);
+	size = _instance_size(objc_object_get_class_inline(obj));
 	copy = objc_zero_alloc(size);
 	
 	objc_copy_memory(obj, copy, size);
@@ -460,7 +465,7 @@ Class objc_class_get_superclass(Class cl){
 	return cl->super_class;
 }
 Class objc_object_get_class(id obj){
-	return obj == nil ? Nil : obj->isa;
+	return obj == nil ? Nil : objc_object_get_class_inline(obj);
 }
 unsigned int objc_class_instance_size(Class cl){
 	return _instance_size(cl);
@@ -535,7 +540,7 @@ Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
 		return NULL;
 	}
 	
-	ivar = _ivar_named(obj->isa, name);
+	ivar = _ivar_named(objc_object_get_class_inline(obj), name);
 	if (ivar == NULL){
 		return NULL;
 	}
@@ -551,7 +556,7 @@ Ivar objc_object_set_variable_named(id obj, const char *name, void *value){
 		return NULL;
 	}
 	
-	ivar = _ivar_named(obj->isa, name);
+	ivar = _ivar_named(objc_object_get_class_inline(obj), name);
 	if (ivar == NULL){
 		return NULL;
 	}
