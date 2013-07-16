@@ -30,5 +30,8 @@ static inline void objc_send_dealloc_msg(id receiver){
 static inline id objc_send_autorelease_msg(id receiver){
 	return objc_msg_send(receiver, objc_autorelease_selector);
 }
+static inline id objc_send_copy_msg(id receiver){
+	return objc_msg_send(receiver, objc_copy_selector);
+}
 
 #endif

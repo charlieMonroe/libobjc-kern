@@ -2,7 +2,6 @@
 #include "os.h"
 #include "message.h"
 #include "selector.h"
-#include "private.h"
 #include "utils.h"
 
 /**
@@ -231,6 +230,9 @@ id objc_retain(id obj){
 		obj = _objc_retain(obj);
 	}
 	return obj;
+}
+id objc_copy(id obj){
+	return objc_send_copy_msg(obj);
 }
 void objc_release(id obj){
 	if (obj != nil){

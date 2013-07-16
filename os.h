@@ -104,7 +104,7 @@ __attribute__((unused)) static void objc_release_lock(void *x){
 		__attribute__((unused)) id lock_object_pointer = obj;\
 		objc_sync_enter(obj);
 
-#define objc_assert(condition, description) \
+#define objc_assert(condition, description...) \
 		if (!(condition)){\
 			panic(description);\
 		}

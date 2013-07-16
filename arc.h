@@ -28,4 +28,10 @@ id objc_init_weak(id *object, id value);
 
 void objc_delete_weak_refs(id obj);
 
+
+/**
+ * Simply send the -copy message.
+ */
+id objc_copy(id obj);
+
 #endif

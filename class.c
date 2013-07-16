@@ -2,7 +2,6 @@
  * Implementation of the class-related functions.
  */
 
-#include "private.h"
 #include "os.h"
 #include "utils.h"
 #include "selector.h"

@@ -26,6 +26,7 @@ PRIVATE SEL objc_retain_selector = 0;
 PRIVATE SEL objc_release_selector = 0;
 PRIVATE SEL objc_dealloc_selector = 0;
 PRIVATE SEL objc_autorelease_selector = 0;
+PRIVATE SEL objc_copy_selector = 0;
 
 
 // Forward declarations needed for the hash table
@@ -307,5 +308,6 @@ void objc_selector_init(void){
 	objc_release_selector = objc_selector_register("release", "v@:");
 	objc_retain_selector = objc_selector_register("retain", "@@:");
 	objc_dealloc_selector = objc_selector_register("dealloc", "v@:");
+	objc_copy_selector = objc_selector_register("copy", "@@:");
 }
 
