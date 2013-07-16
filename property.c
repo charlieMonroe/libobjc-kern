@@ -279,7 +279,7 @@ const char *property_getName(Property property)
 	return name;
 }
 
-PRIVATE size_t lengthOfTypeEncoding(const char *types);
+// PRIVATE size_t lengthOfTypeEncoding(const char *types);
 
 /**
  * The compiler stores the type encoding of the getter.  We replace this with
@@ -296,7 +296,7 @@ static const char *property_getTypeEncoding(Property property)
 	{
 		return &name[1];
 	}
-	size_t typeSize = lengthOfTypeEncoding(name);
+	size_t typeSize = 0; // TODO = lengthOfTypeEncoding(name);
 	char *buffer = malloc(typeSize + 2);
 	buffer[0] = 0;
 	objc_copy_memory(buffer+1, name, typeSize);

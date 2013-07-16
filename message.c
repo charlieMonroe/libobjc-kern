@@ -2,7 +2,7 @@
 #include "dtable.h"
 #include "class.h"
 
-Slot objc_class_get_slot(Class cl, SEL selector){
+PRIVATE Slot objc_class_get_slot(Class cl, SEL selector){
 	Slot slot = objc_dtable_lookup(cl->dtable, selector);
 	if (slot == NULL){
 		dtable_t dtable = dtable_for_class(cl);

@@ -21,6 +21,13 @@
  */
 #define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY 1024
 
+// Initialized in the objc_selector_init();
+PRIVATE SEL objc_retain_selector = 0;
+PRIVATE SEL objc_release_selector = 0;
+PRIVATE SEL objc_dealloc_selector = 0;
+PRIVATE SEL objc_autorelease_selector = 0;
+
+
 // Forward declarations needed for the hash table
 static inline BOOL _objc_selector_struct_name_is_equal_to(void *key, Selector sel);
 static inline uint32_t _objc_selector_hash(Selector sel);
@@ -295,5 +302,10 @@ void objc_selector_init(void){
 	 * Sparse array holding the SEL -> Selector mapping.
 	 */
 	objc_selector_sparse = SparseArrayNew();
+	
+	objc_autorelease_selector = objc_selector_register("autorelease", "@@:");
+	objc_release_selector = objc_selector_register("release", "v@:");
+	objc_retain_selector = objc_selector_register("retain", "@@:");
+	objc_dealloc_selector = objc_selector_register("dealloc", "v@:");
 }
 

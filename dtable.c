@@ -28,41 +28,44 @@ static BOOL ownsMethod(Class cls, SEL sel)
 	return NO;
 }
 
+static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
+	struct objc_slot *slot = objc_class_get_slot(cls, sel);
+	if (NULL != slot){
+		cls->flags.has_custom_arr = YES;
+		return YES;
+	}
+	return NO;
+}
+
 /**
  * Checks whether the class implements memory management methods, and whether
  * they are safe to use with ARC.
  */
 static void checkARCAccessors(Class cls)
 {
-	static SEL retain, release, autorelease, isARC;
-	if (0 == retain)
-	{
-		retain = objc_selector_register("retain", "@@:");
-		release = objc_selector_register("release", "v@:");
-		autorelease = objc_selector_register("autorelease", "@@:");
-		
+	static SEL isARC;
+	if (0 == isARC){
 		// TODO necessary?
-		isARC = objc_selector_register("_ARCCompliantRetainRelease", "@@:");
-	}
-	struct objc_slot *slot = objc_class_get_slot(cls, retain);
-	if ((0 != slot) && !ownsMethod(slot->owner, isARC))
-	{
-		cls->flags.has_custom_arr = YES;
-		return;
-	}
-	slot = objc_class_get_slot(cls, release);
-	if ((NULL != slot) && !ownsMethod(slot->owner, isARC))
-	{
-		cls->flags.has_custom_arr = YES;
-		return;
-	}
-	slot = objc_class_get_slot(cls, autorelease);
-	if ((NULL != slot) && !ownsMethod(slot->owner, isARC))
-	{
-		cls->flags.has_custom_arr = YES;
-		return;
+		isARC = objc_selector_register("_ARCCompliantRetainRelease", "v@:");
 	}
 	
+	if (!ownsMethod(cls, isARC)){
+		// The class doesn't implement the isARC selector,
+		// which means we need to check is it implements
+		// custom ARR methods.
+		if (_objc_check_class_for_custom_arr_method(cls, objc_retain_selector)){
+			return;
+		}
+		if (_objc_check_class_for_custom_arr_method(cls, objc_release_selector)){
+			return;
+		}
+		if (_objc_check_class_for_custom_arr_method(cls, objc_autorelease_selector)){
+			return;
+		}
+		if (_objc_check_class_for_custom_arr_method(cls, isARC)){
+			return;
+		}
+	}
 	cls->flags.has_custom_arr = NO;
 }
 

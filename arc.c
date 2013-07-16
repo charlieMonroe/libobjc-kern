@@ -38,19 +38,13 @@ static inline objc_arc_thread_data *_objc_get_arc_thread_data(void){
 static int objc_autorelease_object_count = 0;
 //static int objc_autorelease_pool_count = 0;
 
-// Initialized in the objc_arc_init();
-static SEL objc_retain_selector = 0;
-static SEL objc_release_selector = 0;
-static SEL objc_dealloc_selector = 0;
-static SEL objc_autorelease_selector = 0;
-
 static inline id _objc_retain(id obj){
 	// TODO small objects
 	// TODO blocks
 	if (obj->isa->flags.has_custom_arr){
 		// The class has custom ARR methods,
 		// send the message
-		return objc_msg_send(obj, objc_retain_selector);
+		return objc_send_retain_msg(obj);
 	}
 	
 	/**
@@ -68,7 +62,7 @@ static inline void _objc_release(id obj){
 	if (obj->isa->flags.has_custom_arr){
 		// The class has custom ARR methods,
 		// send the message directly
-		objc_msg_send(obj, objc_release_selector);
+		objc_send_release_msg(obj);
 		return;
 	}
 	
@@ -80,14 +74,14 @@ static inline void _objc_release(id obj){
 	Object object = (Object)obj;
 	if (__sync_sub_and_fetch(&(object->retain_count), 1) < 0){
 		objc_delete_weak_refs(obj);
-		objc_msg_send(obj, objc_dealloc_selector);
+		objc_send_dealloc_msg(obj);
 	}
 }
 
 static inline id _objc_autorelease(id obj){
 	if (obj->isa->flags.has_custom_arr){
 		// Let the object's method handle it
-		return objc_msg_send(obj, objc_autorelease_selector);
+		return objc_send_autorelease_msg(obj);
 	}
 	
 	objc_arc_thread_data *data = _objc_get_arc_thread_data();
@@ -101,7 +95,7 @@ static inline id _objc_autorelease(id obj){
 	}
 	
 	// TODO
-	return objc_msg_send(obj, objc_autorelease_selector);
+	return objc_send_autorelease_msg(obj);
 }
 
 
@@ -455,11 +449,6 @@ id objc_init_weak(id *object, id value){
 #pragma mark Init Function
 
 void objc_arc_init(void){
-	objc_autorelease_selector = objc_selector_register("autorelease", "@@:");
-	objc_release_selector = objc_selector_register("release", "v@:");
-	objc_retain_selector = objc_selector_register("retain", "@@:");
-	objc_dealloc_selector = objc_selector_register("dealloc", "v@:");
-	
 	objc_rw_lock_init(&objc_weak_refs_lock);
 	objc_weak_refs = objc_weak_ref_table_create(128);
 	

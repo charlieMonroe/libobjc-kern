@@ -5,6 +5,15 @@
 #include "types.h"
 #include "os.h" // For OBJC_INLINE
 
+/**
+ * Some basic selectors used throughout the
+ * run-time, initialized in objc_selector_init()
+ */
+PRIVATE SEL objc_retain_selector;
+PRIVATE SEL objc_release_selector;
+PRIVATE SEL objc_dealloc_selector;
+PRIVATE SEL objc_autorelease_selector;
+
 /* 
  * The selector name is copied over, as well as the types.
  *
