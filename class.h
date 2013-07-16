@@ -165,9 +165,35 @@ extern Ivar objc_object_set_variable_named(id obj, const char *name, void *value
 extern void objc_object_set_variable(id obj, Ivar ivar, void *value);
 extern void *objc_object_get_variable(id object, Ivar ivar);
 
+#define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
+
+Class objc_object_small_classes[7];
+
+static inline Class objc_class_for_small_object(id obj){
+	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);
+	// TODO unlikely
+	if (mask != 0){
+		if (sizeof(void*) == 4){
+			// 32-bit system
+			return objc_object_small_classes[0];
+		}else{
+			return objc_object_small_classes[mask];
+		}
+	}
+	return Nil;
+}
+
+static inline BOOL objc_object_is_small_object(id obj){
+	return objc_class_for_small_object(obj) != Nil;
+}
 
 __attribute__((always_inline)) static inline Class objc_object_get_class_inline(id obj){
-	// TODO check for in-pointer classes
+	Class cl = objc_class_for_small_object(obj);
+	// TODO unlikely
+	if (cl != Nil){
+		return cl;
+	}
+	
 	return obj->isa;
 }
 

@@ -3,6 +3,7 @@
 #include "message.h"
 #include "selector.h"
 #include "utils.h"
+#include "class.h"
 #include "associative.h"
 
 /**
@@ -39,7 +40,10 @@ static int objc_autorelease_object_count = 0;
 //static int objc_autorelease_pool_count = 0;
 
 static inline id _objc_retain(id obj){
-	// TODO small objects
+	if (objc_object_is_small_object(obj)){
+		return obj;
+	}
+	
 	// TODO blocks
 	if (obj->isa->flags.has_custom_arr){
 		// The class has custom ARR methods,
@@ -58,7 +62,11 @@ static inline id _objc_retain(id obj){
 }
 
 static inline void _objc_release(id obj){
-	// TODO small objects + blocks
+	if (objc_object_is_small_object(obj)){
+		return;
+	}
+	
+	// TODO blocks
 	if (obj->isa->flags.has_custom_arr){
 		// The class has custom ARR methods,
 		// send the message directly

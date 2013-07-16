@@ -1,6 +1,7 @@
 #include "associative.h"
 #include "class_extra.h"
 #include "arc.h"
+#include "class.h"
 
 /**
  * This implementation of associated objects makes a few assumptions about the
@@ -224,7 +225,9 @@ id objc_get_associated_object(id object, void *key){
 		return nil;
 	}
 	
-	// TODO small objects
+	if (objc_object_is_small_object(object)){
+		return nil;
+	}
 	
 	id result = nil;
 	
@@ -266,6 +269,10 @@ id objc_get_associated_object(id object, void *key){
 
 void objc_set_associated_object(id object, void *key, id value, objc_association_policy policy){
 	if (object == nil || key == NULL){
+		return;
+	}
+	
+	if (objc_object_is_small_object(object)){
 		return;
 	}
 	
@@ -333,7 +340,9 @@ void objc_remove_associated_objects(id object){
 		return;
 	}
 	
-	// TODO small objects
+	if (objc_object_is_small_object(object)){
+		return;
+	}
 	
 	/**
 	 * The issue here is that we cannot simply WLOCK the lock and then iterate
@@ -353,6 +362,11 @@ void objc_remove_associated_objects(id object){
 }
 
 void objc_remove_associated_weak_refs(id object){
+	
+	if (objc_object_is_small_object(object)){
+		return;
+	}
+	
 	/**
 	 * This function is quite similar to the objc_remove_associated_objects,
 	 * but doesn't actually free any objects, or any of the objc_object_ref_list

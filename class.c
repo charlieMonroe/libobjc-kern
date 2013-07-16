@@ -11,6 +11,10 @@
 #include "runtime.h"
 
 
+Class objc_object_small_classes[7];
+
+
+
 #pragma mark -
 #pragma mark STATIC_VARIABLES_AND_MACROS
 

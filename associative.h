@@ -14,23 +14,26 @@ enum
 	 * Perform straight assignment, no message sends.
 	 */
 	OBJC_ASSOCIATION_ASSIGN = 0,
+	
 	/**
 	 * Retain the associated object.
 	 */
 	OBJC_ASSOCIATION_RETAIN_NONATOMIC = 1,
+	
 	/**
 	 * Copy the associated object, by sending it a -copy message.
 	 */
 	OBJC_ASSOCIATION_COPY_NONATOMIC = 3,
+	
 	/**
 	 * Atomic retain.
 	 */
 	OBJC_ASSOCIATION_RETAIN = 0x301,
+
 	/**
 	 * Atomic copy.
 	 */
 	OBJC_ASSOCIATION_COPY = 0x303,
-	
 	
 	/**
 	 * A special association for storing weak refs. The weak refs are zeroed on 
