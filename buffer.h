@@ -23,7 +23,7 @@ static void set_buffered_object_at_index(BUFFER_TYPE *cat, unsigned int i)
 		if (NULL == buffered_object_overflow)
 		{
 			buffered_object_overflow =
-				calloc(BUFFER_SIZE, sizeof(BUFFER_TYPE*));
+				objc_zero_alloc(BUFFER_SIZE * sizeof(BUFFER_TYPE*));
 			buffered_object_overflow_space = BUFFER_SIZE;
 		}
 		while (i >= buffered_object_overflow_space)

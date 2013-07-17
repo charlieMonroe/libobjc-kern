@@ -29,7 +29,8 @@
 
 /** Protocols. */
 #define OBJC_LIST_TYPE_NAME protocol
-#define OBJC_LIST_TYPE struct objc_protocol
+#define OBJC_LIST_TYPE struct objc_protocol *
+#define OBJC_LIST_VALUES_ARE_POINTERS 1
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 

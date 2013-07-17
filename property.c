@@ -239,7 +239,7 @@ Property *class_copyPropertyList(Class cls, unsigned int *outCount)
 		return NULL;
 	}
 	
-	Property *list = calloc(sizeof(Property), count);
+	Property *list = objc_zero_alloc(sizeof(Property) * count);
 	unsigned int out = 0;
 	for (objc_property_list *l=properties ; NULL!=l ; l=l->next)
 	{
@@ -297,7 +297,7 @@ static const char *property_getTypeEncoding(Property property)
 		return &name[1];
 	}
 	size_t typeSize = 0; // TODO = lengthOfTypeEncoding(name);
-	char *buffer = malloc(typeSize + 2);
+	char *buffer = objc_alloc(typeSize + 2);
 	buffer[0] = 0;
 	objc_copy_memory(buffer+1, name, typeSize);
 	buffer[typeSize+1] = 0;
@@ -370,7 +370,7 @@ PRIVATE const char *constructPropertyAttributes(Property property,
 	{
 		encodingSize += 2 + iVarNameSize;
 	}
-	unsigned char *encoding = malloc(encodingSize);
+	unsigned char *encoding = objc_alloc(encodingSize);
 	// Set the leading 0 and the offset of the name
 	unsigned char *insert = encoding;
 	BOOL needsComma = NO;
@@ -525,7 +525,7 @@ objc_property_attribute_t *property_copyAttributeList(Property property,
 		count++;
 	}
 
-	objc_property_attribute_t *propAttrs = calloc(sizeof(objc_property_attribute_t), count);
+	objc_property_attribute_t *propAttrs = objc_zero_alloc(sizeof(objc_property_attribute_t) * count);
 	memcpy(propAttrs, attrs, count * sizeof(objc_property_attribute_t));
 	if (NULL != outCount)
 	{
@@ -546,7 +546,7 @@ PRIVATE struct objc_property propertyFromAttrs(const objc_property_attribute_t *
 			case 'T':
 			{
 				size_t typeSize = strlen(attributes[i].value);
-				char *buffer = malloc(typeSize + 2);
+				char *buffer = objc_alloc(typeSize + 2);
 				buffer[0] = 0;
 				memcpy(buffer+1, attributes[i].value, typeSize);
 				buffer[typeSize+1] = 0;
@@ -616,7 +616,7 @@ BOOL class_addProperty(Class cls,
 	p.name = name;
 	constructPropertyAttributes(&p, iVarname);
 
-	objc_property_list *l = calloc(1, sizeof(objc_property_list)
+	objc_property_list *l = objc_zero_alloc(sizeof(objc_property_list)
 			+ sizeof(struct objc_property));
 	l->size = 1;
 	objc_copy_memory(&l->property_list, &p, sizeof(struct objc_property));

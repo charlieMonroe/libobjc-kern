@@ -30,6 +30,8 @@ PRIVATE void objc_arc_init(void);
 
 PRIVATE void objc_class_extra_init(void);
 
+PRIVATE void objc_protocol_init(void);
+
 
 /**
  * Initializes the run-time lock and calls all the above functions.

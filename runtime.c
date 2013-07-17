@@ -35,6 +35,7 @@ void objc_runtime_init(void){
 	objc_class_init();
 	objc_arc_init();
 	objc_class_extra_init();
+	objc_protocol_init();
 	
 	objc_install_base_classes();
 	

@@ -15,6 +15,10 @@
  * You can also define OBJC_LIST_TYPE which
  * defines the type of the array. If not defined,
  * falls back to (void *).
+ *
+ * If OBJC_LIST_VALUES_ARE_POINTERS is defined as 1,
+ * when returning values, direct pointers are returned,
+ * not references to structures.
  */
 
 
@@ -23,11 +27,23 @@
 #endif
 
 #ifndef OBJC_LIST_TYPE
-	#define OBJC_LIST_TYPE (void *)
+	#error You need to define list type.
 #endif
 
 #ifndef OBJC_LIST_CHAINABLE
 	#define OBJC_LIST_CHAINABLE 0
+#endif
+
+#ifndef OBJC_LIST_VALUES_ARE_POINTERS
+	#define OBJC_LIST_VALUES_ARE_POINTERS 0
+#endif
+
+#if OBJC_LIST_VALUES_ARE_POINTERS
+	#define OBJC_LIST_RETURN_TYPE_REF
+	#define OBJC_LIST_TYPE_REF
+#else
+	#define OBJC_LIST_RETURN_TYPE_REF *
+	#define OBJC_LIST_TYPE_REF &
 #endif
 
 
@@ -125,7 +141,7 @@ static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_T
 /**
  * Goes through the whole linked list and copies all the ->*_list items into one big list.
  */
-static inline OBJC_LIST_TYPE **PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _flatten)(
+static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _flatten)(
 												    OBJC_LIST_STRUCTURE_TYPE_NAME *head
 												    ){
 	// First, figure out how much to allocate.
@@ -137,12 +153,12 @@ static inline OBJC_LIST_TYPE **PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _fla
 	}
 	
 	// NULL-terminated
-	OBJC_LIST_TYPE **objs = objc_alloc((size + 1) * sizeof(OBJC_LIST_TYPE*));
+	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF*objs = objc_alloc((size + 1) * sizeof(OBJC_LIST_TYPE*));
 	unsigned int counter = 0;
 	list = head;
 	while (list != NULL && counter < size){
 		for (int i = 0; i < list->size; ++i){
-			objs[counter] = &(list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
 			++counter;
 			
 			if (counter >= size){
@@ -157,9 +173,82 @@ static inline OBJC_LIST_TYPE **PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _fla
 	return objs;
 }
 
+/**
+ * Goes through the whole linked list and copies all the ->*_list items into one big list.
+ */
+static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _copy_list)(
+										      OBJC_LIST_STRUCTURE_TYPE_NAME *head,
+										      unsigned int *outCount
+										      ){
+	// First, figure out how much to allocate.
+	unsigned int size = 0;
+	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
+	while (list != NULL){
+		size += list->size;
+		list = list->next;
+	}
+	
+	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *objs = objc_alloc(size * sizeof(OBJC_LIST_TYPE*));
+	unsigned int counter = 0;
+	list = head;
+	while (list != NULL && counter < size){
+		for (int i = 0; i < list->size; ++i){
+			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			++counter;
+			
+			if (counter > size){
+				// Someone probably added something in the meanwhile
+				break;
+			}
+		}
+		
+		list = list->next;
+	}
+	
+	if (outCount != NULL){
+		*outCount = size;
+	}
+	
+	return objs;
+}
+
+
+/**
+ * Goes through the whole linked list and copies all the ->*_list items into the buffer
+ * of max size size. Returns the number actually put into the buffer.
+ */
+static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_list)(
+											OBJC_LIST_STRUCTURE_TYPE_NAME *head,
+											OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *buffer,
+											unsigned int buffer_size
+											){
+	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *objs = buffer;
+	unsigned int counter = 0;
+	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
+	while (list != NULL && counter < buffer_size){
+		for (int i = 0; i < list->size; ++i){
+			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			++counter;
+			
+			if (counter > buffer_size){
+				// Someone probably added something in the meanwhile
+				break;
+			}
+		}
+		
+		list = list->next;
+	}
+	
+	return counter;
+}
+
+
+
 #endif // OBJC_LIST_CHAINABLE
 
 #undef OBJC_LIST_TYPE_NAME
 #undef OBJC_LIST_TYPE
 #undef OBJC_LIST_CHAINABLE
-
+#undef OBJC_LIST_VALUES_ARE_POINTERS
+#undef OBJC_LIST_RETURN_TYPE_REF
+#undef OBJC_LIST_TYPE_REF

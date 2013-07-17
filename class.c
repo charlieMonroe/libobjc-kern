@@ -452,7 +452,7 @@ id objc_object_copy(id obj){
 	size = _instance_size(objc_object_get_class_inline(obj));
 	copy = objc_zero_alloc(size);
 	
-	objc_copy_memory(obj, copy, size);
+	objc_copy_memory(copy, obj, size);
 	
 	return copy;
 }
@@ -583,7 +583,7 @@ Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
 		return NULL;
 	}
 	
-	objc_copy_memory((char*)obj + ivar->offset, *out_value, ivar->size);
+	objc_copy_memory(*out_value, (char*)obj + ivar->offset, ivar->size);
 	
 	return ivar;
 }
@@ -599,7 +599,7 @@ Ivar objc_object_set_variable_named(id obj, const char *name, void *value){
 		return NULL;
 	}
 	
-	objc_copy_memory(value, (char*)obj + ivar->offset, ivar->size);
+	objc_copy_memory((char*)obj + ivar->offset, value, ivar->size);
 	
 	return ivar;
 }
@@ -619,6 +619,6 @@ void objc_object_set_variable(id obj, Ivar ivar, void *value){
 		return;
 	}
 	
-	objc_copy_memory(value, (char*)obj + ivar->offset, ivar->size);
+	objc_copy_memory((char*)obj + ivar->offset, value, ivar->size);
 }
 
