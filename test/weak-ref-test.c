@@ -12,14 +12,14 @@ int main(int argc, const char * argv[]){
 	
 	id weak_ref = (id)0x1234;
 	
-	objc_store_weak(&weak_ref, obj);
+	objc_store_weak(&weak_ref, (id)obj);
 	
-	objc_assert(weak_ref == obj, "The obj wasn't stored in the weak ref!\n");
+	objc_assert(weak_ref == (id)obj, "The obj wasn't stored in the weak ref!\n");
 	
 	// TODO this should be called automatically
-	objc_remove_associated_objects(obj);
+	objc_remove_associated_objects((id)obj);
 	
-	objc_release(obj);
+	objc_release((id)obj);
 	
 	objc_assert(obj->retainCount == -1, "The associated object should have been deallocated!\n");
 	objc_assert(weak_ref == 0, "The weak ref isn't zeroed out!\n")
