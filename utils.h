@@ -96,6 +96,13 @@ OBJC_INLINE unsigned int objc_hash_string(const char *str){
 	return hash;
 }
 
+/**
+ * Returns YES if ptr1 == ptr2;
+ */
+OBJC_INLINE BOOL objc_pointers_are_equal(const void *ptr1, const void *ptr2){
+	return ptr1 == ptr2;
+}
+
 /*
  * Hashes a pointer;
  */

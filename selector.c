@@ -28,6 +28,7 @@ PRIVATE SEL objc_dealloc_selector = 0;
 PRIVATE SEL objc_autorelease_selector = 0;
 PRIVATE SEL objc_copy_selector = 0;
 PRIVATE SEL objc_cxx_destruct_selector = 0;
+PRIVATE SEL objc_load_selector = 0;
 
 
 // Forward declarations needed for the hash table
@@ -311,5 +312,6 @@ void objc_selector_init(void){
 	objc_dealloc_selector = objc_selector_register("dealloc", "v@:");
 	objc_copy_selector = objc_selector_register("copy", "@@:");
 	objc_cxx_destruct_selector = objc_selector_register(".cxx_destruct", "v@:");
+	objc_load_selector = objc_selector_register("load", "v@:");
 }
 

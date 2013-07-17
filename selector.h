@@ -15,6 +15,7 @@ PRIVATE SEL objc_dealloc_selector;
 PRIVATE SEL objc_autorelease_selector;
 PRIVATE SEL objc_copy_selector;
 PRIVATE SEL objc_cxx_destruct_selector;
+PRIVATE SEL objc_load_selector;
 
 /* 
  * The selector name is copied over, as well as the types.

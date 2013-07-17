@@ -6,9 +6,41 @@
 #include "class_registry.h"
 
 /**
- * The initial capacity for the hash table.
+ * The initial capacities for the hash tables.
  */
-#define OBJC_CLASS_TABLE_INITIAL_CAPACITY 256
+#define OBJC_CLASS_TABLE_INITIAL_CAPACITY 512
+#define OBJC_LOAD_TABLE_INITIAL_CAPACITY 512
+
+#define MAP_TABLE_NAME objc_load_messages
+#define MAP_TABLE_COMPARE_FUNCTION objc_pointers_are_equal
+#define MAP_TABLE_HASH_KEY objc_hash_pointer
+#define MAP_TABLE_HASH_VALUE objc_hash_pointer
+#define MAP_TABLE_VALUE_TYPE IMP
+#include "hashtable.h"
+
+/**
+ * A hash table with the load messages.
+ */
+static objc_load_messages_table *objc_load_messages;
+
+PRIVATE void objc_class_send_load_messages(Class cl){
+	Class meta = cl->isa; // It's a class method, need to link at the meta class
+	objc_method_list *list = meta->methods;
+	while (list != NULL) {
+		for (int i = 0; i < list->size; ++i){
+			Method m = &list->method_list[i];
+			if (m->selector == objc_load_selector){
+				IMP load_imp = m->implementation;
+				if (objc_load_messages_table_get(objc_load_messages, load_imp)){
+					load_imp((id)cl, objc_load_selector);
+					objc_load_messages_insert(objc_load_messages, load_imp);
+				}
+			}
+		}
+		list = list->next;
+	}
+}
+
 
 // Forward declarations needed for the hash table
 static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl);
@@ -19,7 +51,6 @@ static inline uint32_t _objc_class_hash(Class cl);
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
-
 #include "hashtable.h"
 
 /**
@@ -356,7 +387,8 @@ PRIVATE BOOL objc_class_resolve(Class cl){
 	
 	_objc_insert_class_into_class_tree(cl);
 	
-	// TODO send load messages
+	objc_class_send_load_messages(cl);
+	
 	// TODO load call-back
 	
 	return YES;
@@ -421,4 +453,5 @@ void objc_class_init(void){
 	objc_debug_log("Initializing classes.\n");
 	
 	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
+	objc_load_messages = objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY);
 }
