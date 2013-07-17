@@ -22,8 +22,6 @@ typedef struct objc_object_ref_list_struct {
 	objc_associative_reference refs[REF_CNT];
 } objc_object_ref_list;
 
-
-
 /**
  * Associated objects install a fake class for each object that uses them.
  * 
@@ -55,12 +53,13 @@ Class _objc_find_class_for_object(id object){
  * and create == YES, allocates it and installs the isa pointer.
  */
 Class _objc_class_for_object(id object, BOOL create){
+	Class superclass = object->isa;
 	Class cl = _objc_find_class_for_object(object);
 	if (cl == Nil && create){
 		// TODO locking
 		cl = objc_zero_alloc(sizeof(objc_fake_class));
-		cl->isa = object->isa->isa;
-		cl->super_class = object->isa;
+		cl->isa = superclass->isa;
+		cl->super_class = superclass;
 		cl->dtable = uninstalled_dtable;
 		cl->flags.fake = YES;
 		
@@ -198,7 +197,7 @@ static inline void _objc_remove_associative_lists_for_object(id object){
 		if (list->next != NULL){
 			_objc_remove_associative_list(list, list->next, &list->lock, NO);
 		}
-		_objc_remove_associative_list(NULL, list, &list->lock, NO);
+		_objc_remove_associative_list(NULL, list, &list->lock, YES);
 	}else{
 		objc_fake_class *cl = (objc_fake_class*)_objc_class_for_object(object, NO);
 		if (cl == (objc_fake_class*)Nil){
@@ -208,7 +207,7 @@ static inline void _objc_remove_associative_lists_for_object(id object){
 		if (cl->list.next != NULL){
 			_objc_remove_associative_list(&cl->list, cl->list.next, &cl->list.lock, YES);
 		}
-		_objc_remove_associative_list(NULL, &cl->list, &cl->list.lock, YES);
+		_objc_remove_associative_list(NULL, &cl->list, &cl->list.lock, NO);
 	}
 }
 

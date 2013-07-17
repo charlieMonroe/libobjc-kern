@@ -31,7 +31,15 @@ id objc_msg_send(id receiver, SEL selector, ...){
 		objc_install_dtable_for_object(receiver);
 		
 		// Now that the dtable has been installed, try it again
-		sl = objc_class_get_slot(receiver->isa, selector);
+		Class cl = receiver->isa;
+		while (cl != Nil){
+			sl = objc_class_get_slot(cl, selector);
+			if (sl != NULL){
+				break;
+			}
+			cl = cl->super_class;
+		}
+		
 		if (sl == NULL){
 			// TODO forwarding
 			objc_assert(NO, "TODO forwarding");

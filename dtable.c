@@ -456,7 +456,7 @@ PRIVATE void objc_send_initialize(id object)
 PRIVATE void objc_install_dtable_for_object(id receiver){
 	Class cl = receiver->isa;
 	
-	objc_debug_log("Installing dtable on class %s%s.\n", cl->name, cl->flags.meta ? " (meta)" : "");
+	objc_debug_log("Installing dtable on class %s%s.\n", objc_class_get_name(objc_object_get_class_inline(receiver)), cl->flags.meta ? " (meta)" : "");
 	
 	dtable_t dtable = dtable_for_class(cl);
 	/* Install the dtable if it hasn't already been initialized. */
