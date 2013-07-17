@@ -109,6 +109,11 @@ extern Class objc_object_get_class(id obj);
  */
 extern unsigned int objc_class_instance_size(Class cl);
 
+/**
+ * Returns the meta class.
+ */
+Class objc_class_get_meta_class(const char *name);
+
 
 /**
  * The following two functions return a list of methods

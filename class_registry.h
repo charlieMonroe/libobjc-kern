@@ -25,16 +25,18 @@ extern void objc_class_finish(Class cl);
  * is NULL-terminated and the caller is responsible for freeing
  * it using the objc_dealloc function.
  */
-extern Class *objc_class_get_list(void);
+Class *objc_class_copy_list(unsigned int *count);
+int objc_class_get_list(Class *buffer, unsigned int len);
 
 /**
  * Finds a class registered with the run-time and returns it,
  * or Nil, if no such class is registered.
  *
- * Note that if the class is currently being in construction,
- * Nil is returned anyway.
+ * Before returning Nil, however, it checks the hook
+ * if it can supply a class (unlike the objc_class_look_up()).
  */
-extern Class objc_class_for_name(const char *name);
+Class objc_class_for_name(const char *name);
+Class objc_class_look_up(const char *name);
 
 /**
  * Registers a class with the runtime.

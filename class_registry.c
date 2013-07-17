@@ -64,6 +64,9 @@ OBJC_INLINE uint32_t _objc_class_hash(Class cl){
 	return objc_hash_string(cl->name);
 }
 
+/**
+ * Inserts cl into the siblings linked list
+ */
 static inline void _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling){
 	// Inserting into the linked list
 	Class last_sibling = sibling->sibling_list;
@@ -111,6 +114,13 @@ static inline void _objc_insert_class_into_class_tree(Class cl){
  * Removes the class from the unresolved list.
  */
 static inline void _objc_class_remove_from_unresolved_list(Class cl){
+	if (cl->unresolved_class_next == Nil &&
+	    cl->unresolved_class_previous == Nil &&
+	    cl != unresolved_classes){
+		// Not on the list
+		return;
+	}
+	
 	if (cl->unresolved_class_previous == Nil){
 		// The first class
 		objc_assert(cl == unresolved_classes, "There are possibly two unresolved class lists? (%p != %p)", cl, unresolved_classes);
@@ -258,11 +268,11 @@ void objc_class_finish(Class cl){
 	OBJC_UNLOCK_RUNTIME();
 }
 
-Class *objc_class_get_list(void){
+Class *objc_class_copy_list(unsigned int *out_count){
 	size_t class_count = objc_classes->table_used;
 	
 	// NULL-terminated
-	Class *classes = objc_alloc((class_count + 1) * sizeof(Class));
+	Class *classes = objc_alloc(class_count * sizeof(Class));
 	
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;
@@ -272,9 +282,22 @@ Class *objc_class_get_list(void){
 		classes[count++] = next;
 	}
 	
-	// NULL-termination
-	classes[count] = NULL;
+	if (out_count != NULL){
+		*out_count = count;
+	}
+	
 	return classes;
+}
+int objc_class_get_list(Class *buffer, unsigned int len){
+	int count = 0;
+	struct objc_class_table_enumerator *e = NULL;
+	Class next;
+	while (count < len &&
+	       (next = objc_class_next(objc_classes, &e))){
+		buffer[count++] = next;
+	}
+	
+	return count;
 }
 
 Class objc_class_for_name(const char *name){
@@ -283,12 +306,22 @@ Class objc_class_for_name(const char *name){
 	}
 	
 	Class c = objc_class_table_get(objc_classes, name);
-	if (c == NULL || !c->flags.resolved){
-		/* NULL, or still in construction */
-		return Nil;
+	if (c != Nil){
+		/* Found it */
+		return c;
 	}
 	
+	// TODO aliases?
+	// TODO hook
+	
 	return c;
+}
+
+Class objc_class_look_up(const char *name){
+	if (name != NULL){
+		return objc_class_table_get(objc_classes, name);
+	}
+	return Nil;
 }
 
 PRIVATE BOOL objc_class_resolve(Class cl){
@@ -300,7 +333,7 @@ PRIVATE BOOL objc_class_resolve(Class cl){
 	 * The class needs to be resolved.
 	 */
 	Class superclass = cl->super_class;
-	if (!superclass->flags.resolved){
+	if (superclass != Nil && !superclass->flags.resolved){
 		if (!objc_class_resolve(superclass)){
 			return NO;
 		}

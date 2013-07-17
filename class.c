@@ -478,13 +478,29 @@ IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
 #pragma mark Information getters
 
 BOOL objc_class_resolved(Class cl){
+	if (cl == Nil){
+		return NO;
+	}
 	return cl->flags.resolved;
 }
 const char *objc_class_get_name(Class cl){
+	if (cl == Nil){
+		return NULL;
+	}
 	return cl->name;
 }
 Class objc_class_get_superclass(Class cl){
+	if (cl == Nil){
+		return Nil;
+	}
+	if (!cl->flags.resolved){
+		objc_class_resolve(cl);
+	}
 	return cl->super_class;
+}
+Class objc_class_get_meta_class(const char *name){
+	Class cl = objc_class_for_name(name);
+	return cl == Nil ? Nil : cl->isa;
 }
 Class objc_object_get_class(id obj){
 	return obj == nil ? Nil : objc_object_get_class_inline(obj);

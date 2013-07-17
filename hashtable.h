@@ -353,7 +353,7 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
 	// Value does not exist.
-	if (MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
+	if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
 		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
