@@ -2,6 +2,7 @@
 #ifndef OBJC_CLASS_REGISTRY_H
 #define OBJC_CLASS_REGISTRY_H
 
+#include "types.h"
 
 /**
  * Creates a new class with name that is a subclass of superclass.
@@ -47,7 +48,7 @@ extern void objc_class_register_classes(Class *cl, unsigned int count);
 /**
  * TODO
  */
-extern BOOL objc_resolve_class(Class cl);
+PRIVATE BOOL objc_class_resolve(Class cl);
 
 
 #endif // OBJC_CLASS_REGISTRY_H

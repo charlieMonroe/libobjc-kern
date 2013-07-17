@@ -11,9 +11,31 @@
 #include "runtime.h"
 #include "class.h"
 
+#pragma mark -
+#pragma mark Small Object Classes
 
-Class objc_object_small_classes[7];
+Class objc_small_object_classes[7];
 
+BOOL objc_register_small_object_class(Class cl, uintptr_t mask){
+	if ((mask & OBJC_SMALL_OBJECT_MASK) != mask){
+		// Wrong mask
+		return NO;
+	}
+	
+	if (sizeof(void*) ==  4){
+		// 32-bit computer, only support 1 class
+		if (objc_small_object_classes[0] == Nil) {
+			objc_small_object_classes[0] = cl;
+			return YES;
+		}
+		return NO;
+	}
+	
+	if (objc_small_object_classes[mask] == Nil){
+		objc_small_object_classes[mask] = cl;
+	}
+	return NO;
+}
 
 
 #pragma mark -
@@ -393,7 +415,7 @@ id objc_class_create_instance(Class cl){
 	id obj;
 	unsigned int size;
 	
-	if (cl->flags.in_construction){
+	if (!cl->flags.resolved){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
 		return nil;
 	}
@@ -455,8 +477,8 @@ IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
 #pragma mark -
 #pragma mark Information getters
 
-BOOL objc_class_in_construction(Class cl){
-	return cl->flags.in_construction;
+BOOL objc_class_resolved(Class cl){
+	return cl->flags.resolved;
 }
 const char *objc_class_get_name(Class cl){
 	return cl->name;
@@ -489,9 +511,9 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 		return NULL;
 	}
 	
-	if (!cls->flags.in_construction){
-		objc_log("Class %s isn't in construction!\n", cls->name);
-		objc_abort("Trying to add ivar to a class that isn't in construction.");
+	if (cls->flags.resolved){
+		objc_log("Class %s is already resolved!\n", cls->name);
+		objc_abort("Trying to add ivar to a class that is already resolved.");
 	}
 	
 	if (_ivar_named(cls, name) != NULL){

@@ -114,8 +114,7 @@ struct objc_class MRObject_metaclass = {
 	.name = "MRObject",
 	.methods = &MRObject_class_method_list, /** Class methods */
 	.flags = {
-		.meta = 1,
-		.in_construction = 1
+		.meta = 1
 	}
 };
 
@@ -127,10 +126,7 @@ struct objc_class MRObject_class = {
 	.name = "MRObject",
 	.methods = &MRObject_instance_method_list, /** Methods */
 	.ivars = &MRObject_ivar_list, /** Ivars */
-	.ivar_offsets = (unsigned int*)&MRObject_class_ivar_offsets,
-	.flags = {
-		.in_construction = 1
-	}
+	.ivar_offsets = (unsigned int*)&MRObject_class_ivar_offsets
 };
 
 #pragma mark -
@@ -187,7 +183,6 @@ struct objc_class __MRConstString_metaclass = {
 	.name = "__MRConstString",
 	.flags = {
 		.meta = 1,
-		.in_construction = 1
 	}
 };
 
@@ -199,10 +194,7 @@ struct objc_class __MRConstString_class = {
 	.name = "__MRConstString",
 	.methods = &__MRConstString_instance_method_list, /** Class methods */
 	.ivars = &__MRConstString_ivar_list,
-	.ivar_offsets = (unsigned int*)&__MRConstString_class_ivar_offsets,
-	.flags = {
-		.in_construction = 1
-	}
+	.ivar_offsets = (unsigned int*)&__MRConstString_class_ivar_offsets
 };
 
 #pragma mark -

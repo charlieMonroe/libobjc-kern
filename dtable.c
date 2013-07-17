@@ -343,7 +343,7 @@ PRIVATE void objc_send_initialize(id object)
 
 
 	// Make sure that the class is resolved.
-	objc_resolve_class(class);
+	objc_class_resolve(class);
 
 	// Make sure that the superclass is initialized first.
 	if (Nil != class->super_class)

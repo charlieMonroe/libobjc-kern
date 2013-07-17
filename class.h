@@ -82,11 +82,12 @@ extern IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector);
 #pragma mark Information getters
 
 /**
- * Returns YES if the class is currently in construction.
- * This generally means that objc_class_finish hasn't been
- * called with this class yet.
+ * Returns YES if the class is resolved.
+ * This generally means that objc_class_finish has been
+ * called with this class, or the class was loaded from
+ * an image and then resolved.
  */
-extern BOOL objc_class_in_construction(Class cl);
+extern BOOL objc_class_resolved(Class cl);
 
 /**
  * Returns the name of the class.
@@ -167,7 +168,10 @@ extern void *objc_object_get_variable(id object, Ivar ivar);
 
 #define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
 
-Class objc_object_small_classes[7];
+Class objc_small_object_classes[7];
+
+BOOL objc_register_small_object_class(Class cl, uintptr_t mask);
+
 
 static inline Class objc_class_for_small_object(id obj){
 	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);
@@ -175,9 +179,9 @@ static inline Class objc_class_for_small_object(id obj){
 	if (mask != 0){
 		if (sizeof(void*) == 4){
 			// 32-bit system
-			return objc_object_small_classes[0];
+			return objc_small_object_classes[0];
 		}else{
-			return objc_object_small_classes[mask];
+			return objc_small_object_classes[mask];
 		}
 	}
 	return Nil;

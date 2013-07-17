@@ -1,10 +1,9 @@
-#include "os.h"
-#include "types.h"
 #include "runtime.h"
 #include "utils.h"
 #include "selector.h"
 #include "sarray2.h"
 #include "dtable.h"
+#include "class_registry.h"
 
 /**
  * The initial capacity for the hash table.
@@ -43,6 +42,13 @@ objc_class_table *objc_classes;
 static Class class_tree;
 
 /**
+ * A pointer to the first unresolved class. The rest of
+ * the unresolved classes are a linked list using
+ * the unresolved pointer in the Class structure.
+ */
+static Class unresolved_classes;
+
+/**
  * The runtime lock used for locking when modifying the
  * class hierarchy or modifying the classes in general.
  */
@@ -57,7 +63,6 @@ OBJC_INLINE uint32_t _objc_class_hash(Class cl){
 	// Hash the name
 	return objc_hash_string(cl->name);
 }
-
 
 static inline void _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling){
 	// Inserting into the linked list
@@ -100,6 +105,27 @@ static inline void _objc_insert_class_into_class_tree(Class cl){
 			_objc_insert_class_to_back_of_sibling_list(cl, super_class->subclass_list);
 		}
 	}
+}
+
+/**
+ * Removes the class from the unresolved list.
+ */
+static inline void _objc_class_remove_from_unresolved_list(Class cl){
+	if (cl->unresolved_class_previous == Nil){
+		// The first class
+		objc_assert(cl == unresolved_classes, "There are possibly two unresolved class lists? (%p != %p)", cl, unresolved_classes);
+		unresolved_classes = cl->unresolved_class_next;
+	}else{
+		cl->unresolved_class_previous->unresolved_class_next = cl->unresolved_class_next;
+	}
+	
+	if (cl->unresolved_class_next != Nil){
+		// Not the end of the linked list
+		cl->unresolved_class_next->unresolved_class_previous = cl->unresolved_class_previous;
+	}
+	
+	cl->unresolved_class_previous = Nil;
+	cl->unresolved_class_next = Nil;
 }
 
 // Forward declaration
@@ -160,12 +186,12 @@ Class objc_class_create(Class superclass, const char *name) {
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
 	
-	if (superclass != Nil && superclass->flags.in_construction){
+	if (superclass != Nil && !superclass->flags.resolved){
 		/** Cannot create a subclass of an unfinished class.
 		 * The reason is simple: what if the superclass added
 		 * a variable after the subclass did so?
 		 */
-		objc_abort("Trying to create a subclass of an unfinished class.");
+		objc_abort("Trying to create a subclass of an unresolved class.");
 	}
 	
 	OBJC_LOCK_RUNTIME();
@@ -204,9 +230,7 @@ Class objc_class_create(Class superclass, const char *name) {
 		newClass->instance_size = superclass->instance_size;
 	}
 	
-	newMetaClass->flags.in_construction = YES;
 	newMetaClass->flags.meta = YES;
-	newClass->flags.in_construction = YES;
 	
 	newMetaClass->flags.user_created = YES;
 	newClass->flags.user_created = YES;
@@ -227,18 +251,9 @@ void objc_class_finish(Class cl){
 	}
 	
 	OBJC_LOCK_RUNTIME();
-	
-	/* That's it! Just mark it as not in construction */
-	cl->flags.in_construction = NO;
-	
-	// Fix up the class name
-	Class metaClass = cl->isa;
-	Class metaMeta = objc_class_table_get(objc_classes, metaClass->isa);
-	metaClass->isa = metaMeta;
-	metaClass->flags.in_construction = NO;
-	
+		
 	objc_class_insert(objc_classes, cl);
-	_objc_insert_class_into_class_tree(cl);
+	objc_class_resolve(cl);
 	
 	OBJC_UNLOCK_RUNTIME();
 }
@@ -268,7 +283,7 @@ Class objc_class_for_name(const char *name){
 	}
 	
 	Class c = objc_class_table_get(objc_classes, name);
-	if (c == NULL || c->flags.in_construction){
+	if (c == NULL || !c->flags.resolved){
 		/* NULL, or still in construction */
 		return Nil;
 	}
@@ -276,7 +291,64 @@ Class objc_class_for_name(const char *name){
 	return c;
 }
 
-void objc_class_register_class(Class cl){
+PRIVATE BOOL objc_class_resolve(Class cl){
+	if (cl->flags.resolved){
+		return YES;
+	}
+	
+	/**
+	 * The class needs to be resolved.
+	 */
+	Class superclass = cl->super_class;
+	if (!superclass->flags.resolved){
+		if (!objc_class_resolve(superclass)){
+			return NO;
+		}
+	}
+	
+	/**
+	 * Beyond this point, the superclasses are resolved.
+	 */
+	
+	_objc_class_remove_from_unresolved_list(cl);
+	
+	// TODO resolving the superclass pointer char * -> Class - really necessary?
+	
+	cl->flags.resolved = YES;
+	cl->isa->flags.resolved = YES;
+	
+	// TODO - here?
+	_objc_class_fixup_instance_size(cl);
+	_objc_class_fixup_instance_size(cl->isa);
+	
+	_objc_insert_class_into_class_tree(cl);
+	
+	// TODO send load messages
+	// TODO load call-back
+	
+	return YES;
+}
+
+PRIVATE void objc_class_resolve_links(void){
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	Class cl = unresolved_classes;
+	BOOL resolved_class;
+	do {
+		resolved_class = NO;
+		while (cl != Nil) {
+			// Need to remember the next before resolving
+			Class next = cl->unresolved_class_next;
+			
+			objc_class_resolve(cl);
+			resolved_class |= cl->flags.resolved;
+			
+			cl = next;
+		}
+	} while (resolved_class);
+}
+
+PRIVATE void objc_class_register_class(Class cl){
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
 			 " Which one will be used is undefined.\n", cl->name);
@@ -297,34 +369,12 @@ void objc_class_register_class(Class cl){
 		cl->isa->super_class = cl;
 		cl->isa->isa = cl->isa;
 	}
-	
-	cl->dtable = uninstalled_dtable;
-	add_method_list_to_class(cl, cl->methods);
-	cl->isa->dtable = uninstalled_dtable;
-	add_method_list_to_class(cl->isa, cl->isa->methods);
-	
-	cl->flags.in_construction = NO;
-	cl->isa->flags.in_construction = NO;
-	
-	_objc_class_fixup_instance_size(cl);
-	_objc_class_fixup_instance_size(cl->isa);
-	
-	// TODO other stuff
-	if (!cl->flags.user_created){
-		// TODO +load
-	}
-	// TODO objc_load_callback
 }
 
 void objc_class_register_classes(Class *cl, unsigned int count){
 	for (int i = 0; i < count; ++i){
 		objc_class_register_class(cl[i]);
 	}
-}
-
-BOOL objc_resolve_class(Class cl){
-	// TODO
-	return NO;
 }
 
 /***** INITIALIZATION *****/

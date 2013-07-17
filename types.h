@@ -169,7 +169,7 @@ struct objc_category {
 
 typedef struct {
 	BOOL meta : 1;
-	BOOL in_construction : 1;
+	BOOL resolved : 1;
 	BOOL initialized : 1; // +initialized called
 	BOOL user_created : 1;
 	BOOL has_custom_arr : 1; // Implements -retain, -release, or -autorelease
@@ -207,6 +207,9 @@ struct objc_class {
 		
 	Class subclass_list;
 	Class sibling_list;
+	
+	Class unresolved_class_previous;
+	Class unresolved_class_next;
 	
 	void *extra_space;
 	
