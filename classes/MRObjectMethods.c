@@ -11,7 +11,7 @@
 
 id _C_MRObject_alloc_(id self, SEL _cmd){
 	MRObject_instance_t *instance = (MRObject_instance_t*)objc_class_create_instance((Class)self);
-	instance->retainCount = 1;
+	instance->retainCount = 0;
 	return (id)instance;
 }
 void _C_MRObject_load_(id self, SEL _cmd){

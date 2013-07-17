@@ -43,7 +43,7 @@ typedef struct {
  */
 Class _objc_find_class_for_object(id object){
 	Class cl = object->isa;
-	while (cl != Nil && cl->flags.fake) {
+	while (cl != Nil && !cl->flags.fake) {
 		cl = cl->super_class;
 	}
 	
