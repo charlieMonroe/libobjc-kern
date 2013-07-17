@@ -47,6 +47,21 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
 
 
 /**
+ * Used generally only in protocols to describe a method.
+ */
+struct objc_method_description {
+	/**
+	 * The types of this method.
+	 */
+	const char *types;
+	
+	/**
+	 * The name of this method.
+	 */
+	SEL   selector;
+};
+
+/**
  * Actual declarations of the structures follow.
  */
 struct objc_selector {
@@ -138,6 +153,7 @@ typedef struct {
  */
 typedef struct objc_protocol_list_struct objc_protocol_list;
 typedef struct objc_method_list_struct objc_method_list;
+typedef struct objc_method_description_list_struct objc_method_description_list;
 typedef struct objc_property_list_struct objc_property_list;
 typedef struct objc_ivar_list_struct objc_ivar_list;
 typedef struct objc_category_list_struct objc_category_list;
@@ -148,11 +164,11 @@ struct objc_protocol {
 	const char *name;
 	
 	objc_protocol_list *protocols; // other protocols
-	objc_method_list *instance_methods;
-	objc_method_list *class_methods;
+	objc_method_description_list *instance_methods;
+	objc_method_description_list *class_methods;
 	
-	objc_method_list *optional_instance_methods;
-	objc_method_list *optional_class_methods;
+	objc_method_description_list *optional_instance_methods;
+	objc_method_description_list *optional_class_methods;
 	
 	objc_property_list *properties;
 	objc_property_list *optional_properties;

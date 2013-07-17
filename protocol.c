@@ -22,15 +22,194 @@ static inline int _objc_hash_protocol(Protocol *p){
 static objc_protocol_table *objc_protocols;
 static Class objc_protocol_class;
 
+static inline objc_method_description_list **_objc_protocol_get_method_list_ptr(Protocol *p, BOOL required, BOOL instance){
+	if (p == NULL){
+		return NULL;
+	}
+	return (required ?
+		 (instance ? &p->instance_methods : &p->class_methods) :
+		 (instance ? &p->optional_instance_methods : &p->optional_class_methods)
+	 );
+}
+
+static inline objc_property_list **_objc_protocol_get_property_list_ptr(Protocol *p, BOOL required, BOOL instance){
+	if (p == NULL || !instance){
+		return NULL;
+	}
+	return (required ? &p->properties : &p->optional_properties);
+}
 
 
 #pragma mark -
 #pragma mark Public Functions
 
+
+
 Protocol *objc_getProtocol(const char *name){
+	if (name == NULL){
+		return NULL;
+	}
 	return objc_protocol_table_get(objc_protocols, name);
 }
 
+BOOL protocol_conformsToProtocol(Protocol *p1, Protocol *p2){
+	if (p1 == NULL || p2 == NULL){
+		return NO;
+	}
+	
+	if (p1 == p2 || objc_strings_equal(p1->name, p2->name)){
+		return YES;
+	}
+	
+	objc_protocol_list *list = p1->protocols;
+	while (list != NULL) {
+		for (int i = 0; i < list->size; ++i){
+			Protocol *p = list->protocol_list[i];
+			if (p == p2 || objc_strings_equal(p->name, p2->name)){
+				return YES;
+			}
+			if (protocol_conformsToProtocol(p, p2)){
+				return YES;
+			}
+		}
+		
+		list = list->next;
+	}
+	return NO;
+	
+}
+
+BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
+	if (cls == Nil || protocol == NULL){
+		return NO;
+	}
+	
+	objc_protocol_list *list = cls->protocols;
+	while (list != NULL) {
+		for (int i = 0; i < list->size; ++i){
+			if (protocol_conformsToProtocol(list->protocol_list[i], protocol)){
+				return YES;
+			}
+		}
+		
+		list = list->next;
+	}
+	return NO;
+}
+
+static objc_method_description_list *get_method_list(Protocol *p,
+			BOOL isRequiredMethod,
+			BOOL isInstanceMethod){
+	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod, isInstanceMethod);
+	return list_ptr == NULL ? NULL : *list_ptr;
+}
+
+struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
+								   BOOL isRequiredMethod, BOOL isInstanceMethod, unsigned int *count){
+	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod, isInstanceMethod);
+	if (list_ptr == NULL && *list_ptr == NULL && (*list_ptr)->size == 0){
+		if (count != NULL){
+			*count = 0;
+		}
+		return NULL;
+	}
+	
+	objc_method_description_list *list = *list_ptr;
+	if (count != NULL){
+		*count = list->size;
+	}
+	
+	struct objc_method_description *descriptions = objc_zero_alloc(sizeof(struct objc_method_description) * list->size);
+	for (int i = 0; i < list->size; ++i){
+		descriptions[i] = list->method_description_list[i];
+	}
+	
+	return descriptions;
+}
+
+Protocol*__unsafe_unretained* protocol_copyProtocolList(Protocol *p, unsigned int *count){
+	if (p == NULL || p->protocols == NULL || p->protocols->size == 0){
+		if (count != NULL){
+			*count = 0;
+		}
+		return NULL;
+	}
+	return objc_protocol_list_copy_list(p->protocols, count);
+}
+
+Property *protocol_copyPropertyList(Protocol *protocol,
+				    unsigned int *outCount){
+	if (outCount != NULL){
+		*outCount = 0;
+	}
+	if (protocol == NULL){
+		return NULL;
+	}
+	
+	objc_property_list *list = *_objc_protocol_get_property_list_ptr(protocol, YES, NO);
+	objc_property_list *optional_list = *_objc_protocol_get_property_list_ptr(protocol, NO, NO);
+	
+	unsigned int list_size = list == NULL ? 0 : list->size;
+	unsigned int optional_list_size = optional_list == NULL ? 0 : list->size;
+	unsigned int size = list_size + optional_list_size;
+	
+	if (size == 0){
+		return NULL;
+	}
+	
+	Property *buffer = objc_zero_alloc(size * sizeof(Property));
+	if (list != NULL){
+		objc_property_list_get_list(list, buffer, list_size);
+	}
+	if (optional_list != NULL){
+		objc_property_list_get_list(optional_list, buffer + list_size, optional_list_size);
+	}
+	
+	if (outCount != NULL){
+		*outCount = size;
+	}
+	
+	return buffer;
+}
+
+Property protocol_getProperty(Protocol *protocol,
+                                     const char *name,
+                                     BOOL required,
+                                     BOOL instance){
+	objc_property_list **list_ptr = _objc_protocol_get_property_list_ptr(protocol, required, instance);
+	if (list_ptr == NULL || *list_ptr == NULL){
+		return NULL;
+	}
+	
+	objc_property_list *list = *list_ptr;
+	while (list != NULL) {
+		for (int i = 0; i < list->size; ++i){
+			if (objc_strings_equal(list->property_list[i].name, name)){
+				return &list->property_list[i];
+			}
+		}
+		list = list->next;
+	}
+	return NULL;
+}
+
+struct objc_method_description protocol_getMethodDescription(Protocol *p,
+                              SEL aSel, BOOL required, BOOL instance){
+	struct objc_method_description result = {0,0};
+	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, required, instance);
+	if (list_ptr == NULL || *list_ptr == NULL){
+		return result;
+	}
+	
+	objc_method_description_list *list = *list_ptr;
+	for (int i = 0; i < list->size; ++i){
+		if (list->method_description_list[i].selector == aSel){
+			return list->method_description_list[i];
+		}
+	}
+	
+	return result;
+}
 
 const char *protocol_getName(Protocol *protocol){
 	return protocol == NULL ? NULL : protocol->name;
@@ -41,9 +220,9 @@ BOOL protocol_isEqual(Protocol *protocol1, Protocol *protocol2){
 		return NO;
 	}
 	
-	return protocol1 == protocol2
-		|| protocol1->name == protocol2->name
-		|| objc_strings_equal(protocol1->name, protocol2->name);
+	// We can skip comparing pointers since objc_strings_equal does
+	// this anyway
+	return objc_strings_equal(protocol1->name, protocol2->name);
 }
 
 Protocol*__unsafe_unretained* objc_copyProtocolList(Protocol *protocol, unsigned int *outCount){
@@ -85,20 +264,16 @@ void objc_protocol_add_method(Protocol *aProtocol,
 	
 	objc_assert(objc_strings_equal(objc_selector_get_types(selector), types), "Trying to add a method description to a protocol with types that are different than the ones of the selector.\n")
 	
-	objc_method_list **list_ptr = (isRequiredMethod ?
-				       (isInstanceMethod ? &aProtocol->instance_methods : &aProtocol->class_methods) :
-				       (isInstanceMethod ? &aProtocol->optional_instance_methods : &aProtocol->optional_class_methods)
-				       );
+	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(aProtocol, isRequiredMethod, isInstanceMethod);
 	if (*list_ptr == NULL){
-		*list_ptr = objc_method_list_create(1);
+		*list_ptr = objc_method_description_list_create(1);
 	}else{
-		*list_ptr = objc_method_list_expand_by(*list_ptr, 1);
+		*list_ptr = objc_method_description_list_expand_by(*list_ptr, 1);
 	}
 	
-	Method m = &(*list_ptr)->method_list[(*list_ptr)->size - 1];
+	struct objc_method_description *m = &(*list_ptr)->method_description_list[(*list_ptr)->size - 1];
 	m->selector = selector;
-	m->selector_types = types;
-	m->selector_name = objc_selector_get_name(selector);
+	m->types = types;
 }
 
 void objc_protocol_add_protocol(Protocol *aProtocol, Protocol *addition){

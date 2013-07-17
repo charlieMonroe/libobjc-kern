@@ -27,6 +27,12 @@
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
+/** Method description list */
+#define OBJC_LIST_TYPE_NAME method_description
+#define OBJC_LIST_TYPE struct objc_method_description
+#define OBJC_LIST_CHAINABLE 0
+#include "list.h"
+
 /** Protocols. */
 #define OBJC_LIST_TYPE_NAME protocol
 #define OBJC_LIST_TYPE struct objc_protocol *

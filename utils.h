@@ -59,7 +59,7 @@ OBJC_INLINE char *objc_strcpy(const char *str){
 OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 	unsigned int index;
 	
-	if (str1 == NULL && str2 == NULL){
+	if (str1 ==  str2){
 		return YES;
 	}
 	
