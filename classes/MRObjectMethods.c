@@ -14,6 +14,9 @@ id _C_MRObject_alloc_(id self, SEL _cmd){
 	instance->retainCount = 1;
 	return (id)instance;
 }
+void _C_MRObject_load_(id self, SEL _cmd){
+	objc_debug_log("+load message sent to class %s\n", objc_class_get_name((Class)self));
+}
 
 void _C_MRObject_initialize_(id self, SEL _cmd){
 	objc_debug_log("Initializing class %s\n", objc_object_get_class_inline(self)->name);

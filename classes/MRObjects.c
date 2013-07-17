@@ -15,12 +15,18 @@
 
 static struct objc_method_list_struct MRObject_class_method_list = {
 	0, // Next
-	4, // Size
+	5, // Size
 	{
 		{
 			(IMP)_C_MRObject_alloc_,
 			"alloc",
 			"@@:",
+			0
+		},
+		{
+			(IMP)_C_MRObject_load_,
+			"load",
+			"v@:",
 			0
 		},
 		{

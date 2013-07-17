@@ -85,7 +85,7 @@ enum PropertyAttributeKind2
 	OBJC_PR_unsafe_unretained = (1<<5),
 };
 
-const char *property_getName(Property p);
+const char *property_getName(Property property);
 const char *property_getAttributes(Property property);
 
 /**

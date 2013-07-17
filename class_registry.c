@@ -31,7 +31,11 @@ PRIVATE void objc_class_send_load_messages(Class cl){
 			Method m = &list->method_list[i];
 			if (m->selector == objc_load_selector){
 				IMP load_imp = m->implementation;
-				if (objc_load_messages_table_get(objc_load_messages, load_imp)){
+				/**
+				 * The IMP mustn't be in the hash table. We hash the already called
+				 * IMPs so that they don't get called twice.
+				 */
+				if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
 					load_imp((id)cl, objc_load_selector);
 					objc_load_messages_insert(objc_load_messages, load_imp);
 				}
