@@ -3,6 +3,7 @@
 #include "property.h"
 #include "selector.h"
 #include "runtime.h"
+#include "class_registry.h"
 
 static inline BOOL _objc_protocols_are_equal(const char *name, Protocol *p){
 	return objc_strings_equal(name, p->name);
@@ -18,6 +19,9 @@ static inline int _objc_hash_protocol(Protocol *p){
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_hash_protocol
 #include "hashtable.h"
+
+#define BUFFER_TYPE objc_protocol_list
+#include "buffer.h"
 
 static objc_protocol_table *objc_protocols;
 static Class objc_protocol_class;
@@ -40,10 +44,128 @@ static inline objc_property_list **_objc_protocol_get_property_list_ptr(Protocol
 }
 
 
+static int isEmptyProtocol(Protocol *aProto)
+{
+	int isEmpty =
+	((aProto->instance_methods == NULL) ||
+	 (aProto->instance_methods->size == 0)) &&
+	((aProto->class_methods == NULL) ||
+	 (aProto->class_methods->size == 0)) &&
+	((aProto->protocols == NULL) ||
+	 (aProto->protocols->size == 0));
+	
+	isEmpty &= (aProto->optional_instance_methods->size == 0);
+	isEmpty &= (aProto->optional_class_methods->size == 0);
+	isEmpty &= (aProto->properties == 0) || (aProto->properties->size == 0);
+	isEmpty &= (aProto->optional_properties == 0) || (aProto->optional_properties->size == 0);
+	return isEmpty;
+}
+
+// FIXME: Make p1 adopt all of the stuff in p2
+static void makeProtocolEqualToProtocol(Protocol *p1,
+                                        Protocol *p2)
+{
+#define COPY(x) p1->x = p2->x
+	COPY(instance_methods);
+	COPY(class_methods);
+	COPY(protocols);
+	COPY(optional_instance_methods);
+	COPY(optional_class_methods);
+	COPY(properties);
+	COPY(optional_properties);
+#undef COPY
+}
+
+static Protocol *_objc_unique_protocol(Protocol *aProto){
+	if (objc_protocol_class == Nil){
+		objc_protocol_class = objc_class_for_name("Protocol");
+	}
+	
+	Protocol *oldProtocol = objc_protocol_table_get(objc_protocols, aProto->name);
+	if (NULL == oldProtocol){
+		// This is the first time we've seen this protocol, so add it to the
+		// hash table and ignore it.
+		objc_protocol_insert(objc_protocols, aProto);
+		return aProto;
+	}
+	
+	if (isEmptyProtocol(oldProtocol)){
+		if (isEmptyProtocol(aProto)){
+			return aProto;
+			// Add protocol to a list somehow.
+		}else{
+			// This protocol is not empty, so we use its definitions
+			makeProtocolEqualToProtocol(oldProtocol, aProto);
+			return aProto;
+		}
+	}else{
+		if (isEmptyProtocol(aProto)){
+			makeProtocolEqualToProtocol(aProto, oldProtocol);
+			return oldProtocol;
+		}else{
+			return oldProtocol;
+			//FIXME: We should really perform a check here to make sure the
+			//protocols are actually the same.
+		}
+	}
+}
+
+typedef enum {
+	protocol_version_kernel_objc = 0x100
+} objc_protocol_version;
+
+static BOOL _objc_init_protocols(objc_protocol_list *protocols){
+	if (Nil == objc_protocol_class){
+		return NO;
+	}
+	
+	for (unsigned i=0 ; i<protocols->size ; i++)
+	{
+		Protocol *aProto = protocols->protocol_list[i];
+		// Don't initialise a protocol twice
+		if (aProto->isa == objc_protocol_class) { continue ;}
+		
+		// Protocols in the protocol list have their class pointers set to the
+		// version of the protocol class that they expect.
+		objc_assert((objc_protocol_version)aProto->isa == protocol_version_kernel_objc,
+			    "Protocol of unknown version %p!\n", aProto->isa);
+		
+		// Initialize all of the protocols that this protocol refers to
+		if (NULL != aProto->protocols){
+			_objc_init_protocols(aProto->protocols);
+		}
+		// Replace this protocol with a unique version of it.
+		protocols->protocol_list[i] = _objc_unique_protocol(aProto);
+	}
+	return YES;
+}
+
+#pragma mark -
+#pragma mark Private Export
+
+PRIVATE void objc_init_protocols(objc_protocol_list *protocols){
+	if (!_objc_init_protocols(protocols))
+	{
+		set_buffered_object_at_index(protocols, buffered_objects++);
+		return;
+	}
+	if (buffered_objects > 0) { return; }
+	
+	// If we can load one protocol, then we can load all of them.
+	for (unsigned i=0 ; i<buffered_objects ; i++){
+		objc_protocol_list *c = buffered_object_at_index(i);
+		if (NULL != c){
+			_objc_init_protocols(c);
+			set_buffered_object_at_index(NULL, i);
+		}
+	}
+	compact_buffer();
+}
+
+
+
 #pragma mark -
 #pragma mark Public Functions
-
-
 
 Protocol *objc_getProtocol(const char *name){
 	if (name == NULL){
@@ -97,7 +219,7 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
 	return NO;
 }
 
-static objc_method_description_list *get_method_list(Protocol *p,
+static objc_method_description_list *_objc_protocol_get_method_list(Protocol *p,
 			BOOL isRequiredMethod,
 			BOOL isInstanceMethod){
 	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod, isInstanceMethod);
@@ -106,15 +228,15 @@ static objc_method_description_list *get_method_list(Protocol *p,
 
 struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
 								   BOOL isRequiredMethod, BOOL isInstanceMethod, unsigned int *count){
-	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod, isInstanceMethod);
-	if (list_ptr == NULL && *list_ptr == NULL && (*list_ptr)->size == 0){
+	
+	objc_method_description_list *list = _objc_protocol_get_method_list(p, isRequiredMethod, isInstanceMethod);
+	if (list == NULL || list->size == 0){
 		if (count != NULL){
 			*count = 0;
 		}
 		return NULL;
 	}
 	
-	objc_method_description_list *list = *list_ptr;
 	if (count != NULL){
 		*count = list->size;
 	}
@@ -195,13 +317,13 @@ Property protocol_getProperty(Protocol *protocol,
 
 struct objc_method_description protocol_getMethodDescription(Protocol *p,
                               SEL aSel, BOOL required, BOOL instance){
+	
 	struct objc_method_description result = {0,0};
-	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, required, instance);
-	if (list_ptr == NULL || *list_ptr == NULL){
+	objc_method_description_list *list = _objc_protocol_get_method_list(p, required, instance);
+	if (list == NULL){
 		return result;
 	}
 	
-	objc_method_description_list *list = *list_ptr;
 	for (int i = 0; i < list->size; ++i){
 		if (list->method_description_list[i].selector == aSel){
 			return list->method_description_list[i];
