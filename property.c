@@ -211,7 +211,7 @@ Property class_getProperty(Class cls, const char *name)
 	{
 		for (int i=0 ; i<properties->size ; i++)
 		{
-			Property p = &properties->property_list[i];
+			Property p = &properties->list[i];
 			if (objc_strings_equal(property_getName(p), name))
 			{
 				return p;
@@ -596,7 +596,7 @@ BOOL class_addProperty(Class cls,
 	constructPropertyAttributes(&p, iVarname);
 
 	objc_property_list *l = objc_property_list_create(1);
-	objc_copy_memory(&l->property_list, &p, sizeof(struct objc_property));
+	objc_copy_memory(&l->list, &p, sizeof(struct objc_property));
 	
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	l->next = cls->properties;

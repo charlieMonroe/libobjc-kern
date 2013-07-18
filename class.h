@@ -65,18 +65,6 @@ extern IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector);
 extern BOOL objc_class_is_resolved(Class cl);
 
 
-
-
-/**
- * Returns the meta class.
- */
-Class objc_class_get_meta_class(const char *name);
-
-
-
-
-
-
 #pragma mark -
 #pragma mark Ivar-related
 

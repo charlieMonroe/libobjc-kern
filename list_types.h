@@ -18,6 +18,10 @@
 /** Ivar list. */
 #define OBJC_LIST_TYPE_NAME ivar
 #define OBJC_LIST_TYPE struct objc_ivar
+#define OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK(x) {\
+	objc_dealloc((void*)x->type);\
+	objc_dealloc((void*)x->name);\
+}
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 

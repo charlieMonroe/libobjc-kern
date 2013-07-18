@@ -259,7 +259,7 @@ const char *objc_selector_get_types(SEL selector){
 
 void objc_register_selectors_from_method_list(objc_method_list *list){
 	for (int i = 0; i < list->size; ++i){
-		Method m = &list->method_list[i];
+		Method m = &list->list[i];
 		m->selector = sel_registerName(m->selector_name, m->selector_types);
 	}
 }

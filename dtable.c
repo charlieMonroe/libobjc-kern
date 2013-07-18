@@ -80,8 +80,8 @@ static void collectMethodsForMethodListToSparseArray(
 	}
 	for (unsigned i=0 ; i<list->size ; i++)
 	{
-		SparseArrayInsert(sarray, list->method_list[i].selector,
-				(void*)&list->method_list[i]);
+		SparseArrayInsert(sarray, list->list[i].selector,
+				(void*)&list->list[i]);
 	}
 }
 
@@ -267,7 +267,7 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	{
 		for (unsigned i=0 ; i<list->size ; i++)
 		{
-			installMethodInDtable(class, class, dtable, &list->method_list[i], NO);
+			installMethodInDtable(class, class, dtable, &list->list[i], NO);
 		}
 		list = list->next;
 	}
@@ -282,7 +282,9 @@ PRIVATE dtable_t objc_copy_dtable_for_class(dtable_t old, Class cls)
 
 PRIVATE void free_dtable(dtable_t dtable)
 {
-	SparseArrayDestroy(dtable);
+	if (dtable != uninstalled_dtable){
+		SparseArrayDestroy(dtable);
+	}
 }
 
 __attribute__((unused)) static void objc_release_object_lock(id *x)

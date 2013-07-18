@@ -40,6 +40,7 @@ Ivar *class_copyIvarList(Class cls, unsigned int *outCount);
 
 Method class_getMethod(Class cls, SEL name);
 Method class_getInstanceMethod(Class cls, SEL name);
+Method class_getInstanceMethodNonRecursive(Class cls, SEL name);
 Method class_getClassMethod(Class cls, SEL name);
 IMP class_getMethodImplementation(Class cls, SEL name);
 IMP class_getMethodImplementation_stret(Class cls, SEL name);

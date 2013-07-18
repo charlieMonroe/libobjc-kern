@@ -4,7 +4,7 @@
 #include "utils.h" /* For objc_strcpy */
 #include "dtable.h"
 #include "class.h"
-
+#include "class_registry.h"
 
 /**
  * Adds methods from the array 'm' into the method_list. The m array doesn't
@@ -18,7 +18,7 @@ OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
 	// TODO locking
 	objc_method_list *list = objc_method_list_create(count);
 	for (int i = 0; i < count; ++i){
-		list->method_list[i] = *m[i];
+		list->list[i] = *m[i];
 	}
 	
 	cl->methods = objc_method_list_append(cl->methods, list);
@@ -64,9 +64,33 @@ Method objc_method_create(SEL selector, IMP implementation){
 	return m;
 }
 
-IMP objc_method_get_implementation(Method method){
+IMP method_getImplementation(Method method){
 	objc_assert(method != NULL, "Getting implementation of NULL method!");
 	return method->implementation;
+}
+
+SEL method_getName(Method m){
+	return m == NULL ? 0 : m->selector;
+}
+
+const char *method_getTypeEncoding(Method m){
+	if (m == NULL){
+		return NULL;
+	}
+	return objc_selector_get_types(m->selector);
+}
+
+IMP method_setImplementation(Method m, IMP imp){
+	if (m == NULL){
+		return NULL;
+	}
+	
+	IMP old_impl = m->implementation;
+	m->implementation = imp;
+	
+	objc_updateDtableForClassContainingMethod(m);
+	
+	return old_impl;
 }
 
 #pragma mark -
@@ -85,6 +109,10 @@ BOOL class_addMethod(Class cls, SEL selector, IMP imp){
 void objc_class_add_methods(Class cl, Method *m, unsigned int count){
 	_add_methods(cl, m, count);
 }
+
+
+void method_exchangeImplementations(Method m1, Method m2);
+
 
 #pragma mark -
 #pragma mark Replacing methods

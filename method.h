@@ -12,9 +12,4 @@
  */
 extern Method objc_method_create(SEL selector, IMP implementation);
 
-/**
- * Returns the IMP of the method.
- */
-extern IMP objc_method_get_implementation(Method method);
-
 #endif /* OBJC_METHOD_H_ */

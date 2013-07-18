@@ -48,13 +48,6 @@ static SEL objc_forwarding_selector;
 static SEL objc_drops_unrecognized_forwarding_selector;
 
 /**
- * A function that is returned when the receiver is nil.
- */
-static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
-	return nil;
-}
-
-/**
  * Class structures are versioned. If a class prototype of a different
  * version is encountered, it is either ignored, if the version is
  * 
@@ -98,7 +91,7 @@ OBJC_INLINE Method _lookup_method_in_method_list(objc_method_list *method_list, 
 	while (method_list != NULL) {
 		int i;
 		for (i = 0; i < method_list->size; ++i){
-			Method m = &method_list->method_list[i];
+			Method m = &method_list->list[i];
 			if (m->selector == selector){
 				return m;
 			}
@@ -235,7 +228,7 @@ OBJC_INLINE Ivar _ivar_named_in_ivar_list(objc_ivar_list *ivar_list, const char 
 	}
 	
 	for (int i = 0; i < ivar_list->size; ++i){
-		Ivar var = &ivar_list->ivar_list[i];
+		Ivar var = &ivar_list->list[i];
 		if (objc_strings_equal(var->name, name)){
 			return var;
 		}
@@ -293,7 +286,7 @@ OBJC_INLINE void _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_coun
 			break;
 		}
 		
-		list[counter] = &ivar_list->ivar_list[i];
+		list[counter] = &ivar_list->list[i];
 		++counter;
 	}
 	
@@ -407,6 +400,19 @@ Method class_getInstanceMethod(Class cls, SEL selector){
 	}
 	
 	return _lookup_method(cls, selector);
+}
+
+Method class_getInstanceMethodNonRecursive(Class cls, SEL selector){
+	if (cls != Nil && cls->flags.meta){
+		cls = (Class)objc_getClass(cls->name);
+	}
+	
+	cls = objc_class_get_nonfake_inline(cls);
+	if (cls == Nil || selector == 0){
+		return NULL;
+	}
+	
+	return _lookup_method_in_method_list(cls->methods, selector);
 }
 
 Method class_getClassMethod(Class cls, SEL selector){
@@ -546,9 +552,17 @@ BOOL class_isMetaClass(Class cls){
 
 
 
-Class objc_class_get_meta_class(const char *name){
+id objc_getMetaClass(const char *name){
 	Class cl = (Class)objc_getClass(name);
-	return cl == Nil ? Nil : cl->isa;
+	return cl == Nil ? nil : (id)cl->isa;
+}
+
+id objc_getRequiredClass(const char *name){
+	id cl = objc_getClass(name);
+	if (cl == nil){
+		objc_abort("Couldn't find required class %s\n", name = NULL ? "[NULL]" : name);
+	}
+	return cl;
 }
 
 size_t class_getInstanceSize(Class cls){
@@ -591,7 +605,7 @@ BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, 
 		cls->ivars = objc_ivar_list_expand_by(cls->ivars, 1);
 	}
 	
-	variable = &cls->ivars->ivar_list[cls->ivars->size - 1];
+	variable = &cls->ivars->list[cls->ivars->size - 1];
 	variable->name = objc_strcpy(name);
 	variable->type = objc_strcpy(types);
 	variable->size = size;

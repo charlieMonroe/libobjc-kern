@@ -121,7 +121,7 @@ static BOOL _objc_init_protocols(objc_protocol_list *protocols){
 	
 	for (unsigned i=0 ; i<protocols->size ; i++)
 	{
-		Protocol *aProto = protocols->protocol_list[i];
+		Protocol *aProto = protocols->list[i];
 		// Don't initialise a protocol twice
 		if (aProto->isa == objc_protocol_class) { continue ;}
 		
@@ -135,7 +135,7 @@ static BOOL _objc_init_protocols(objc_protocol_list *protocols){
 			_objc_init_protocols(aProto->protocols);
 		}
 		// Replace this protocol with a unique version of it.
-		protocols->protocol_list[i] = _objc_unique_protocol(aProto);
+		protocols->list[i] = _objc_unique_protocol(aProto);
 	}
 	return YES;
 }
@@ -186,7 +186,7 @@ BOOL protocol_conformsToProtocol(Protocol *p1, Protocol *p2){
 	objc_protocol_list *list = p1->protocols;
 	while (list != NULL) {
 		for (int i = 0; i < list->size; ++i){
-			Protocol *p = list->protocol_list[i];
+			Protocol *p = list->list[i];
 			if (p == p2 || objc_strings_equal(p->name, p2->name)){
 				return YES;
 			}
@@ -210,7 +210,7 @@ BOOL class_addProtocol(Class cls, Protocol *protocol){
 	}
 	
 	objc_protocol_list *list = objc_protocol_list_create(1);
-	list->protocol_list[0] = protocol;
+	list->list[0] = protocol;
 	
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
@@ -227,7 +227,7 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
 	objc_protocol_list *list = cls->protocols;
 	while (list != NULL) {
 		for (int i = 0; i < list->size; ++i){
-			if (protocol_conformsToProtocol(list->protocol_list[i], protocol)){
+			if (protocol_conformsToProtocol(list->list[i], protocol)){
 				return YES;
 			}
 		}
@@ -271,7 +271,7 @@ struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
 	
 	struct objc_method_description *descriptions = objc_zero_alloc(sizeof(struct objc_method_description) * list->size);
 	for (int i = 0; i < list->size; ++i){
-		descriptions[i] = list->method_description_list[i];
+		descriptions[i] = list->list[i];
 	}
 	
 	return descriptions;
@@ -334,8 +334,8 @@ Property protocol_getProperty(Protocol *protocol,
 	objc_property_list *list = *list_ptr;
 	while (list != NULL) {
 		for (int i = 0; i < list->size; ++i){
-			if (objc_strings_equal(list->property_list[i].name, name)){
-				return &list->property_list[i];
+			if (objc_strings_equal(list->list[i].name, name)){
+				return &list->list[i];
 			}
 		}
 		list = list->next;
@@ -353,8 +353,8 @@ struct objc_method_description protocol_getMethodDescription(Protocol *p,
 	}
 	
 	for (int i = 0; i < list->size; ++i){
-		if (list->method_description_list[i].selector == aSel){
-			return list->method_description_list[i];
+		if (list->list[i].selector == aSel){
+			return list->list[i];
 		}
 	}
 	
@@ -421,7 +421,7 @@ void objc_protocol_add_method(Protocol *aProtocol,
 		*list_ptr = objc_method_description_list_expand_by(*list_ptr, 1);
 	}
 	
-	struct objc_method_description *m = &(*list_ptr)->method_description_list[(*list_ptr)->size - 1];
+	struct objc_method_description *m = &(*list_ptr)->list[(*list_ptr)->size - 1];
 	m->selector = selector;
 	m->types = types;
 }
@@ -437,7 +437,7 @@ void objc_protocol_add_protocol(Protocol *aProtocol, Protocol *addition){
 		aProtocol->protocols = objc_protocol_list_expand_by(aProtocol->protocols, 1);
 	}
 	
-	aProtocol->protocols->protocol_list[aProtocol->protocols->size - 1] = addition;
+	aProtocol->protocols->list[aProtocol->protocols->size - 1] = addition;
 }
 
 void objc_protocol_add_property(Protocol *protocol, const char *name,
@@ -459,7 +459,7 @@ void objc_protocol_add_property(Protocol *protocol, const char *name,
 	struct objc_property prop = propertyFromAttrs(atts, att_count, &ivar_name);
 	prop.name = name;
 	constructPropertyAttributes(&prop, ivar_name);
-	objc_copy_memory(&((*list_ptr)->property_list[(*list_ptr)->size - 1]), &prop, sizeof(prop));
+	objc_copy_memory(&((*list_ptr)->list[(*list_ptr)->size - 1]), &prop, sizeof(prop));
 }
 
 

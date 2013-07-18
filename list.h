@@ -96,7 +96,7 @@ struct OBJC_LIST_STRUCTURE_NAME {
 	/**
 	 * Actual list of the items.
 	 */
-	OBJC_LIST_TYPE PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[];
+	OBJC_LIST_TYPE list[];
 };
 
 /**
@@ -158,7 +158,7 @@ static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_
 	list = head;
 	while (list != NULL && counter < size){
 		for (int i = 0; i < list->size; ++i){
-			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			objs[counter] = OBJC_LIST_TYPE_REF (list->list[i]);
 			++counter;
 			
 			if (counter >= size){
@@ -193,7 +193,7 @@ static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_
 	list = head;
 	while (list != NULL && counter < size){
 		for (int i = 0; i < list->size; ++i){
-			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			objs[counter] = OBJC_LIST_TYPE_REF (list->list[i]);
 			++counter;
 			
 			if (counter > size){
@@ -227,7 +227,7 @@ static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_lis
 	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
 	while (list != NULL && counter < buffer_size){
 		for (int i = 0; i < list->size; ++i){
-			objs[counter] = OBJC_LIST_TYPE_REF (list->PREFIX_SUFFIX(OBJC_LIST_TYPE_NAME, _list)[i]);
+			objs[counter] = OBJC_LIST_TYPE_REF (list->list[i]);
 			++counter;
 			
 			if (counter > buffer_size){
@@ -242,9 +242,24 @@ static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_lis
 	return counter;
 }
 
-
-
 #endif // OBJC_LIST_CHAINABLE
+
+
+__attribute__((unused)) static void PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _free)(
+								OBJC_LIST_STRUCTURE_TYPE_NAME *head){
+	if (head == NULL){
+		return;
+	}
+#if OBJC_LIST_CHAINABLE
+	PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _free)(head->next);
+#endif
+#ifdef OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK
+	for (int i = 0; i < head->size; ++i){
+		OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK((OBJC_LIST_TYPE_REF head->list[i]));
+	}
+#endif
+	objc_dealloc(head);
+}
 
 #undef OBJC_LIST_TYPE_NAME
 #undef OBJC_LIST_TYPE
@@ -252,3 +267,4 @@ static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_lis
 #undef OBJC_LIST_VALUES_ARE_POINTERS
 #undef OBJC_LIST_RETURN_TYPE_REF
 #undef OBJC_LIST_TYPE_REF
+#undef OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK

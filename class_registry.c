@@ -4,6 +4,7 @@
 #include "sarray2.h"
 #include "dtable.h"
 #include "class_registry.h"
+#include "class.h"
 
 /**
  * The initial capacities for the hash tables.
@@ -28,7 +29,7 @@ PRIVATE void objc_class_send_load_messages(Class cl){
 	objc_method_list *list = meta->methods;
 	while (list != NULL) {
 		for (int i = 0; i < list->size; ++i){
-			Method m = &list->method_list[i];
+			Method m = &list->list[i];
 			if (m->selector == objc_load_selector){
 				IMP load_imp = m->implementation;
 				/**
@@ -146,6 +147,33 @@ static inline void _objc_insert_class_into_class_tree(Class cl){
 }
 
 /**
+ * Removes a class from the class tree. Note that the run-time
+ * lock must be held.
+ */
+static inline void _objc_class_remove_from_class_tree(Class cl){
+	Class *subclasses_ptr;
+	if (cl->super_class == Nil){
+		// One of the root classes
+		subclasses_ptr = &class_tree;
+	}else{
+		subclasses_ptr = &cl->super_class->subclass_list;
+	}
+	
+	if (*subclasses_ptr == cl){
+		*subclasses_ptr = cl->sibling_list;
+	}else{
+		Class sibling = *subclasses_ptr;
+		while (sibling != Nil) {
+			if (sibling->sibling_list == cl){
+				sibling->sibling_list = cl->sibling_list;
+				return;
+			}
+			sibling = sibling->sibling_list;
+		}
+	}
+}
+
+/**
  * Removes the class from the unresolved list.
  */
 static inline void _objc_class_remove_from_unresolved_list(Class cl){
@@ -190,7 +218,7 @@ static unsigned int _objc_class_calculate_instance_size(Class cl){
 	
 	if (cl->ivars != NULL){
 		for (int i = 0; i < cl->ivars->size; ++i){
-			Ivar ivar = &cl->ivars->ivar_list[i];
+			Ivar ivar = &cl->ivars->list[i];
 			unsigned int offset = size;
 			if (size % ivar->align != 0){
 				unsigned int padding = (ivar->align - (size % ivar->align));
@@ -230,7 +258,20 @@ static void _objc_class_fixup_instance_size(Class cl){
 }
 
 
-Class objc_class_create(Class superclass, const char *name) {
+PRIVATE void objc_updateDtableForClassContainingMethod(Method m){
+	Class nextClass = Nil;
+	void *state = NULL;
+	SEL sel = method_getName(m);
+	while (Nil != (nextClass = objc_class_next(objc_classes, (struct objc_class_table_enumerator**)&state))){
+		if (class_getInstanceMethodNonRecursive(nextClass, sel) == m){
+			objc_update_dtable_for_class(nextClass);
+			return;
+		}
+	}
+}
+
+
+Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes) {
 	if (name == NULL || *name == '\0'){
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
@@ -251,8 +292,8 @@ Class objc_class_create(Class superclass, const char *name) {
 		return NULL;
 	}
 	
-	Class newClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)));
-	Class newMetaClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)));
+	Class newClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)+ extraBytes));
+	Class newMetaClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)  + extraBytes));
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
@@ -293,7 +334,7 @@ Class objc_class_create(Class superclass, const char *name) {
 	return newClass;
 }
 
-void objc_class_finish(Class cl){
+void objc_registerClassPair(Class cl){
 	if (cl == Nil){
 		objc_abort("Cannot finish a NULL class!\n");
 		return;
@@ -305,6 +346,39 @@ void objc_class_finish(Class cl){
 	objc_class_resolve(cl);
 	
 	OBJC_UNLOCK_RUNTIME();
+}
+
+void objc_disposeClassPair(Class cls){
+	if (cls == Nil){
+		return;
+	}
+	
+	Class meta = cls->isa;
+	
+	{
+		OBJC_LOCK_RUNTIME_FOR_SCOPE();
+		_objc_class_remove_from_class_tree(cls);
+		_objc_class_remove_from_class_tree(meta);
+	}
+	
+	objc_method_list_free(cls->methods);
+	objc_method_list_free(meta->methods);
+	
+	objc_ivar_list_free(cls->ivars);
+	
+	objc_protocol_list_free(cls->protocols);
+	objc_protocol_list_free(meta->protocols);
+	
+	objc_property_list_free(cls->properties);
+	
+	free_dtable(cls->dtable);
+	free_dtable(meta->dtable);
+	
+	objc_class_table_set(objc_classes, cls->name, NULL);
+	
+	
+	objc_dealloc(cls);
+	objc_dealloc(meta);
 }
 
 Class *objc_copyClassList(unsigned int *out_count){
@@ -327,7 +401,7 @@ Class *objc_copyClassList(unsigned int *out_count){
 	
 	return classes;
 }
-int objc_getClassList(Class *buffer, unsigned int len){
+int objc_getClassList(Class *buffer, int len){
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;
 	Class next;
@@ -339,7 +413,7 @@ int objc_getClassList(Class *buffer, unsigned int len){
 	return count;
 }
 
-Class objc_getClass(const char *name){
+id objc_getClass(const char *name){
 	if (name == NULL){
 		return Nil;
 	}
@@ -347,20 +421,20 @@ Class objc_getClass(const char *name){
 	Class c = objc_class_table_get(objc_classes, name);
 	if (c != Nil){
 		/* Found it */
-		return c;
+		return (id)c;
 	}
 	
 	// TODO aliases?
 	// TODO hook
 	
-	return c;
+	return (id)c;
 }
 
-Class objc_lookUpClass(const char *name){
+id objc_lookUpClass(const char *name){
 	if (name != NULL){
-		return objc_class_table_get(objc_classes, name);
+		return (id)objc_class_table_get(objc_classes, name);
 	}
-	return Nil;
+	return nil;
 }
 
 PRIVATE BOOL objc_class_resolve(Class cl){

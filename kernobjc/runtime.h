@@ -12,6 +12,7 @@
 #include "selector.h"
 #include "object.h"
 #include "class.h"
+#include "method.h"
 
 
 
@@ -24,7 +25,14 @@
  * if it can supply a class (unlike the objc_lookUpClass()).
  */
 id objc_getClass(const char *name);
+id objc_getMetaClass(const char *name);
 id objc_lookUpClass(const char *name);
+
+/**
+ * Unlike the previous functions, aborts if the class
+ * cannot be found.
+ */
+id objc_getRequiredClass(const char *name);
 
 /**
  * Returns a list of classes registered with the run-time. 
@@ -34,37 +42,30 @@ id objc_lookUpClass(const char *name);
 int objc_getClassList(Class *buffer, int bufferCount);
 Class *objc_copyClassList(unsigned int *outCount);
 
-
-id objc_getMetaClass(const char *name);
-id objc_getRequiredClass(const char *name);
-
-
 Protocol *objc_getProtocol(const char *name);
 Protocol*__unsafe_unretained* objc_copyProtocolList(Protocol *protocol, unsigned int *outCount);
 
-
-
+/**
+ * Creates a new class with name that is a subclass of superclass.
+ *
+ * The returned class isn't registered with the run-time yet,
+ * you need to use the objc_registerPair function.
+ *
+ * Memory management note: the name is copied.
+ */
 Class objc_allocateClassPair(Class superclass, const char *name,
 			     size_t extraBytes);
+
+/**
+ * This function marks the class as finished (i.e. resolved, not in construction).
+ * You need to call this before creating any instances.
+ */
 void objc_registerClassPair(Class cls);
-Class objc_duplicateClass(Class original, const char *name,
-			  size_t extraBytes);
+
+/**
+ * Removes class from the run-time and releases the class structures.
+ */
 void objc_disposeClassPair(Class cls);
-
-SEL method_getName(Method m);
-IMP method_getImplementation(Method m);
-const char *method_getTypeEncoding(Method m);
-
-unsigned int method_getNumberOfArguments(Method m);
-char *method_copyReturnType(Method m);
-char *method_copyArgumentType(Method m, unsigned int index);
-void method_getReturnType(Method m, char *dst, size_t dst_len);
-void method_getArgumentType(Method m, unsigned int index,
-			    char *dst, size_t dst_len);
-struct objc_method_description *method_getDescription(Method m);
-
-IMP method_setImplementation(Method m, IMP imp);
-void method_exchangeImplementations(Method m1, Method m2);
 
 const char *ivar_getName(Ivar v);
 const char *ivar_getTypeEncoding(Ivar v);
