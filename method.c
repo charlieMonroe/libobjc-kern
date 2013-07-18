@@ -108,8 +108,17 @@ void objc_class_add_methods(Class cl, Method *m, unsigned int count){
 	_add_methods(cl, m, count);
 }
 
-
-void method_exchangeImplementations(Method m1, Method m2);
+void method_exchangeImplementations(Method m1, Method m2){
+	if (m1 == NULL || m2 == NULL){
+		return;
+	}
+	IMP imp = m2->implementation;
+	m2->implementation = m1->implementation;
+	m1->implementation = imp;
+	
+	objc_updateDtableForClassContainingMethod(m1);
+	objc_updateDtableForClassContainingMethod(m2);
+}
 
 
 #pragma mark -
@@ -127,6 +136,7 @@ IMP class_replaceMethod(Class cls, SEL name, IMP imp){
 	}else{
 		m->implementation = imp;
 		++m->version;
+		objc_updateDtableForClassContainingMethod(m);
 	}
 	return m == NULL ? NULL : m->implementation;
 }

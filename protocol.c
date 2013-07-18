@@ -388,7 +388,7 @@ Protocol *objc_allocateProtocol(const char *name){
 	return p;
 }
 
-void objc_protocol_register(Protocol *protocol){
+void objc_registerProtocol(Protocol *protocol){
 	if (protocol == NULL){
 		return;
 	}
@@ -403,7 +403,7 @@ void objc_protocol_register(Protocol *protocol){
 	objc_protocol_insert(objc_protocols, protocol);
 }
 
-void objc_protocol_add_method(Protocol *aProtocol,
+void protocol_addMethodDescription(Protocol *aProtocol,
                                    SEL selector,
                                    const char *types,
                                    BOOL isRequiredMethod,
@@ -426,7 +426,7 @@ void objc_protocol_add_method(Protocol *aProtocol,
 	m->types = types;
 }
 
-void objc_protocol_add_protocol(Protocol *aProtocol, Protocol *addition){
+void protocol_addProtocol(Protocol *aProtocol, Protocol *addition){
 	if (aProtocol == NULL || addition == NULL){
 		return;
 	}
@@ -440,7 +440,7 @@ void objc_protocol_add_protocol(Protocol *aProtocol, Protocol *addition){
 	aProtocol->protocols->list[aProtocol->protocols->size - 1] = addition;
 }
 
-void objc_protocol_add_property(Protocol *protocol, const char *name,
+void protocol_addProperty(Protocol *protocol, const char *name,
 						  const objc_property_attribute_t *atts,
 						  unsigned int att_count, BOOL required, BOOL instance){
 	// Some basic check of the parameters
