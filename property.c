@@ -2,7 +2,6 @@
 #include "class.h"
 #include "spinlock.h"
 #include "message.h"
-#include "selector.h"
 #include "utils.h"
 #include "runtime.h"
 #include "arc.h"

@@ -1,7 +1,5 @@
 #include "method.h"
 #include "selector.h" /* For sel_registerName. */
-#include "os.h" /* For objc_alloc. */
-#include "utils.h" /* For objc_strcpy */
 #include "dtable.h"
 #include "class.h"
 #include "class_registry.h"

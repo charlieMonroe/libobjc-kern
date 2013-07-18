@@ -2,7 +2,6 @@
 #include "class_extra.h"
 #include "arc.h"
 #include "class.h"
-#include "selector.h"
 #include "dtable.h"
 
 #define REF_CNT 10

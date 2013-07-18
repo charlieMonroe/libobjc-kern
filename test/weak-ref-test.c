@@ -3,7 +3,6 @@
 #include "../classes/MRObjects.h"
 #include "../message.h"
 #include "../arc.h"
-#include "../types.h"
 #include "associative.h"
 
 void weak_ref_test(void){

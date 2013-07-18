@@ -1,6 +1,5 @@
 #include "../kernobjc/runtime.h"
 #include "../classes/MRObjects.h"
-#include "../os.h"
 
 static void print_method_list(struct objc_method_list_struct *methods){
 	if (methods == NULL){

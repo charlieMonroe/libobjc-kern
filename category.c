@@ -1,6 +1,5 @@
 #include "types.h"
 #include "selector.h"
-#include "class_registry.h"
 #include "dtable.h"
 #include "class.h"
 

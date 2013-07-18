@@ -3,7 +3,6 @@
 #include "../classes/MRObjects.h"
 #include "../message.h"
 #include "../associative.h"
-#include "../types.h"
 
 void associated_objects_test(void){
 	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, sel_registerName("alloc", "@@:"));
