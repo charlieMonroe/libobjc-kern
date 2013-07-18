@@ -445,6 +445,11 @@ Class object_setClass(id obj, Class new_class){
 	if (obj == nil){
 		return Nil;
 	}
+	
+	if ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK){
+		return objc_object_get_class_inline(obj);
+	}
+	
 	old_class = obj->isa;
 	obj->isa = new_class;
 	return old_class;
@@ -528,7 +533,7 @@ BOOL objc_class_is_resolved(Class cl){
 const char *class_getName(Class cl){
 	cl = objc_class_get_nonfake_inline(cl);
 	if (cl == Nil){
-		return NULL;
+		return "nil";
 	}
 	
 	return cl->name;
@@ -587,9 +592,9 @@ BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, 
 		return NO;
 	}
 	
-	if (cls->flags.resolved){
-		objc_log("Class %s is already resolved!\n", cls->name);
-		objc_abort("Trying to add ivar to a class that is already resolved.");
+	if (cls->flags.initialized){
+		objc_log("Class %s is already initialized!\n", cls->name);
+		objc_abort("Trying to add ivar to a class that is already initialized.");
 	}
 	
 	if (_ivar_named(cls, name) != NULL){

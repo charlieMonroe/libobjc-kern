@@ -136,7 +136,11 @@ IMP class_replaceMethod(Class cls, SEL name, IMP imp){
 	}else{
 		m->implementation = imp;
 		++m->version;
-		objc_updateDtableForClassContainingMethod(m);
 	}
+	
+	if (cls->flags.resolved){
+		objc_update_dtable_for_class(cls);
+	}
+	
 	return m == NULL ? NULL : m->implementation;
 }

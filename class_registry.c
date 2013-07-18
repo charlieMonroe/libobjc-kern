@@ -284,16 +284,14 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 		objc_abort("Trying to create a subclass of an unresolved class.");
 	}
 	
-	OBJC_LOCK_RUNTIME();
 	if (objc_class_table_get(objc_classes, name) != NULL){
 		/* i.e. a class with this name already exists */
 		objc_log("A class with this name already exists (%s).\n", name);
-		OBJC_UNLOCK_RUNTIME();
 		return NULL;
 	}
 	
-	Class newClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)+ extraBytes));
-	Class newMetaClass = (Class)(objc_zero_alloc(sizeof(struct objc_class)  + extraBytes));
+	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class) + extraBytes);
+	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class));
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
@@ -328,8 +326,6 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 	newClass->dtable = newMetaClass->dtable = uninstalled_dtable;
 	
 	// It is inserted into the class tree and hash table on class_finish
-	
-	OBJC_UNLOCK_RUNTIME();
 	
 	return newClass;
 }

@@ -67,8 +67,10 @@ objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
 
 // TODO
 const uint8_t *class_getIvarLayout(Class cls);
-const uint8_t *class_getWeakIvarLayout(Class cls);
 void class_setIvarLayout(Class cls, const uint8_t *layout);
+
+// TODO
+const uint8_t *class_getWeakIvarLayout(Class cls);
 void class_setWeakIvarLayout(Class cls, const uint8_t *layout);
 
 

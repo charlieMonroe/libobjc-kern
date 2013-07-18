@@ -62,7 +62,7 @@ struct objc_property {
 	const char *setter_types;
 	
 	// TODO - merge attributes into
-	// on unsigned int? Would require
+	// one unsigned int? Would require
 	// to redifine enums in property.h
 	char attributes;
 	char attributes2;
