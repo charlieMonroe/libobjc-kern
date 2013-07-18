@@ -71,6 +71,16 @@ static id _objc_nil_receiver_function(id self, SEL _cmd, ...){
  * includes the extra space required by extensions.
  */
 OBJC_INLINE unsigned int _instance_size(Class cl){
+	if (cl == Nil){
+		return 0;
+	}
+	
+	if (cl->flags.fake){
+		while (cl != Nil && cl->flags.fake) {
+			cl = cl->super_class;
+		}
+	}
+	
 	if (cl->flags.meta){
 		return sizeof(struct objc_class);
 	}
@@ -181,7 +191,7 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
-	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", objc_object_get_class_inline(obj)->name, objc_selector_get_name(selector));
+	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", objc_object_get_nonfake_class_inline(obj)->name, objc_selector_get_name(selector));
 	objc_abort("Class doesn't support forwarding.");
 }
 
@@ -210,7 +220,7 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 		
 		forwarding_imp = _lookup_method_impl(obj->isa, objc_forwarding_selector);
 		if (forwarding_imp == NULL){
-			objc_log("Class %s doesn't respond to selector %s.\n", objc_object_get_class_inline(obj)->name, objc_selector_get_name(selector));
+			objc_log("Class %s doesn't respond to selector %s.\n", objc_object_get_nonfake_class_inline(obj)->name, objc_selector_get_name(selector));
 			return NULL;
 		}
 		
@@ -344,7 +354,7 @@ OBJC_INLINE Method _lookup_object_method(id obj, SEL selector){
 /**
  * The same scenario as above, but in this case a call to the superclass.
  */
-OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
+OBJC_INLINE Method _lookup_method_super(struct objc_super *sup, SEL selector){
 	Method method;
 	
 	if (sup == NULL){
@@ -374,12 +384,7 @@ OBJC_INLINE Method _lookup_method_super(objc_super *sup, SEL selector){
 }
 
 
-#pragma mark -
-#pragma mark Responding to selectors
 
-BOOL objc_class_responds_to_selector(Class cl, SEL selector){
-	return _lookup_method(cl, selector) != NULL;
-}
 
 
 #pragma mark -
@@ -387,12 +392,6 @@ BOOL objc_class_responds_to_selector(Class cl, SEL selector){
 
 Method objc_lookup_method(Class cl, SEL selector){
 	return _lookup_method(cl, selector);
-}
-IMP objc_lookup_method_impl(Class cl, SEL selector){
-	/** No forwarding here! This is simply to lookup 
-	 * a method implementation.
-	 */
-	return _lookup_method_impl(cl, selector);
 }
 
 #pragma mark -
@@ -463,13 +462,13 @@ id objc_object_copy(id obj){
 Method objc_object_lookup_method(id obj, SEL selector){
 	return _lookup_object_method(obj, selector);
 }
-Method objc_object_lookup_method_super(objc_super *sup, SEL selector){
+Method objc_object_lookup_method_super(struct objc_super *sup, SEL selector){
 	return _lookup_method_super(sup, selector);
 }
 IMP objc_object_lookup_impl(id obj, SEL selector){
 	return _lookup_object_method(obj, selector)->implementation;
 }
-IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector){
+IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector){
 	return _lookup_method_super(sup, selector)->implementation;
 }
 
@@ -503,7 +502,7 @@ Class objc_class_get_meta_class(const char *name){
 	return cl == Nil ? Nil : cl->isa;
 }
 Class objc_object_get_class(id obj){
-	return obj == nil ? Nil : objc_object_get_class_inline(obj);
+	return obj == nil ? Nil : objc_object_get_nonfake_class_inline(obj);
 }
 unsigned int objc_class_instance_size(Class cl){
 	return _instance_size(cl);
@@ -578,7 +577,7 @@ Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
 		return NULL;
 	}
 	
-	ivar = _ivar_named(objc_object_get_class_inline(obj), name);
+	ivar = _ivar_named(objc_object_get_nonfake_class_inline(obj), name);
 	if (ivar == NULL){
 		return NULL;
 	}
@@ -594,7 +593,7 @@ Ivar objc_object_set_variable_named(id obj, const char *name, void *value){
 		return NULL;
 	}
 	
-	ivar = _ivar_named(objc_object_get_class_inline(obj), name);
+	ivar = _ivar_named(objc_object_get_nonfake_class_inline(obj), name);
 	if (ivar == NULL){
 		return NULL;
 	}

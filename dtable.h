@@ -116,6 +116,12 @@ void objc_update_dtable_for_class(Class);
 void objc_install_dtable_for_object(id obj);
 
 /**
+ * Initializing.
+ */
+PRIVATE void objc_send_initialize(id object);
+
+
+/**
  * Adds a single method list to a class.  This is used when loading categories,
  * and is faster than completely rebuilding the dtable.
  */

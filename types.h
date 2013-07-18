@@ -107,10 +107,10 @@ struct objc_object {
  * Definition of super. As the super calls may
  * be chained, this is quite necessary.
  */
-typedef struct {
+struct objc_super {
 	id receiver;
 	Class class;
-} objc_super;
+};
 
 /**
  * Declaration of an Ivar.
@@ -238,7 +238,7 @@ struct objc_slot {
 	Class owner, cachedFor;
 	const char *types;
 	SEL selector;
-	IMP method;
+	IMP implementation;
 	unsigned int version;
 };
 

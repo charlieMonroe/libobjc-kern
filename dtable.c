@@ -106,7 +106,7 @@ static BOOL installMethodInDtable(Class class,
 	if (NULL != slot)
 	{
 		// If this method is the one already installed, pretend to install it again.
-		if (slot->method == method->implementation) { return NO; }
+		if (slot->implementation == method->implementation) { return NO; }
 
 		// If the existing slot is for this class, we can just replace the
 		// implementation.  We don't need to bump the version; this operation
@@ -116,7 +116,7 @@ static BOOL installMethodInDtable(Class class,
 			// Don't replace methods if we're not meant to (if they're from
 			// later in a method list, for example)
 			if (!replaceExisting) { return NO; }
-			slot->method = method->implementation;
+			slot->implementation = method->implementation;
 			return YES;
 		}
 
@@ -450,13 +450,16 @@ PRIVATE void objc_send_initialize(id object)
 	// Store the buffer in the temporary dtables list.  Note that it is safe to
 	// insert it into a global list, even though it's a temporary variable,
 	// because we will clean it up after this function.
-	initializeSlot->method((id)class, initializeSel);
+	initializeSlot->implementation((id)class, initializeSel);
 }
 
 PRIVATE void objc_install_dtable_for_object(id receiver){
-	Class cl = receiver->isa;
+	Class cl = objc_object_get_class_inline(receiver);
 	
-	objc_debug_log("Installing dtable on class %s%s.\n", objc_class_get_name(objc_object_get_class_inline(receiver)), cl->flags.meta ? " (meta)" : "");
+	objc_debug_log("Installing dtable on class %s%s%s.\n",
+		       objc_class_get_name(objc_object_get_nonfake_class_inline(receiver)),
+		       cl->flags.fake ? "[fake]" : "",
+		       cl->flags.meta ? " (meta)" : "");
 	
 	dtable_t dtable = dtable_for_class(cl);
 	/* Install the dtable if it hasn't already been initialized. */

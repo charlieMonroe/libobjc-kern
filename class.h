@@ -17,16 +17,6 @@
 #define OBJC_OBJ_IS_INSTANCE(obj) (!(obj->isa->flags.is_meta))
 
 #pragma mark -
-#pragma mark Responding to selectors
-
-/**
- * Returns YES if the class respons to the selector. This includes
- * the class' superclasses.
- */
-extern BOOL objc_class_responds_to_selector(Class cl, SEL selector);
-
-
-#pragma mark -
 #pragma mark Lookup functions
 
 extern Method objc_lookup_method(Class cl, SEL selector);
@@ -73,9 +63,9 @@ extern id objc_object_copy(id obj);
  * accordingly.
  */
 extern Method objc_object_lookup_method(id obj, SEL selector);
-extern Method objc_object_lookup_method_super(objc_super *sup, SEL selector);
+extern Method objc_object_lookup_method_super(struct objc_super *sup, SEL selector);
 extern IMP objc_object_lookup_impl(id obj, SEL selector);
-extern IMP objc_object_lookup_impl_super(objc_super *sup, SEL selector);
+extern IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector);
 
 
 #pragma mark -
@@ -203,11 +193,14 @@ __attribute__((always_inline)) static inline Class objc_object_get_class_inline(
 		return cl;
 	}
 	
-	cl = obj->isa;
+	return obj->isa;
+}
+
+__attribute__((always_inline)) static inline Class objc_object_get_nonfake_class_inline(id obj){
+	Class cl = objc_object_get_class_inline(obj);
 	while (cl != Nil && cl->flags.fake) {
 		cl = cl->super_class;
 	}
-	
 	return cl;
 }
 

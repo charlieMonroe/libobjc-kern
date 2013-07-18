@@ -213,6 +213,10 @@ static unsigned int _objc_class_calculate_instance_size(Class cl){
 }
 
 static void _objc_class_fixup_instance_size(Class cl){
+	if (cl->flags.fake || cl->flags.resolved){
+		return;
+	}
+	
 	objc_assert(cl != Nil, "Cannot fixup instance size of Nil class!\n");
 	
 	if (cl->flags.meta){

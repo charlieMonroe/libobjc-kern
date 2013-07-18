@@ -14,7 +14,7 @@ static inline struct objc_slot *new_slot_for_method_in_class(Method method,
 	slot->owner = class;
 	slot->types = method->selector_name + objc_strlen(method->selector_name) + 1;
 	slot->selector = method->selector;
-	slot->method = method->implementation;
+	slot->implementation = method->implementation;
 	slot->version = 1;
 	
 	return slot;

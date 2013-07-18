@@ -5,12 +5,34 @@
 #include "types.h"
 #include "selector.h"
 
+#pragma mark -
+#pragma mark Responding to selectors
+
+/**
+ * Returns YES if the class respons to the selector. This includes
+ * the class' superclasses.
+ */
+extern BOOL objc_class_responds_to_selector(Class cl, SEL selector);
+
+
+
+
+
+
+
+
+
+
+
+
+
 PRIVATE Slot objc_class_get_slot(Class cl, SEL selector);
 
 /*
  * TODO - implement in assembly
  */
 id objc_msg_send(id receiver, SEL selector, ...);
+
 
 
 /**

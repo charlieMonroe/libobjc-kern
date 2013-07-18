@@ -19,7 +19,7 @@ void _C_MRObject_load_(id self, SEL _cmd){
 }
 
 void _C_MRObject_initialize_(id self, SEL _cmd){
-	objc_debug_log("Initializing class %s\n", objc_object_get_class_inline(self)->name);
+	objc_debug_log("Initializing class %s\n", objc_object_get_nonfake_class_inline(self)->name);
 }
 
 id _C_MRObject_new_(id self, SEL _cmd){
