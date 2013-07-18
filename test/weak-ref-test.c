@@ -6,7 +6,7 @@
 #include "../types.h"
 #include "associative.h"
 
-int main(int argc, const char * argv[]){
+void weak_ref_test(void){
 	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, objc_selector_register("alloc", "@@:"));
 	obj = (MRObject_instance_t*)objc_msg_send((id)obj, objc_selector_register("init", "@@:"));
 	
@@ -25,7 +25,6 @@ int main(int argc, const char * argv[]){
 	objc_assert(weak_ref == 0, "The weak ref isn't zeroed out!\n")
 	
 	objc_log("===================\n");
-	objc_log("Passed weak ref tests.\n");
-	
-	return 0;
+	objc_log("Passed weak ref tests.\n\n");
+
 }

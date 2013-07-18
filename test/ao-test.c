@@ -5,7 +5,7 @@
 #include "../associative.h"
 #include "../types.h"
 
-int main(int argc, const char * argv[]){
+void associated_objects_test(void){
 	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, objc_selector_register("alloc", "@@:"));
 	obj = (MRObject_instance_t*)objc_msg_send((id)obj, objc_selector_register("init", "@@:"));
 	
@@ -27,7 +27,5 @@ int main(int argc, const char * argv[]){
 	objc_assert(obj_to_associate->retainCount == 0, "The associated object should have been released!\n");
 	
 	objc_log("===================\n");
-	objc_log("Passed associated object tests.\n");
-	
-	return 0;
+	objc_log("Passed associated object tests.\n\n");
 }
