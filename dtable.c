@@ -46,7 +46,7 @@ static void checkARCAccessors(Class cls)
 	static SEL isARC;
 	if (0 == isARC){
 		// TODO necessary?
-		isARC = objc_selector_register("_ARCCompliantRetainRelease", "v@:");
+		isARC = sel_registerName("_ARCCompliantRetainRelease", "v@:");
 	}
 	
 	if (!ownsMethod(cls, isARC)){
@@ -231,7 +231,7 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	// waiting on the lock.
 	if (classHasDtable(class)) { return dtable_for_class(class); }
 
-	Class super = objc_class_get_superclass(class);
+	Class super = class_getSuperclass(class);
 	dtable_t dtable;
 
 
@@ -400,7 +400,7 @@ PRIVATE void objc_send_initialize(id object)
 	static SEL initializeSel = 0;
 	if (0 == initializeSel)
 	{
-		initializeSel = objc_selector_register("initialize", "v@:");
+		initializeSel = sel_registerName("initialize", "v@:");
 	}
 
 	struct objc_slot *initializeSlot = skipMeta ? 0 :
@@ -457,7 +457,7 @@ PRIVATE void objc_install_dtable_for_object(id receiver){
 	Class cl = objc_object_get_class_inline(receiver);
 	
 	objc_debug_log("Installing dtable on class %s%s%s.\n",
-		       objc_class_get_name(objc_object_get_nonfake_class_inline(receiver)),
+		       object_getClassName(receiver),
 		       cl->flags.fake ? "[fake]" : "",
 		       cl->flags.meta ? " (meta)" : "");
 	

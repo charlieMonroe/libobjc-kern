@@ -2,6 +2,7 @@
 #include "selector.h"
 #include "class_registry.h"
 #include "dtable.h"
+#include "class.h"
 
 #define BUFFER_TYPE struct objc_category
 #include "buffer.h"
@@ -45,7 +46,7 @@ static void _objc_category_load(Category cat, Class class){
 }
 
 static BOOL _objc_category_try_load(Category category){
-	Class cl = objc_class_for_name(category->class_name);
+	Class cl = (Class)objc_getClass(category->class_name);
 	if (cl == Nil){
 		return NO;
 	}

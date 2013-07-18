@@ -20,23 +20,6 @@ extern Class objc_class_create(Class superclass, const char *name);
  */
 extern void objc_class_finish(Class cl);
 
-/**
- * Returns a list of classes registered with the run-time. The list
- * is NULL-terminated and the caller is responsible for freeing
- * it using the objc_dealloc function.
- */
-Class *objc_class_copy_list(unsigned int *count);
-int objc_class_get_list(Class *buffer, unsigned int len);
-
-/**
- * Finds a class registered with the run-time and returns it,
- * or Nil, if no such class is registered.
- *
- * Before returning Nil, however, it checks the hook
- * if it can supply a class (unlike the objc_class_look_up()).
- */
-Class objc_class_for_name(const char *name);
-Class objc_class_look_up(const char *name);
 
 /**
  * Registers a class with the runtime.

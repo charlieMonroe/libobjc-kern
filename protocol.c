@@ -3,7 +3,7 @@
 #include "property.h"
 #include "selector.h"
 #include "runtime.h"
-#include "class_registry.h"
+#include "class.h"
 
 static inline BOOL _objc_protocols_are_equal(const char *name, Protocol *p){
 	return objc_strings_equal(name, p->name);
@@ -78,7 +78,7 @@ static void makeProtocolEqualToProtocol(Protocol *p1,
 
 static Protocol *_objc_unique_protocol(Protocol *aProto){
 	if (objc_protocol_class == Nil){
-		objc_protocol_class = objc_class_for_name("Protocol");
+		objc_protocol_class = (Class)objc_getClass("Protocol");
 	}
 	
 	Protocol *oldProtocol = objc_protocol_table_get(objc_protocols, aProto->name);
@@ -217,6 +217,16 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
 		list = list->next;
 	}
 	return NO;
+}
+
+Protocol * __unsafe_unretained *class_copyProtocolList(Class cls, unsigned int *outCount){
+	if (cls == Nil || cls->protocols == NULL || cls->protocols->size == 0){
+		if (outCount != NULL){
+			*outCount = 0;
+		}
+		return NULL;
+	}
+	return objc_protocol_list_copy_list(cls->protocols, outCount);
 }
 
 static objc_method_description_list *_objc_protocol_get_method_list(Protocol *p,

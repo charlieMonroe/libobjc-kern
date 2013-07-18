@@ -19,8 +19,8 @@ static clock_t forwarding_test(void){
 	clock_t c1, c2;
 	int i;
 	
-	new_class_instance = objc_class_create_instance(objc_class_for_name("NewClass"));
-	my_class_instance = (MyClass*)objc_class_create_instance(objc_class_for_name("MyClass"));
+	new_class_instance = objc_class_create_instance(objc_getClass("NewClass"));
+	my_class_instance = (MyClass*)objc_class_create_instance(objc_getClass("MyClass"));
 	my_class_instance->proxyObject = new_class_instance;
 	
 	c1 = clock();
@@ -49,7 +49,7 @@ int main(int argc, const char * argv[]){
 	
 	{
 		Class completely_new_class = objc_class_create(Nil, "NewClass");
-		SEL unknown_selector = objc_selector_register("unknownSelector:");
+		SEL unknown_selector = sel_registerName("unknownSelector:");
 		objc_class_add_ivar(completely_new_class, "isa", sizeof(Class), __alignof(Class), "#");
 		objc_class_add_instance_method(completely_new_class, objc_method_create(unknown_selector, "v@:i", (IMP)_I_NewClass_unknownSelector));
 		objc_class_finish(completely_new_class);	

@@ -177,7 +177,7 @@ id objc_msg_send(id receiver, SEL selector, ...){
 #pragma mark -
 #pragma mark Responding to selectors
 
-BOOL objc_class_responds_to_selector(Class cl, SEL selector){
+BOOL class_respondsToSelector(Class cl, SEL selector){
 	if (cl == Nil || selector == 0){
 		return NO;
 	}
@@ -187,7 +187,7 @@ BOOL objc_class_responds_to_selector(Class cl, SEL selector){
 #pragma mark -
 #pragma mark Regular lookup functions
 
-IMP objc_lookup_method_impl(Class cl, SEL selector){
+IMP class_getMethodImplementation(Class cl, SEL selector){
 	/** No forwarding here! This is simply to lookup
 	 * a method implementation.
 	 */
@@ -195,6 +195,6 @@ IMP objc_lookup_method_impl(Class cl, SEL selector){
 }
 
 IMP class_getMethodImplementation_stret(Class cls, SEL name){
-	return objc_lookup_method_impl(cls, name);
+	return class_getMethodImplementation(cls, name);
 }
 

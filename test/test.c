@@ -1,9 +1,6 @@
-#include "../selector.h"
-#include "../class.h"
-#include "../class_registry.h"
-#include "../utils.h"
+#include "../kernobjc/runtime.h"
 #include "../classes/MRObjects.h"
-#include "../message.h"
+#include "../os.h"
 
 static void print_method_list(struct objc_method_list_struct *methods){
 	if (methods == NULL){
@@ -12,7 +9,7 @@ static void print_method_list(struct objc_method_list_struct *methods){
 	}
 	
 	for (int i = 0; i < methods->size; ++i){
-		printf("\t%s(%d) - %p\n", objc_selector_get_name(methods->method_list[i].selector), methods->method_list[i].selector, methods->method_list[i].implementation);
+		printf("\t%s(%d) - %p\n", sel_getName(methods->method_list[i].selector), methods->method_list[i].selector, methods->method_list[i].implementation);
 	}
 }
 static void print_ivar_list(struct objc_ivar_list_struct *ivars){
@@ -27,7 +24,7 @@ static void print_ivar_list(struct objc_ivar_list_struct *ivars){
 }
 
 static void print_class(Class cl){
-	printf("******** Class %s %s********\n", objc_class_get_name(cl), cl->flags.meta ? "(meta)" : "");
+	printf("******** Class %s %s********\n", class_getName(cl), cl->flags.meta ? "(meta)" : "");
 	printf("**** Methods:\n");
 	print_method_list(cl->methods);
 	printf("**** Ivars:\n");
@@ -37,7 +34,7 @@ static void print_class(Class cl){
 }
 static void list_classes(void){
 	unsigned int count;
-	Class *classes = objc_class_copy_list(&count);
+	Class *classes = objc_copyClassList(&count);
 	for (int i = 0; i < count; ++i){
 		print_class(classes[i]);
 		print_class(classes[i]->isa);

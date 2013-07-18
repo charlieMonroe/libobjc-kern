@@ -7,8 +7,8 @@
 #include "associative.h"
 
 void weak_ref_test(void){
-	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, objc_selector_register("alloc", "@@:"));
-	obj = (MRObject_instance_t*)objc_msg_send((id)obj, objc_selector_register("init", "@@:"));
+	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, sel_registerName("alloc", "@@:"));
+	obj = (MRObject_instance_t*)objc_msg_send((id)obj, sel_registerName("init", "@@:"));
 	
 	id weak_ref = (id)0x1234;
 	

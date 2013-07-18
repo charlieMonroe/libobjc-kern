@@ -15,7 +15,7 @@ id _C_MRObject_alloc_(id self, SEL _cmd){
 	return (id)instance;
 }
 void _C_MRObject_load_(id self, SEL _cmd){
-	objc_debug_log("+load message sent to class %s\n", objc_class_get_name((Class)self));
+	objc_debug_log("+load message sent to class %s\n", object_getClassName(self));
 }
 
 void _C_MRObject_initialize_(id self, SEL _cmd){
@@ -27,11 +27,11 @@ id _C_MRObject_new_(id self, SEL _cmd){
 	static SEL init_SEL;
 	
 	if (alloc_SEL == null_selector){
-		alloc_SEL = objc_selector_register("alloc", "@@:");
+		alloc_SEL = sel_registerName("alloc", "@@:");
 	}
 	
 	if (init_SEL == null_selector){
-		init_SEL = objc_selector_register("init", "@@:");
+		init_SEL = sel_registerName("init", "@@:");
 	}
 	
 	self = ((id(*)(id, SEL))objc_object_lookup_impl(self, alloc_SEL))(self, alloc_SEL);
@@ -57,7 +57,7 @@ void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 		/** Dealloc */
 		static SEL dealloc_selector;
 		if (dealloc_selector == null_selector){
-			dealloc_selector = objc_selector_register("dealloc", "v@:");
+			dealloc_selector = sel_registerName("dealloc", "v@:");
 		}
 		objc_msg_send((id)self, dealloc_selector);
 	}else if (retain_cnt < 0){

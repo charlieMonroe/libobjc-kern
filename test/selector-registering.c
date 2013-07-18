@@ -7,9 +7,9 @@ int main(int argc, const char * argv[])
 		char *str;
 		asprintf(&str, "%i", i);
 		
-		SEL sel = objc_selector_register(str, "@@:");
+		SEL sel = sel_registerName(str, "@@:");
 		
-		objc_assert(objc_strings_equal(objc_selector_get_name(sel), str), "Couldn't get selector back!");
+		objc_assert(objc_strings_equal(sel_getName(sel), str), "Couldn't get selector back!");
 		objc_assert(objc_strings_equal(objc_selector_get_types(sel), "@@:"), "Couldn't get selector's types back!");
 		
 		free(str);

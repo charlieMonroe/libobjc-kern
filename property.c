@@ -18,7 +18,7 @@ static inline id _objc_copy_object(id obj){
 	static SEL copy_sel = 0;
 	// TODO unlikely
 	if (copy_sel == 0){
-		copy_sel = objc_selector_register("copy", "@@:");
+		copy_sel = sel_registerName("copy", "@@:");
 	}
 	obj = objc_msg_send(obj, copy_sel);
 	return obj;
@@ -224,31 +224,10 @@ Property class_getProperty(Class cls, const char *name)
 
 Property *class_copyPropertyList(Class cls, unsigned int *outCount)
 {
-	objc_property_list *properties = cls->properties;
-	unsigned int count = 0;
-	for (objc_property_list *l = properties ; NULL != l; l = l->next)
-	{
-		count += l->size;
-	}
-	if (NULL != outCount)
-	{
-		*outCount = count;
-	}
-	if (0 == count)
-	{
+	if (cls == Nil || cls->properties == NULL || cls->properties->size == 0){
 		return NULL;
 	}
-	
-	Property *list = objc_zero_alloc(sizeof(Property) * count);
-	unsigned int out = 0;
-	for (objc_property_list *l=properties ; NULL!=l ; l=l->next)
-	{
-		for (int i=0 ; i<properties->size ; i++)
-		{
-			list[out++] = &l->property_list[i];
-		}
-	}
-	return list;
+	return objc_property_list_copy_list(cls->properties, outCount);
 }
 static const char* property_getIVar(Property property) {
 	const char *iVar = property_getAttributes(property);

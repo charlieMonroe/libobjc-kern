@@ -51,7 +51,7 @@ static Method _I_MyClass_forwardedMethod_(MyClass *self, SEL _cmd, SEL selector)
 }
 
 static BOOL _I_MyClass_dropMessageForSelector_(id self, SEL _cmd, SEL selector){
-	printf("Class %s supports message dropping - dropped call with selector %s.\n", objc_class_get_name(objc_object_get_class(self)), objc_selector_get_name(selector));
+	printf("Class %s supports message dropping - dropped call with selector %s.\n", object_getClassName(self), sel_getName(selector));
 	return YES;
 }
 
@@ -158,7 +158,7 @@ static void _I_MySubclass_increment_(MyClass *self, SEL _cmd, ...){
 	objc_super super;
 	IMP super_imp;
 	super.receiver = (id)self;
-	super.class = objc_class_get_superclass(objc_object_get_class(self));
+	super.class = class_getSuperclass(objc_object_get_class(self));
 	super_imp = objc_object_lookup_impl_super(&super, _cmd);
 	super_imp((id)self, _cmd);
 	
@@ -270,7 +270,7 @@ static void print_categories(Class cl){
 #endif
 
 static void print_class(Class cl){
-	printf("******** Class %s ********\n", objc_class_get_name(cl));
+	printf("******** Class %s ********\n", class_getName(cl));
 	printf("**** Class methods:\n");
 	print_method_list(objc_class_get_class_method_list(cl));
 	printf("**** Instance methods:\n");
@@ -302,14 +302,14 @@ static void list_classes(void){
 
 #if OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_NONE
 #define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
-	sel_var = objc_selector_register(sel_name);\
+	sel_var = sel_registerName(sel_name);\
 	imp_var = objc_object_lookup_impl(obj, sel_var);\
 }
 #elif OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_SELECTOR
 #define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
 	static SEL sel_var##sel_var;\
 	if (sel_var##sel_var == NULL){\
-		sel_var##sel_var = objc_selector_register(sel_name);\
+		sel_var##sel_var = sel_registerName(sel_name);\
 	}\
 	sel_var = sel_var##sel_var;\
 	imp_var = objc_object_lookup_impl(obj, sel_var);\
@@ -324,7 +324,7 @@ static void list_classes(void){
 	} cache;\
 	\
 	if (sel_var##sel_var == NULL){\
-		sel_var##sel_var = objc_selector_register(sel_name);\
+		sel_var##sel_var = sel_registerName(sel_name);\
 	}\
 	sel_var = sel_var##sel_var;\
 	\
@@ -354,7 +354,7 @@ static void list_classes(void){
 	\
 	PREFLIGHT\
 	\
-	cl = objc_class_for_name(INSTANCE_CLASS_NAME);\
+	cl = objc_getClass(INSTANCE_CLASS_NAME);\
 	OBJC_GET_IMP((id)cl, "alloc", alloc_selector, alloc_impl);\
 	instance = (MyClass*)alloc_impl((id)cl, alloc_selector);\
 	\

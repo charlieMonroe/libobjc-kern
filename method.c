@@ -1,5 +1,5 @@
 #include "method.h"
-#include "selector.h" /* For objc_selector_register. */
+#include "selector.h" /* For sel_registerName. */
 #include "os.h" /* For objc_alloc. */
 #include "utils.h" /* For objc_strcpy */
 #include "dtable.h"
@@ -57,7 +57,7 @@ Method objc_method_create(SEL selector, IMP implementation){
 	 * they are just pointers to the actual Selector structure
 	 * anyway.
 	 */
-	m->selector_name = objc_selector_get_name(selector);
+	m->selector_name = sel_getName(selector);
 	m->selector_types = objc_selector_get_types(selector);
 	
 	m->implementation = implementation;
@@ -95,7 +95,7 @@ IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const
 		return NULL;
 	}
 	
-	m = objc_lookup_method(cls, name);
+	m = class_getMethod(cls, name);
 	if (m == NULL){
 		Method new_method = objc_method_create(name, imp);
 		_add_methods(cls, &new_method, 1);

@@ -75,15 +75,13 @@ OBJC_INLINE unsigned int _instance_size(Class cl){
 		return 0;
 	}
 	
-	if (cl->flags.fake){
-		while (cl != Nil && cl->flags.fake) {
-			cl = cl->super_class;
-		}
-	}
+	objc_assert(cl->flags.resolved, "Getting instance size of unresolved class (%s)!\n", class_getName(cl));
 	
 	if (cl->flags.meta){
 		return sizeof(struct objc_class);
 	}
+	
+	cl = objc_class_get_nonfake_inline(cl);
 	
 	return cl->instance_size;
 }
@@ -191,7 +189,7 @@ OBJC_INLINE BOOL _class_is_subclass_of_class(Class cl, Class superclass_candidat
 OBJC_INLINE void _forwarding_not_supported_abort(id obj, SEL selector){
 	/* i.e. the object doesn't respond to the
 	 forwarding selector either. */
-	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", objc_object_get_nonfake_class_inline(obj)->name, objc_selector_get_name(selector));
+	objc_log("%s doesn't support forwarding and doesn't respond to selector %s!\n", objc_object_get_nonfake_class_inline(obj)->name, sel_getName(selector));
 	objc_abort("Class doesn't support forwarding.");
 }
 
@@ -220,7 +218,7 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 		
 		forwarding_imp = _lookup_method_impl(obj->isa, objc_forwarding_selector);
 		if (forwarding_imp == NULL){
-			objc_log("Class %s doesn't respond to selector %s.\n", objc_object_get_nonfake_class_inline(obj)->name, objc_selector_get_name(selector));
+			objc_log("Class %s doesn't respond to selector %s.\n", objc_object_get_nonfake_class_inline(obj)->name, sel_getName(selector));
 			return NULL;
 		}
 		
@@ -370,7 +368,7 @@ OBJC_INLINE Method _lookup_method_super(struct objc_super *sup, SEL selector){
 	
 	if (method == NULL){
 		/* Not found! Prepare for forwarding. */
-		objc_log("Called super to class %s, which doesn't implement selector %s.\n", sup->class->name, objc_selector_get_name(selector));
+		objc_log("Called super to class %s, which doesn't implement selector %s.\n", sup->class->name, sel_getName(selector));
 		if (_forward_method_invocation(sup->receiver, selector)){
 			// TODO
 			return NULL;
@@ -390,14 +388,54 @@ OBJC_INLINE Method _lookup_method_super(struct objc_super *sup, SEL selector){
 #pragma mark -
 #pragma mark Regular lookup functions
 
-Method objc_lookup_method(Class cl, SEL selector){
-	return _lookup_method(cl, selector);
+Method class_getMethod(Class cls, SEL selector){
+	cls = objc_class_get_nonfake_inline(cls);
+	if (cls == Nil || selector == 0){
+		return NULL;
+	}
+	return _lookup_method(cls, selector);
+}
+
+Method class_getInstanceMethod(Class cls, SEL selector){
+	if (cls != Nil && cls->flags.meta){
+		cls = (Class)objc_getClass(cls->name);
+	}
+	
+	cls = objc_class_get_nonfake_inline(cls);
+	if (cls == Nil || selector == 0){
+		return NULL;
+	}
+	
+	return _lookup_method(cls, selector);
+}
+
+Method class_getClassMethod(Class cls, SEL selector){
+	if (cls == Nil || selector == 0){
+		return NULL;
+	}
+	
+	if (!cls->flags.meta){
+		cls = cls->isa;
+	}
+	
+	return _lookup_method(cls, selector);
 }
 
 #pragma mark -
-#pragma mark Setting class of an object
+#pragma mark Setting and getting class of an object
 
-Class objc_object_set_class(id obj, Class new_class){
+Class object_getClass(id obj){
+	return obj == nil ? Nil : objc_object_get_nonfake_class_inline(obj);
+}
+
+const char *object_getClassName(id obj){
+	if (obj == nil){
+		return NULL;
+	}
+	return class_getName(object_getClass(obj));
+}
+
+Class object_setClass(id obj, Class new_class){
 	Class old_class;
 	if (obj == nil){
 		return Nil;
@@ -420,7 +458,7 @@ id objc_class_create_instance(Class cl){
 	}
 	
 	if (cl->flags.meta){
-		cl = objc_class_for_name(cl->name);
+		cl = (Class)objc_getClass(cl->name);
 	}
 	
 	size = _instance_size(cl);
@@ -476,42 +514,52 @@ IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector){
 #pragma mark -
 #pragma mark Information getters
 
-BOOL objc_class_resolved(Class cl){
+BOOL objc_class_is_resolved(Class cl){
 	if (cl == Nil){
 		return NO;
 	}
 	return cl->flags.resolved;
 }
-const char *objc_class_get_name(Class cl){
+const char *class_getName(Class cl){
+	cl = objc_class_get_nonfake_inline(cl);
 	if (cl == Nil){
 		return NULL;
 	}
+	
 	return cl->name;
 }
-Class objc_class_get_superclass(Class cl){
-	if (cl == Nil){
+
+Class class_getSuperclass(Class cls){
+	if (cls == Nil){
 		return Nil;
 	}
-	if (!cl->flags.resolved){
-		objc_class_resolve(cl);
+	
+	if (!cls->flags.resolved){
+		objc_class_resolve(cls);
 	}
-	return cl->super_class;
+	return cls->super_class;
 }
+
+BOOL class_isMetaClass(Class cls){
+	return cls == Nil ? NO : cls->flags.meta;
+}
+
+
+
 Class objc_class_get_meta_class(const char *name){
-	Class cl = objc_class_for_name(name);
+	Class cl = (Class)objc_getClass(name);
 	return cl == Nil ? Nil : cl->isa;
 }
-Class objc_object_get_class(id obj){
-	return obj == nil ? Nil : objc_object_get_nonfake_class_inline(obj);
+
+size_t class_getInstanceSize(Class cls){
+	return _instance_size(cls);
 }
-unsigned int objc_class_instance_size(Class cl){
-	return _instance_size(cl);
-}
-Method *objc_class_get_class_method_list(Class cl){
-	if (cl == Nil){
+Method *class_copyMethodList(Class cls, unsigned int *outCount){
+	cls = objc_class_get_nonfake_inline(cls);
+	if (cls == Nil){
 		return NULL;
 	}
-	return objc_method_list_flatten(cl->methods);
+	return objc_method_list_copy_list(cls->methods, outCount);
 }
 
 
@@ -561,13 +609,26 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 	
 	return variable;
 }
-Ivar objc_class_get_ivar(Class cls, const char *name){
+Ivar class_getInstanceVariable(Class cls, const char *name){
+	cls = objc_class_get_nonfake_inline(cls);
 	return _ivar_named(cls, name);
 }
-Ivar *objc_class_get_ivar_list(Class cl){
+Ivar *class_copyIvarList(Class cl, unsigned int *outCount){
+	cl = objc_class_get_nonfake_inline(cl);
 	unsigned int number_of_ivars = _ivar_count(cl);
-	Ivar *ivars = objc_alloc(sizeof(Ivar) * (number_of_ivars + 1));
+	if (number_of_ivars == 0){
+		if (outCount != NULL){
+			*outCount = 0;
+		}
+		return NULL;
+	}
+	
+	Ivar *ivars = objc_alloc(sizeof(Ivar) * number_of_ivars);
 	_ivars_copy_to_list(cl, ivars, number_of_ivars);
+	if (outCount != NULL){
+		*outCount = number_of_ivars;
+	}
+	
 	return ivars;
 }
 Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
@@ -602,22 +663,30 @@ Ivar objc_object_set_variable_named(id obj, const char *name, void *value){
 	
 	return ivar;
 }
-void *objc_object_get_variable(id obj, Ivar ivar){
+
+#pragma mark -
+#pragma mark Ivars
+
+id object_getIvar(id obj, Ivar ivar){
 	char *var_ptr;
 	
 	if (obj == nil || ivar == NULL){
 		return NULL;
 	}
 	
+	// TODO check for weak refs and use loadWeak
+	
 	var_ptr = (char*)obj;
 	var_ptr += ivar->offset;
-	return var_ptr;
+	return (id)var_ptr;
 }
-void objc_object_set_variable(id obj, Ivar ivar, void *value){
+
+void object_setIvar(id obj, Ivar ivar, id value){
 	if (obj == nil || ivar == NULL){
 		return;
 	}
 	
+	// TODO - check for weak refs and use storeWeak
 	objc_copy_memory((char*)obj + ivar->offset, value, ivar->size);
 }
 

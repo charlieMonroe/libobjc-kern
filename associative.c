@@ -11,7 +11,7 @@ typedef struct {
 	void *key;
 	void *value;
 	
-	objc_association_policy policy;
+	objc_AssociationPolicy policy;
 } objc_associative_reference;
 
 typedef struct objc_object_ref_list_struct {
@@ -102,8 +102,8 @@ objc_object_ref_list *_objc_ref_list_for_object(id object, BOOL create){
 /**
  * Returns YES when the policy is one of the atomic ones.
  */
-static inline BOOL _objc_is_policy_atomic(objc_association_policy policy){
-	static objc_association_policy const OBJC_ASSOCIATION_ATOMIC = 0x300;
+static inline BOOL _objc_is_policy_atomic(objc_AssociationPolicy policy){
+	static objc_AssociationPolicy const OBJC_ASSOCIATION_ATOMIC = 0x300;
 	return (policy & OBJC_ASSOCIATION_ATOMIC) == OBJC_ASSOCIATION_ATOMIC;
 }
 
@@ -111,7 +111,7 @@ static inline BOOL _objc_is_policy_atomic(objc_association_policy policy){
  * Disposes of the object according to the policy. This pretty much means 
  * releasing the object unless the policy was assign.
  */
-static inline void _objc_dispose_of_object_according_to_policy(id object, objc_association_policy policy){
+static inline void _objc_dispose_of_object_according_to_policy(id object, objc_AssociationPolicy policy){
 	if (policy == OBJC_ASSOCIATION_WEAK_REF){
 		void **address = (void**)object;
 		if (address != NULL){
@@ -268,7 +268,7 @@ id objc_get_associated_object(id object, void *key){
 	return result;
 }
 
-void objc_set_associated_object(id object, void *key, id value, objc_association_policy policy){
+void objc_set_associated_object(id object, void *key, id value, objc_AssociationPolicy policy){
 	if (object == nil || key == NULL){
 		return;
 	}
@@ -315,7 +315,7 @@ void objc_set_associated_object(id object, void *key, id value, objc_association
 	}
 	
 	
-	objc_association_policy old_policy = ref->policy;
+	objc_AssociationPolicy old_policy = ref->policy;
 	id old_value = ref->value;
 	
 	ref->key = key;

@@ -23,7 +23,7 @@ PRIVATE SEL objc_load_selector;
  * Trying to add a selector with an existing name, yet different types
  * yields in a runtime error.
  */
-extern SEL objc_selector_register(const char *name, const char *types);
+extern SEL sel_registerName(const char *name, const char *types);
 
 /* 
  * Since SEL is just a 16-bit number pointing into the selector table,
@@ -36,12 +36,12 @@ OBJC_INLINE BOOL objc_selectors_equal(SEL selector1, SEL selector2){
 /* 
  * Returns the selector name.
  */
-extern const char *objc_selector_get_name(SEL selector);
+const char *sel_getName(SEL selector);
 
 /*
  * Returns the selector types.
  */
-extern const char *objc_selector_get_types(SEL selector);
+const char *objc_selector_get_types(SEL selector);
 
 
 /**

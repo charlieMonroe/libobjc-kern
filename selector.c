@@ -140,7 +140,7 @@ static char *_objc_selector_copy_name_and_types(const char *name, const char *ty
  *
  * Requires objc_selector_lock to be locked.
  */
-static BOOL objc_selector_register_direct(Selector selector) {
+static BOOL sel_registerName_direct(Selector selector) {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
 	if (selector->sel_uid != 0){
@@ -177,7 +177,7 @@ static BOOL objc_selector_register_direct(Selector selector) {
 #pragma mark -
 #pragma mark PUBLIC_FUNCTIONS
 
-SEL objc_selector_register(const char *name, const char *types){
+SEL sel_registerName(const char *name, const char *types){
 	objc_assert(name != NULL, "Cannot register a selector with NULL name!");
 	objc_assert(types != NULL, "Cannot register a selector with NULL types!");
 	objc_assert(objc_strlen(types) > 2, "Not enough types for registering selector.");
@@ -208,7 +208,7 @@ SEL objc_selector_register(const char *name, const char *types){
 				return 0;
 			}
 			
-			if (!objc_selector_register_direct(selector)){
+			if (!sel_registerName_direct(selector)){
 				return 0;
 			}
 		}
@@ -223,7 +223,7 @@ SEL objc_selector_register(const char *name, const char *types){
 	return selector->sel_uid;
 }
 
-const char *objc_selector_get_name(SEL selector){
+const char *sel_getName(SEL selector){
 	if (selector == 0){
 		return "((null))";
 	}
@@ -260,7 +260,7 @@ const char *objc_selector_get_types(SEL selector){
 void objc_register_selectors_from_method_list(objc_method_list *list){
 	for (int i = 0; i < list->size; ++i){
 		Method m = &list->method_list[i];
-		m->selector = objc_selector_register(m->selector_name, m->selector_types);
+		m->selector = sel_registerName(m->selector_name, m->selector_types);
 	}
 }
 
@@ -275,7 +275,7 @@ void objc_register_selectors_from_class(Class cl){
 void objc_register_selector_array(struct objc_selector *selectors, unsigned int count){
 	for (int i = 0; i < count; ++i){
 		Selector selector = &selectors[i];
-		objc_selector_register_direct(selector);
+		sel_registerName_direct(selector);
 	}
 }
 
@@ -306,12 +306,12 @@ void objc_selector_init(void){
 	 */
 	objc_selector_sparse = SparseArrayNew();
 	
-	objc_autorelease_selector = objc_selector_register("autorelease", "@@:");
-	objc_release_selector = objc_selector_register("release", "v@:");
-	objc_retain_selector = objc_selector_register("retain", "@@:");
-	objc_dealloc_selector = objc_selector_register("dealloc", "v@:");
-	objc_copy_selector = objc_selector_register("copy", "@@:");
-	objc_cxx_destruct_selector = objc_selector_register(".cxx_destruct", "v@:");
-	objc_load_selector = objc_selector_register("load", "v@:");
+	objc_autorelease_selector = sel_registerName("autorelease", "@@:");
+	objc_release_selector = sel_registerName("release", "v@:");
+	objc_retain_selector = sel_registerName("retain", "@@:");
+	objc_dealloc_selector = sel_registerName("dealloc", "v@:");
+	objc_copy_selector = sel_registerName("copy", "@@:");
+	objc_cxx_destruct_selector = sel_registerName(".cxx_destruct", "v@:");
+	objc_load_selector = sel_registerName("load", "v@:");
 }
 

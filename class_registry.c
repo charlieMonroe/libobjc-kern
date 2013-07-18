@@ -307,7 +307,7 @@ void objc_class_finish(Class cl){
 	OBJC_UNLOCK_RUNTIME();
 }
 
-Class *objc_class_copy_list(unsigned int *out_count){
+Class *objc_copyClassList(unsigned int *out_count){
 	size_t class_count = objc_classes->table_used;
 	
 	// NULL-terminated
@@ -327,7 +327,7 @@ Class *objc_class_copy_list(unsigned int *out_count){
 	
 	return classes;
 }
-int objc_class_get_list(Class *buffer, unsigned int len){
+int objc_getClassList(Class *buffer, unsigned int len){
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;
 	Class next;
@@ -339,7 +339,7 @@ int objc_class_get_list(Class *buffer, unsigned int len){
 	return count;
 }
 
-Class objc_class_for_name(const char *name){
+Class objc_getClass(const char *name){
 	if (name == NULL){
 		return Nil;
 	}
@@ -356,7 +356,7 @@ Class objc_class_for_name(const char *name){
 	return c;
 }
 
-Class objc_class_look_up(const char *name){
+Class objc_lookUpClass(const char *name){
 	if (name != NULL){
 		return objc_class_table_get(objc_classes, name);
 	}

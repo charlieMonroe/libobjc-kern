@@ -7,6 +7,7 @@
 #define OBJC_CLASS_H_
 
 #include "types.h" /* For Class, BOOL, Method, ... definitions. */
+#include "kernobjc/runtime.h"
 
 /**
  * Two simple macros that determine whether the object is
@@ -14,23 +15,7 @@
  * has a meta flag, it is fairly easy.
  */
 #define OBJC_OBJ_IS_CLASS(obj) (obj->isa->flags.is_meta)
-#define OBJC_OBJ_IS_INSTANCE(obj) (!(obj->isa->flags.is_meta))
-
-#pragma mark -
-#pragma mark Lookup functions
-
-extern Method objc_lookup_method(Class cl, SEL selector);
-extern IMP objc_lookup_method_impl(Class cl, SEL selector);
-
-#pragma mark -
-#pragma mark Setting class of an object
-
-/**
- * Sets the isa pointer of obj and returns the original
- * class.
- */
-extern Class objc_object_set_class(id obj, Class new_class);
-
+#define OBJC_OBJ_IS_INSTANCE(obj) (!OBJC_OBJ_IS_CLASS(obj))
 
 #pragma mark -
 #pragma mark Object creation, copying and destruction
@@ -77,27 +62,10 @@ extern IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector);
  * called with this class, or the class was loaded from
  * an image and then resolved.
  */
-extern BOOL objc_class_resolved(Class cl);
+extern BOOL objc_class_is_resolved(Class cl);
 
-/**
- * Returns the name of the class.
- */
-extern const char *objc_class_get_name(Class cl);
 
-/**
- * Returns the superclass of cl, or Nil if it's a root class.
- */
-extern Class objc_class_get_superclass(Class cl);
 
-/**
- * Returns the class of the object, generally the isa pointer.
- */
-extern Class objc_object_get_class(id obj);
-
-/**
- * Returns size of an instance of a class.
- */
-extern unsigned int objc_class_instance_size(Class cl);
 
 /**
  * Returns the meta class.
@@ -105,17 +73,7 @@ extern unsigned int objc_class_instance_size(Class cl);
 Class objc_class_get_meta_class(const char *name);
 
 
-/**
- * The following two functions return a list of methods
- * implemented on a class. The list if NULL-terminated
- * and the caller is responsible for freeing it using the
- * objc_dealloc function.
- *
- * Note that these functions only return methods that are
- * implemented directly on the class. Methods implemented
- * on the class' superclasses are not included.
- */
-extern Method *objc_class_get_method_list(Class cl);
+
 
 
 
@@ -128,21 +86,7 @@ extern Method *objc_class_get_method_list(Class cl);
  */
 extern Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types);
 
-/**
- * Returns an ivar for name.
- */
-extern Ivar objc_class_get_ivar(Class cls, const char *name);
 
-/**
- * Returns a list of ivars. The list if NULL-terminated
- * and the caller is responsible for freeing it using the
- * objc_dealloc function.
- *
- * Note that this function only returns ivars that are
- * declared directly on the class. Ivars declared
- * on the class' superclasses are not included.
- */
-extern Ivar *objc_class_get_ivar_list(Class cl);
 
 /**
  * Returns the ivar as well as the value for the object.
@@ -154,12 +98,6 @@ extern Ivar objc_object_get_variable_named(id obj, const char *name, void **out_
  */
 extern Ivar objc_object_set_variable_named(id obj, const char *name, void *value);
 
-/**
- * Similar to previous functions, but faster if you
- * already have the Ivar pointer.
- */
-extern void objc_object_set_variable(id obj, Ivar ivar, void *value);
-extern void *objc_object_get_variable(id object, Ivar ivar);
 
 #define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
 
@@ -196,11 +134,16 @@ __attribute__((always_inline)) static inline Class objc_object_get_class_inline(
 	return obj->isa;
 }
 
-__attribute__((always_inline)) static inline Class objc_object_get_nonfake_class_inline(id obj){
-	Class cl = objc_object_get_class_inline(obj);
+__attribute__((always_inline)) static inline Class objc_class_get_nonfake_inline(Class cl){
 	while (cl != Nil && cl->flags.fake) {
 		cl = cl->super_class;
 	}
+	return cl;
+}
+
+__attribute__((always_inline)) static inline Class objc_object_get_nonfake_class_inline(id obj){
+	Class cl = objc_object_get_class_inline(obj);
+	cl = objc_class_get_nonfake_inline(cl);
 	return cl;
 }
 
