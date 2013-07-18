@@ -80,12 +80,6 @@ Class objc_class_get_meta_class(const char *name);
 #pragma mark -
 #pragma mark Ivar-related
 
-/**
- * Adds an ivar to a class. If the class is not in construction,
- * calling this function aborts the program.
- */
-extern Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types);
-
 
 
 /**

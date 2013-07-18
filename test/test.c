@@ -19,7 +19,7 @@ static void print_ivar_list(struct objc_ivar_list_struct *ivars){
 	}
 	
 	for (int i = 0; i < ivars->size; ++i){
-		printf("\t%s - %s - size: %d offset: %d alignment: %d\n", ivars->ivar_list[i].name, ivars->ivar_list[i].type, ivars->ivar_list[i].size, ivars->ivar_list[i].offset, ivars->ivar_list[i].align);
+		printf("\t%s - %s - size: %d offset: %d alignment: %d\n", ivars->ivar_list[i].name, ivars->ivar_list[i].type, (unsigned int)ivars->ivar_list[i].size, (unsigned int)ivars->ivar_list[i].offset, (unsigned int)ivars->ivar_list[i].align);
 	}
 }
 

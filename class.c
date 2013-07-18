@@ -567,11 +567,11 @@ Method *class_copyMethodList(Class cls, unsigned int *outCount){
 #pragma mark -
 #pragma mark Ivar-related
 
-Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigned int alignment, const char *types){
+BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, const char *types){
 	Ivar variable;
 	
 	if (cls == Nil || name == NULL || size == 0 || types == NULL){
-		return NULL;
+		return NO;
 	}
 	
 	if (cls->flags.resolved){
@@ -581,7 +581,7 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 	
 	if (_ivar_named(cls, name) != NULL){
 		objc_log("Class %s, or one of its superclasses already have an ivar named %s!\n", cls->name, name);
-		return NULL;
+		return NO;
 	}
 	
 	objc_rw_lock_wlock(&objc_runtime_lock);
@@ -597,17 +597,13 @@ Ivar objc_class_add_ivar(Class cls, const char *name, unsigned int size, unsigne
 	variable->size = size;
 	variable->align = alignment;
 	
-	/* The offset is the aligned end of the instance size. */
-	variable->offset = cls->instance_size;
-	if (alignment != 0 && (variable->offset % alignment) > 0){
-		variable->offset = (variable->offset + (alignment - 1)) & ~(alignment - 1);
-	}
-	
-	cls->instance_size = variable->offset + size;
+	/**
+	 * Offsets and stuff gets computer on class resolving.
+	 */
 		
 	objc_rw_lock_unlock(&objc_runtime_lock);
 	
-	return variable;
+	return YES;
 }
 Ivar class_getInstanceVariable(Class cls, const char *name){
 	cls = objc_class_get_nonfake_inline(cls);

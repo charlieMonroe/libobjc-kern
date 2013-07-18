@@ -21,9 +21,8 @@ OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
 		list->method_list[i] = *m[i];
 	}
 	
-	cl->methods = objc_method_list_prepend(cl->methods, list);
-	add_method_list_to_class(cl, cl->methods);
-	
+	cl->methods = objc_method_list_append(cl->methods, list);
+	dtable_add_method_list_to_class(cl, cl->methods);
 }
 
 
@@ -74,12 +73,14 @@ IMP objc_method_get_implementation(Method method){
 #pragma mark Adding methods
 
 
-void objc_class_add_method(Class cl, Method m){
-	if (cl == NULL || m == NULL){
-		return;
+BOOL class_addMethod(Class cls, SEL selector, IMP imp){
+	if (cls == NULL || selector == 0 || imp == NULL){
+		return NO;
 	}
 	
-	_add_methods(cl, &m, 1);
+	Method m = objc_method_create(selector, imp);
+	_add_methods(cls, &m, 1);
+	return YES;
 }
 void objc_class_add_methods(Class cl, Method *m, unsigned int count){
 	_add_methods(cl, m, count);
@@ -88,30 +89,18 @@ void objc_class_add_methods(Class cl, Method *m, unsigned int count){
 #pragma mark -
 #pragma mark Replacing methods
 
-IMP objc_class_replace_method_implementation(Class cls, SEL name, IMP imp, const char *types){
-	Method m;
-	
-	if (cls == Nil || name == 0 || imp == NULL || types == NULL){
+IMP class_replaceMethod(Class cls, SEL name, IMP imp){
+	if (cls == Nil || name == 0 || imp == NULL){
 		return NULL;
 	}
 	
-	m = class_getMethod(cls, name);
+	Method m = class_getMethod(cls, name);
 	if (m == NULL){
 		Method new_method = objc_method_create(name, imp);
 		_add_methods(cls, &new_method, 1);
-		
-		/**
-		 * Method flushing is handled by the function adding methods.
-		 */
 	}else{
 		m->implementation = imp;
 		++m->version;
-		
-		/**
-		 * There's no need to flush any caches as the whole
-		 * Method pointer is cached -> hence the IMP
-		 * pointer changes even inside the cache.
-		 */
 	}
 	return m == NULL ? NULL : m->implementation;
 }

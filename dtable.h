@@ -125,7 +125,7 @@ PRIVATE void objc_send_initialize(id object);
  * Adds a single method list to a class.  This is used when loading categories,
  * and is faster than completely rebuilding the dtable.
  */
-void add_method_list_to_class(Class cls,
+void dtable_add_method_list_to_class(Class cls,
                               objc_method_list *list);
 
 /**

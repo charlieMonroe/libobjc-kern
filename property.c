@@ -595,10 +595,9 @@ BOOL class_addProperty(Class cls,
 	p.name = name;
 	constructPropertyAttributes(&p, iVarname);
 
-	objc_property_list *l = objc_zero_alloc(sizeof(objc_property_list)
-			+ sizeof(struct objc_property));
-	l->size = 1;
+	objc_property_list *l = objc_property_list_create(1);
 	objc_copy_memory(&l->property_list, &p, sizeof(struct objc_property));
+	
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	l->next = cls->properties;
 	cls->properties = l;

@@ -25,7 +25,7 @@ static void _objc_register_methods(Class cls, objc_method_list *list){
 	// created (don't bother creating dtables for classes when categories are
 	// loaded if the class hasn't received any messages yet.
 	if (classHasDtable(cls)){
-		add_method_list_to_class(cls, list);
+		dtable_add_method_list_to_class(cls, list);
 	}
 }
 

@@ -203,7 +203,7 @@ PRIVATE void objc_update_dtable_for_class(Class cls)
 	checkARCAccessors(cls);
 }
 
-PRIVATE void add_method_list_to_class(Class cls,
+PRIVATE void dtable_add_method_list_to_class(Class cls,
                                       objc_method_list *list)
 {
 	// Only update real dtables

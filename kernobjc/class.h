@@ -67,17 +67,42 @@ objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
 // TODO
 const uint8_t *class_getIvarLayout(Class cls);
 const uint8_t *class_getWeakIvarLayout(Class cls);
-
-BOOL class_addMethod(Class cls, SEL name, IMP imp,
-		     const char *types);
-IMP class_replaceMethod(Class cls, SEL name, IMP imp,
-			const char *types);
-BOOL class_addIvar(Class cls, const char *name, size_t size,
-		   uint8_t alignment, const char *types);
-BOOL class_addProtocol(Class cls, Protocol *protocol);
-BOOL class_addProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
-void class_replaceProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
 void class_setIvarLayout(Class cls, const uint8_t *layout);
 void class_setWeakIvarLayout(Class cls, const uint8_t *layout);
+
+
+/**
+ * The following functions add methods or a single method to the class.
+ *
+ * If a method with the same selector is already attached to the class,
+ * this doesn't override it. This is due to the method lists being a linked
+ * list and the new methods being attached to the end of the list
+ * as well as maintaining behavior of other run-times.
+ */
+BOOL class_addMethod(Class cls, SEL name, IMP imp);
+
+/**
+ * Replaces a method implementation for another one.
+ *
+ * Returns the old implementation.
+ */
+IMP class_replaceMethod(Class cls, SEL name, IMP imp);
+
+/**
+ * Adds an ivar to a class. If the class is resolved,
+ * calling this function aborts the program.
+ */
+BOOL class_addIvar(Class cls, const char *name, size_t size,
+		   uint8_t alignment, const char *types);
+
+
+
+BOOL class_addProtocol(Class cls, Protocol *protocol);
+
+
+BOOL class_addProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
+
+void class_replaceProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
+
 
 #endif

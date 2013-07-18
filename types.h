@@ -48,9 +48,9 @@ struct objc_method {
 struct objc_ivar {
 	const char *name;
 	const char *type;
-	unsigned int size;
-	unsigned int offset;
-	unsigned int align;
+	size_t size;
+	uintptr_t offset;
+	uint8_t align;
 };
 
 struct objc_property {

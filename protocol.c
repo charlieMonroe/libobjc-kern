@@ -201,6 +201,24 @@ BOOL protocol_conformsToProtocol(Protocol *p1, Protocol *p2){
 	
 }
 
+BOOL class_addProtocol(Class cls, Protocol *protocol){
+	if (cls == Nil || protocol == NULL){
+		return NO;
+	}
+	if (class_conformsToProtocol(cls, protocol)){
+		return NO;
+	}
+	
+	objc_protocol_list *list = objc_protocol_list_create(1);
+	list->protocol_list[0] = protocol;
+	
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	list->next = cls->protocols;
+	cls->protocols = list;
+	return YES;
+}
+
 BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
 	if (cls == Nil || protocol == NULL){
 		return NO;
