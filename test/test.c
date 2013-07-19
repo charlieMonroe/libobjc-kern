@@ -23,7 +23,11 @@ static void print_ivar_list(struct objc_ivar_list_struct *ivars){
 }
 
 static void print_class(Class cl){
-	printf("******** Class %s %s********\n", class_getName(cl), cl->flags.meta ? "(meta)" : "");
+	printf("******** Class %s%s%s [%p]********\n", class_getName(cl),
+	       cl->flags.meta ? " (meta)" : "",
+	       cl->flags.fake ? " (fake)" : "",
+	       cl
+	       );
 	printf("**** Methods:\n");
 	print_method_list(cl->methods);
 	printf("**** Ivars:\n");

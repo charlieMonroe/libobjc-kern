@@ -101,7 +101,7 @@ struct objc_class {
 	 * offsets of all ivars, allocs an array here and 
 	 * populates it with ivar offsets.
 	 */
-	unsigned int *ivar_offsets;
+	size_t *ivar_offsets;
 	
 	/*
 	 * Both class and instance methods and ivars are actually
@@ -124,8 +124,8 @@ struct objc_class {
 	
 	void *extra_space;
 	
-	unsigned int instance_size;
-	unsigned int version; /** Right now 0. */
+	size_t instance_size;
+	int version; /** Right now 0. */
 };
 
 

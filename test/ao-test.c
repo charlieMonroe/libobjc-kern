@@ -5,13 +5,13 @@
 #include "../associative.h"
 
 void associated_objects_test(void){
-	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, sel_registerName("alloc", "@@:"));
-	obj = (MRObject_instance_t*)objc_msg_send((id)obj, sel_registerName("init", "@@:"));
+	MRObject_instance_t *obj = (MRObject_instance_t*)objc_msgSend((id)&MRObject_class, sel_registerName("alloc", "@@:"));
+	obj = (MRObject_instance_t*)objc_msgSend((id)obj, sel_registerName("init", "@@:"));
 	
 	void *key = (void*)0x123456;
 	
-	MRObject_instance_t *obj_to_associate = (MRObject_instance_t*)objc_msg_send((id)&MRObject_class, sel_registerName("alloc", "@@:"));
-	obj_to_associate = (MRObject_instance_t*)objc_msg_send((id)obj, sel_registerName("init", "@@:"));
+	MRObject_instance_t *obj_to_associate = (MRObject_instance_t*)objc_msgSend((id)&MRObject_class, sel_registerName("alloc", "@@:"));
+	obj_to_associate = (MRObject_instance_t*)objc_msgSend((id)obj, sel_registerName("init", "@@:"));
 	
 	objc_set_associated_object((id)obj, key, (id)obj_to_associate, OBJC_ASSOCIATION_ASSIGN);
 	objc_set_associated_object((id)obj, key, nil, OBJC_ASSOCIATION_ASSIGN);

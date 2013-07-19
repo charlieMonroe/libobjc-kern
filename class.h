@@ -19,20 +19,6 @@
 
 
 #pragma mark -
-#pragma mark Object lookup
-
-/**
- * The run-time automatically detects whether obj
- * is a class or an instance and handles the situation
- * accordingly.
- */
-extern Method objc_object_lookup_method(id obj, SEL selector);
-extern Method objc_object_lookup_method_super(struct objc_super *sup, SEL selector);
-extern IMP objc_object_lookup_impl(id obj, SEL selector);
-extern IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector);
-
-
-#pragma mark -
 #pragma mark Information getters
 
 /**
@@ -43,29 +29,13 @@ extern IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector);
  */
 extern BOOL objc_class_is_resolved(Class cl);
 
-
-#pragma mark -
-#pragma mark Ivar-related
-
-
-
-/**
- * Returns the ivar as well as the value for the object.
- */
-extern Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value);
-
-/**
- * Sets the ivar for that particular object.
- */
-extern Ivar objc_object_set_variable_named(id obj, const char *name, void *value);
-
+#pragma mark - 
+#pragma mark Small Object Classes
 
 #define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
 #define OBJC_SMALL_OBJECT_CLASS_COUNT ((sizeof(void*) == 4) ? 1 : 4)
 
 Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
-
-BOOL objc_register_small_object_class(Class cl, uintptr_t mask);
 
 static inline Class objc_class_for_small_object(id obj){
 	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);

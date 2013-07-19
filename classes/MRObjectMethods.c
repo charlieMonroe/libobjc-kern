@@ -32,8 +32,8 @@ id _C_MRObject_new_(id self, SEL _cmd){
 		init_SEL = sel_registerName("init", "@@:");
 	}
 	
-	self = objc_msg_send(self, alloc_SEL);
-	self = objc_msg_send(self, init_SEL);
+	self = objc_msgSend(self, alloc_SEL);
+	self = objc_msgSend(self, init_SEL);
 	
 	return self;
 }
@@ -57,7 +57,7 @@ void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 		if (dealloc_selector == null_selector){
 			dealloc_selector = sel_registerName("dealloc", "v@:");
 		}
-		objc_msg_send((id)self, dealloc_selector);
+		objc_msgSend((id)self, dealloc_selector);
 	}else if (retain_cnt < 0){
 		objc_abort("Over-releasing an object %p!", self);
 	}

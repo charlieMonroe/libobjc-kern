@@ -19,7 +19,7 @@ static inline id _objc_copy_object(id obj){
 	if (copy_sel == 0){
 		copy_sel = sel_registerName("copy", "@@:");
 	}
-	obj = objc_msg_send(obj, copy_sel);
+	obj = objc_msgSend(obj, copy_sel);
 	return obj;
 }
 

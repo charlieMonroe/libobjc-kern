@@ -62,7 +62,7 @@ static SEL objc_drops_unrecognized_forwarding_selector;
  * Returns the size required for instances of class 'cl'. This
  * includes the extra space required by extensions.
  */
-OBJC_INLINE unsigned int _instance_size(Class cl){
+OBJC_INLINE size_t _instance_size(Class cl){
 	if (cl == Nil){
 		return 0;
 	}
@@ -512,22 +512,6 @@ id object_copy(id obj, size_t size){
 	return copy;
 }
 
-#pragma mark -
-#pragma mark Object lookup
-
-Method objc_object_lookup_method(id obj, SEL selector){
-	return _lookup_object_method(obj, selector);
-}
-Method objc_object_lookup_method_super(struct objc_super *sup, SEL selector){
-	return _lookup_method_super(sup, selector);
-}
-IMP objc_object_lookup_impl(id obj, SEL selector){
-	return _lookup_object_method(obj, selector)->implementation;
-}
-IMP objc_object_lookup_impl_super(struct objc_super *sup, SEL selector){
-	return _lookup_method_super(sup, selector)->implementation;
-}
-
 /***** INFORMATION GETTERS *****/
 #pragma mark -
 #pragma mark Information getters
@@ -560,6 +544,18 @@ Class class_getSuperclass(Class cls){
 
 BOOL class_isMetaClass(Class cls){
 	return cls == Nil ? NO : cls->flags.meta;
+}
+
+int class_getVersion(Class theClass){
+	if (theClass == Nil){
+		return 0;
+	}
+	return theClass->version;
+}
+void class_setVersion(Class theClass, int version){
+	if (theClass != Nil){
+		theClass->version = version;
+	}
 }
 
 
@@ -623,9 +619,14 @@ BOOL class_addIvar(Class cls, const char *name, size_t size, uint8_t alignment, 
 	variable->size = size;
 	variable->align = alignment;
 	
-	/**
-	 * Offsets and stuff gets computer on class resolving.
-	 */
+	long offset = cls->instance_size;
+	if (alignment > 0){
+		long padding = (alignment - (offset % alignment)) % alignment;
+		offset = offset + padding;
+	}
+	variable->offset = offset;
+	
+	cls->instance_size = offset + size;
 		
 	objc_rw_lock_unlock(&objc_runtime_lock);
 	
@@ -666,39 +667,6 @@ void *object_getIndexedIvars(id obj){
 	return (char*)obj + cl->instance_size;
 }
 
-
-Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
-	Ivar ivar;
-	
-	if (obj == nil || name == NULL || out_value == NULL){
-		return NULL;
-	}
-	
-	ivar = _ivar_named(objc_object_get_nonfake_class_inline(obj), name);
-	if (ivar == NULL){
-		return NULL;
-	}
-	
-	objc_copy_memory(*out_value, (char*)obj + ivar->offset, ivar->size);
-	
-	return ivar;
-}
-Ivar objc_object_set_variable_named(id obj, const char *name, void *value){
-	Ivar ivar;
-	
-	if (obj == nil || name == NULL){
-		return NULL;
-	}
-	
-	ivar = _ivar_named(objc_object_get_nonfake_class_inline(obj), name);
-	if (ivar == NULL){
-		return NULL;
-	}
-	
-	objc_copy_memory((char*)obj + ivar->offset, value, ivar->size);
-	
-	return ivar;
-}
 
 #pragma mark -
 #pragma mark Ivars

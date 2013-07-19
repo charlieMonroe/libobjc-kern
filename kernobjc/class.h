@@ -65,6 +65,10 @@ objc_property_t class_getProperty(Class cls, const char *name);
 objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
 
 
+int class_getVersion(Class theClass);
+void class_setVersion(Class theClass, int version);
+
+
 // TODO
 const uint8_t *class_getIvarLayout(Class cls);
 void class_setIvarLayout(Class cls, const uint8_t *layout);
