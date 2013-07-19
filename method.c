@@ -68,7 +68,7 @@ IMP method_getImplementation(Method method){
 }
 
 SEL method_getName(Method m){
-	return m == NULL ? 0 : m->selector;
+	return m == NULL ? null_selector : m->selector;
 }
 
 const char *method_getTypeEncoding(Method m){
@@ -96,7 +96,7 @@ IMP method_setImplementation(Method m, IMP imp){
 
 
 BOOL class_addMethod(Class cls, SEL selector, IMP imp){
-	if (cls == NULL || selector == 0 || imp == NULL){
+	if (cls == NULL || selector == null_selector || imp == NULL){
 		return NO;
 	}
 	
@@ -125,7 +125,7 @@ void method_exchangeImplementations(Method m1, Method m2){
 #pragma mark Replacing methods
 
 IMP class_replaceMethod(Class cls, SEL name, IMP imp){
-	if (cls == Nil || name == 0 || imp == NULL){
+	if (cls == Nil || name == null_selector || imp == NULL){
 		return NULL;
 	}
 	

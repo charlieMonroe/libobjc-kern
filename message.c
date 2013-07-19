@@ -178,7 +178,7 @@ id objc_msg_send(id receiver, SEL selector, ...){
 #pragma mark Responding to selectors
 
 BOOL class_respondsToSelector(Class cl, SEL selector){
-	if (cl == Nil || selector == 0){
+	if (cl == Nil || selector == null_selector){
 		return NO;
 	}
 	return objc_class_get_slot(cl, selector) != NULL;

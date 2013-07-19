@@ -22,13 +22,13 @@
 #define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY 1024
 
 // Initialized in the objc_selector_init();
-PRIVATE SEL objc_retain_selector = 0;
-PRIVATE SEL objc_release_selector = 0;
-PRIVATE SEL objc_dealloc_selector = 0;
-PRIVATE SEL objc_autorelease_selector = 0;
-PRIVATE SEL objc_copy_selector = 0;
-PRIVATE SEL objc_cxx_destruct_selector = 0;
-PRIVATE SEL objc_load_selector = 0;
+PRIVATE SEL objc_retain_selector = null_selector;
+PRIVATE SEL objc_release_selector = null_selector;
+PRIVATE SEL objc_dealloc_selector = null_selector;
+PRIVATE SEL objc_autorelease_selector = null_selector;
+PRIVATE SEL objc_copy_selector = null_selector;
+PRIVATE SEL objc_cxx_destruct_selector = null_selector;
+PRIVATE SEL objc_load_selector = null_selector;
 
 
 // Forward declarations needed for the hash table

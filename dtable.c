@@ -44,7 +44,7 @@ static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
 static void checkARCAccessors(Class cls)
 {
 	static SEL isARC;
-	if (0 == isARC){
+	if (null_selector == isARC){
 		// TODO necessary?
 		isARC = sel_registerName("_ARCCompliantRetainRelease", "v@:");
 	}
@@ -101,7 +101,7 @@ static BOOL installMethodInDtable(Class class,
                                   BOOL replaceExisting)
 {
 	objc_assert(uninstalled_dtable != dtable, "");
-	uint16_t sel_id = method->selector;
+	SEL sel_id = method->selector;
 	struct objc_slot *slot = SparseArrayLookup(dtable, sel_id);
 	if (NULL != slot)
 	{
@@ -399,9 +399,9 @@ PRIVATE void objc_send_initialize(id object)
 	// to finish setting up the temporary dtable.
 	OBJC_UNLOCK_RUNTIME();
 
-	static SEL initializeSel = 0;
-	if (0 == initializeSel)
-	{
+	static SEL initializeSel = null_selector;
+	// TODO unlikely
+	if (null_selector == initializeSel){
 		initializeSel = sel_registerName("initialize", "v@:");
 	}
 

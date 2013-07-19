@@ -7,6 +7,8 @@ typedef signed char BOOL;
 #define YES ((BOOL)1)
 #define NO ((BOOL)0)
 
+#define null_selector ((SEL)0)
+
 /**
  * Definitions of nil and Nil.
  * nil is used for objects, Nil for classes. It doesn't really matter,

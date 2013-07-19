@@ -13,7 +13,7 @@
 #pragma mark -
 #pragma mark Small Object Classes
 
-Class objc_small_object_classes[7];
+Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
 
 BOOL objc_register_small_object_class(Class cl, uintptr_t mask){
 	if ((mask & OBJC_SMALL_OBJECT_MASK) != mask){
@@ -108,7 +108,7 @@ OBJC_INLINE Method _lookup_method_in_method_list(objc_method_list *method_list, 
 OBJC_INLINE Method _lookup_method(Class class, SEL selector){
 	Method m;
 	
-	if (class == Nil || selector == 0){
+	if (class == Nil || selector == null_selector){
 		return NULL;
 	}
 	
@@ -123,7 +123,7 @@ OBJC_INLINE Method _lookup_method(Class class, SEL selector){
 }
 
 OBJC_INLINE Method _lookup_cached_method(Class cl, SEL selector){
-	if (cl != Nil && selector != 0 && cl->dtable != NULL){
+	if (cl != Nil && selector != null_selector && cl->dtable != NULL){
 		return (Method)SparseArrayLookup((SparseArray*)cl->dtable, selector);
 	}
 	return NULL;
@@ -204,7 +204,7 @@ OBJC_INLINE Method _forward_method_invocation(id obj, SEL selector){
 		/* Forwarding. */
 		IMP forwarding_imp;
 		
-		if (objc_forwarding_selector == 0){
+		if (objc_forwarding_selector == null_selector){
 			// TODO
 		}
 		
@@ -382,7 +382,7 @@ OBJC_INLINE Method _lookup_method_super(struct objc_super *sup, SEL selector){
 
 Method class_getMethod(Class cls, SEL selector){
 	cls = objc_class_get_nonfake_inline(cls);
-	if (cls == Nil || selector == 0){
+	if (cls == Nil || selector == null_selector){
 		return NULL;
 	}
 	return _lookup_method(cls, selector);
@@ -394,7 +394,7 @@ Method class_getInstanceMethod(Class cls, SEL selector){
 	}
 	
 	cls = objc_class_get_nonfake_inline(cls);
-	if (cls == Nil || selector == 0){
+	if (cls == Nil || selector == null_selector){
 		return NULL;
 	}
 	
@@ -407,7 +407,7 @@ Method class_getInstanceMethodNonRecursive(Class cls, SEL selector){
 	}
 	
 	cls = objc_class_get_nonfake_inline(cls);
-	if (cls == Nil || selector == 0){
+	if (cls == Nil || selector == null_selector){
 		return NULL;
 	}
 	
@@ -415,7 +415,7 @@ Method class_getInstanceMethodNonRecursive(Class cls, SEL selector){
 }
 
 Method class_getClassMethod(Class cls, SEL selector){
-	if (cls == Nil || selector == 0){
+	if (cls == Nil || selector == null_selector){
 		return NULL;
 	}
 	
@@ -458,10 +458,7 @@ Class object_setClass(id obj, Class new_class){
 #pragma mark -
 #pragma mark Object creation, copying and destruction
 
-id objc_class_create_instance(Class cl){
-	id obj;
-	unsigned int size;
-	
+id class_createInstance(Class cl, size_t extraBytes){
 	if (!cl->flags.resolved){
 		objc_log("Trying to create an instance of unfinished class (%s).", cl->name);
 		return nil;
@@ -471,14 +468,30 @@ id objc_class_create_instance(Class cl){
 		cl = (Class)objc_getClass(cl->name);
 	}
 	
-	size = _instance_size(cl);
+	// TODO add a flag on the class?
+	// Check if cl is a small object class
+	if (sizeof(void *) == 4 && objc_small_object_classes[0] == cl){
+		return (id)1;
+	}else{
+		for (uintptr_t i = 0; i < OBJC_SMALL_OBJECT_MASK; ++i){
+			if (objc_small_object_classes[i] == cl){
+				return (id)((i << 1) + 1);
+			}
+		}
+	}
 	
-	obj = (id)objc_zero_alloc(size);
+	size_t size = _instance_size(cl);
+	
+	id obj = (id)objc_zero_alloc(size);
 	obj->isa = cl;
+	
+	objc_debug_log("Created instance %p of class %s\n", obj, class_getName(cl));
+	
+	// TODO - cxx_construct?
 	
 	return obj;
 }
-void objc_object_deallocate(id obj){
+void object_dispose(id obj){
 	objc_debug_log("Deallocating instance %p\n", obj);
 	
 	if (obj == nil){
@@ -488,17 +501,12 @@ void objc_object_deallocate(id obj){
 	objc_dealloc(obj);
 }
 
-id objc_object_copy(id obj){
-	id copy;
-	unsigned int size;
-	
+id object_copy(id obj, size_t size){
 	if (obj == nil){
 		return nil;
 	}
 	
-	size = _instance_size(objc_object_get_class_inline(obj));
-	copy = objc_zero_alloc(size);
-	
+	id copy = objc_zero_alloc(size);
 	objc_copy_memory(copy, obj, size);
 	
 	return copy;
@@ -645,6 +653,20 @@ Ivar *class_copyIvarList(Class cl, unsigned int *outCount){
 	
 	return ivars;
 }
+void *object_getIndexedIvars(id obj){
+	if (obj == nil){
+		return NULL;
+	}
+	
+	Class cl = object_getClass(obj);
+	if (cl->instance_size == 0 || cl->flags.meta){
+		return (char*)obj + sizeof(struct objc_class);
+	}
+	
+	return (char*)obj + cl->instance_size;
+}
+
+
 Ivar objc_object_get_variable_named(id obj, const char *name, void **out_value){
 	Ivar ivar;
 	

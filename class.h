@@ -17,27 +17,6 @@
 #define OBJC_OBJ_IS_CLASS(obj) (obj->isa->flags.is_meta)
 #define OBJC_OBJ_IS_INSTANCE(obj) (!OBJC_OBJ_IS_CLASS(obj))
 
-#pragma mark -
-#pragma mark Object creation, copying and destruction
-
-/**
- * This function allocates enough space to contain an instance
- * of the class.
- */
-extern id objc_class_create_instance(Class cl);
-
-/**
- * Deallocates an instance.
- */
-extern void objc_object_deallocate(id obj);
-
-/**
- * Copies obj and returns the exact same copy.
- *
- * This copy is shallow.
- */
-extern id objc_object_copy(id obj);
-
 
 #pragma mark -
 #pragma mark Object lookup
@@ -82,11 +61,11 @@ extern Ivar objc_object_set_variable_named(id obj, const char *name, void *value
 
 
 #define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
+#define OBJC_SMALL_OBJECT_CLASS_COUNT ((sizeof(void*) == 4) ? 1 : 4)
 
-Class objc_small_object_classes[7];
+Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
 
 BOOL objc_register_small_object_class(Class cl, uintptr_t mask);
-
 
 static inline Class objc_class_for_small_object(id obj){
 	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);

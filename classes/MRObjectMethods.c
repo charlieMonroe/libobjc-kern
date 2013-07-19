@@ -1,15 +1,14 @@
 
 #include "MRObjectMethods.h"
 
-#include "../class.h"
-#include "../selector.h"
-#include "../utils.h"
+#include "../kernobjc/runtime.h"
+#include "../private.h"
 #include "../message.h"
 
 #pragma mark MRObject
 
 id _C_MRObject_alloc_(id self, SEL _cmd){
-	MRObject_instance_t *instance = (MRObject_instance_t*)objc_class_create_instance((Class)self);
+	MRObject_instance_t *instance = (MRObject_instance_t*)class_createInstance((Class)self, 0);
 	instance->retainCount = 0;
 	return (id)instance;
 }
@@ -18,7 +17,7 @@ void _C_MRObject_load_(id self, SEL _cmd){
 }
 
 void _C_MRObject_initialize_(id self, SEL _cmd){
-	objc_debug_log("Initializing class %s\n", objc_object_get_nonfake_class_inline(self)->name);
+	objc_debug_log("Initializing class %s\n", object_getClass(self)->name);
 }
 
 id _C_MRObject_new_(id self, SEL _cmd){
@@ -33,8 +32,8 @@ id _C_MRObject_new_(id self, SEL _cmd){
 		init_SEL = sel_registerName("init", "@@:");
 	}
 	
-	self = ((id(*)(id, SEL))objc_object_lookup_impl(self, alloc_SEL))(self, alloc_SEL);
-	self = ((id(*)(id, SEL))objc_object_lookup_impl(self, init_SEL))(self, init_SEL);
+	self = objc_msg_send(self, alloc_SEL);
+	self = objc_msg_send(self, init_SEL);
 	
 	return self;
 }
@@ -73,7 +72,7 @@ void _C_MRObject_release_noop_(Class self, SEL _cmd){
 }
 
 void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd){
-	objc_object_deallocate((id)self);
+	object_dispose((id)self);
 }
 
 #pragma mark -
@@ -84,5 +83,5 @@ const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _c
 }
 
 unsigned int _I___MRConstString_length_(__MRConstString_instance_t *self, SEL _cmd){
-	return objc_strlen(self->cString);
+	return (unsigned int)strlen(self->cString);
 }
