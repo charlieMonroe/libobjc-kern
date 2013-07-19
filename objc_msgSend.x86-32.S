@@ -1,8 +1,7 @@
 #define DTABLE_OFFSET  8
 #define SMALLOBJ_MASK  1
-#define SHIFT_OFFSET   4
-#define DATA_OFFSET    12
-#define SLOT_OFFSET    16
+#define DATA_OFFSET    8
+#define SLOT_OFFSET    8
 .macro MSGSEND receiver, sel, fpret
 	.cfi_startproc                        
 	movl  \receiver(%esp), %eax
@@ -16,26 +15,13 @@
 	movl  \sel(%esp), %ecx
 	mov   DTABLE_OFFSET(%eax), %eax       # Load the dtable from the class
 	
-	mov   (%ecx), %ecx                    # Load the selector index
-
 	                                      # Register use at this point:
 	                                      # %eax: dtable
 	                                      # %ecx: Selector index
 	                                      # %edx: selector index fragment
 
-	mov   SHIFT_OFFSET(%eax), %edx        # Load the shift (dtable size)
 	mov   DATA_OFFSET(%eax), %eax         # load the address of the start of the array
-	cmpl  $8, %edx                        # If this is a small dtable, jump to the small dtable handlers
-	je    2f 
-	cmpl  $0, %edx 
-	je    3f 
 
-	mov   %ecx, %edx
-	and   $0xff0000, %edx
-	shrl  $14, %edx                       # Right shift 16, but then left shift by 2 (* sizeof(void*))
-	add   %edx, %eax
-	mov   (%eax), %eax
-	mov   DATA_OFFSET(%eax), %eax
 2:                                        # dtable16:
 	mov   %ecx, %edx
 	and   $0xff00, %edx
@@ -68,10 +54,9 @@
 
 	push  %ecx                           # _cmd
 	push  %eax                           # &self
-	.cfi_def_cfa_offset 12
-	call  slowMsgLookup@PLT
+	.cfi_def_cfa_offset 8
+	call  CDECL(slowMsgLookup)@PLT
 	add   $8, %esp                       # restore the stack
-
 
 	jmp   *%eax
 6:                                       # smallObject:
@@ -80,8 +65,9 @@
 7:
 	popl  %ebx;
 8:
-	addl  $_GLOBAL_OFFSET_TABLE_+(8b-7b), %ebx
-	leal  objc_small_object_classes@GOTOFF(%ebx), %eax
+# TODO
+#	addl  $_GLOBAL_OFFSET_TABLE_+(8b-7b), %ebx
+	leal  CDECL(objc_small_object_classes)@GOTOFF(%ebx), %eax
 	mov   (%eax), %eax
 	popl  %ebx
 	jmp   1b 

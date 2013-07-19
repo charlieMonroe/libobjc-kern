@@ -8,7 +8,7 @@ static void print_method_list(struct objc_method_list_struct *methods){
 	}
 	
 	for (int i = 0; i < methods->size; ++i){
-		printf("\t%s(%d) - %p\n", sel_getName(methods->list[i].selector), methods->list[i].selector, methods->list[i].implementation);
+		printf("\t%s(%d) - %p\n", sel_getName(methods->list[i].selector), (int)methods->list[i].selector, methods->list[i].implementation);
 	}
 }
 static void print_ivar_list(struct objc_ivar_list_struct *ivars){
