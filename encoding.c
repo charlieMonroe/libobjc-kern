@@ -416,11 +416,6 @@ unsigned method_getNumberOfArguments(Method method)
 	return count - 1;
 }
 
-unsigned method_get_number_of_arguments(struct objc_method *method)
-{
-	return method_getNumberOfArguments(method);
-}
-
 
 char* method_copyArgumentType(Method method, unsigned int index)
 {
@@ -438,83 +433,4 @@ char* method_copyReturnType(Method method)
 	if (NULL == method) { return NULL; }
 	return copyTypeEncoding(method->selector_types);
 }
-
-unsigned objc_get_type_qualifiers (const char *type)
-{
-	unsigned flags = 0;
-#define MAP(chr, bit) case chr: flags |= bit; break;
-	do
-	{
-		switch (*(type++))
-		{
-			default: return flags;
-				MAP('r', _F_CONST)
-				MAP('n', _F_IN)
-				MAP('o', _F_OUT)
-				MAP('N', _F_INOUT)
-				MAP('O', _F_BYCOPY)
-				MAP('V', _F_ONEWAY)
-				MAP('R', _F_BYREF)
-		}
-	} while (1);
-}
-
-// Note: The implementations of these functions is horrible.
-void objc_layout_structure (const char *type,
-                            struct objc_struct_layout *layout)
-{
-	layout->original_type = type;
-	layout->type = 0;
-}
-
-static const char *layout_structure_callback(const char *type, struct objc_struct_layout *layout)
-{
-	size_t align = 0;
-	size_t size = 0;
-	const char *end = sizeof_type(type, &size);
-	alignof_type(type, &align);
-	//printf("Callback called with %s\n", type);
-	if (layout->prev_type < type)
-	{
-		if (layout->record_align == 0)
-		{
-			layout->record_align = (unsigned int)align;
-			layout->type = type;
-		}
-	}
-	else
-	{
-		size_t rsize = (size_t)layout->record_size;
-		round_up(&rsize, align);
-		layout->record_size = (unsigned int)(rsize + size);
-	}
-	return end;
-}
-
-BOOL objc_layout_structure_next_member(struct objc_struct_layout *layout)
-{
-	const char *end = layout->type;
-	layout->record_size = 0;
-	layout->record_align = 0;
-	layout->prev_type = layout->type;
-	const char *type = layout->original_type;
-	parse_struct(&type, (type_parser)layout_structure_callback, layout);
-	//printf("Calculated: (%s) %s %d %d\n", layout->original_type, layout->type, layout->record_size, layout->record_align);
-	//printf("old start %s, new start %s\n", end, layout->type);
-	return layout->type != end;
-}
-
-void objc_layout_structure_get_info (struct objc_struct_layout *layout,
-                                     unsigned int *offset,
-                                     unsigned int *align,
-                                     const char **type)
-{
-	//printf("%p\n", layout);
-	*type = layout->type;
-	size_t off = layout->record_size / 8;
-	*align= layout->record_align / 8;
-	round_up(&off, (size_t)*align);
-	*offset = (unsigned int)off;
-}
-
 
