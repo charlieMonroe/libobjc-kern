@@ -131,10 +131,10 @@ struct objc_class {
 
 struct objc_slot {
 	Class owner, cachedFor;
-	const char *types;
-	SEL selector;
 	IMP implementation;
+	const char *types;
 	unsigned int version;
+	SEL selector;
 };
 
 #include "list_types.h"
