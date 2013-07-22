@@ -5,8 +5,6 @@
 
 #include "types.h" // For BOOL
 
-PRIVATE BOOL objc_runtime_has_been_initialized;
-
 // TODO rename
 PRIVATE void	init_dispatch_tables(void);
 

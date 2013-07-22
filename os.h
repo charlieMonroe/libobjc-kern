@@ -1,6 +1,3 @@
-/**
- * This header file contains various declarations of functions.
- */
 
 #ifndef OBJC_OS_H_
 #define OBJC_OS_H_
@@ -11,11 +8,6 @@
 #include <string.h>
 #include <stddef.h>
 
-/**
- * Some compilers might not support this attribute
- * that forces the compiler to always inline the functions.
- */
-// Not to be used in this runtime, to be removed later
 
 #define PAGE_SIZE 4096
 
@@ -119,4 +111,4 @@ __attribute__((unused)) static void objc_release_lock(void *x){
 #define REALLY_PREFIX_SUFFIX(x, y) x ## y
 #define PREFIX_SUFFIX(x, y) REALLY_PREFIX_SUFFIX(x, y)
 
-#endif /* OBJC_OS_H_ */
+#endif /* !OBJC_OS_H_ */

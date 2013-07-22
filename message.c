@@ -108,7 +108,7 @@ Slot objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
 		 * Return the correct kind of zero, depending on the type
 		 * encoding.
 		 */
-		const char *types = objc_selector_get_types(selector);
+		const char *types = sel_getTypes(selector);
 		const char *t = types;
 		/* Skip type qualifiers */
 		while ('r' == *t || 'n' == *t || 'N' == *t || 'o' == *t ||

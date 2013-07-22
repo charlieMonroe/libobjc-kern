@@ -1,18 +1,20 @@
 /*
-  * This file contains functions that are usually in the C stdlib,
-  * but aren't that hard to implement here for speed sake.
-  */
+ * This file contains functions that are usually in the C stdlib,
+ * but aren't that hard to implement here for the sake of speed.
+ */
 
-#ifndef OBJC_UTILITIES_H_
-#define OBJC_UTILITIES_H_
+#ifndef OBJC_UTILITIES_H
+#define OBJC_UTILITIES_H
 
 #include "types.h" /* For BOOL, NULL, ... */
 #include "os.h" /* For objc_alloc */
 
 /*
-  * Just as the regular strlen function, returns a number of non-zero characters.
-  */
-static inline unsigned int objc_strlen(const char *str){
+ * Just as the regular strlen function, returns a number of non-zero characters.
+ */
+static inline unsigned int
+objc_strlen(const char *str)
+{
 	unsigned int counter;
 	
 	if (str == NULL){
@@ -30,7 +32,9 @@ static inline unsigned int objc_strlen(const char *str){
 /*
  * Unlike the POSIX function, this one handles allocating the new string itself.
  */
-static inline char *objc_strcpy(const char *str){
+static inline char *
+objc_strcpy(const char *str)
+{
 	unsigned int len;
 	char *result;
 	char *curr_char;
@@ -56,7 +60,9 @@ static inline char *objc_strcpy(const char *str){
 /*
  * Returns YES if the strings are equal.
  */
-static inline BOOL objc_strings_equal(const char *str1, const char *str2){
+static inline BOOL
+objc_strings_equal(const char *str1, const char *str2)
+{
 	unsigned int index;
 	
 	if (str1 ==  str2){
@@ -87,7 +93,9 @@ static inline BOOL objc_strings_equal(const char *str1, const char *str2){
 /*
  * Hashes string str.
  */
-static inline unsigned int objc_hash_string(const char *str){
+static inline unsigned int
+objc_hash_string(const char *str)
+{
 	register uint32_t hash = 0;
 	register int32_t c;
 	while ((c = *str++)){
@@ -96,21 +104,27 @@ static inline unsigned int objc_hash_string(const char *str){
 	return hash;
 }
 
-/**
+/*
  * Returns YES if ptr1 == ptr2;
  */
-static inline BOOL objc_pointers_are_equal(const void *ptr1, const void *ptr2){
+static inline BOOL
+objc_pointers_are_equal(const void *ptr1, const void *ptr2)
+{
 	return ptr1 == ptr2;
 }
 
 /*
  * Hashes a pointer;
  */
-static inline unsigned int objc_hash_pointer(const void *ptr){
-	// Bit-rotate right 4, since the lowest few bits in an object pointer will
-	// always be 0, which is not so useful for a hash value
+static inline unsigned int
+objc_hash_pointer(const void *ptr)
+{
+	/*
+	 * Bit-rotate right 4, since the lowest few bits in an object pointer 
+	 * will always be 0, which is not so useful for a hash value.
+	 */
 	return (unsigned int)(((uintptr_t)ptr >> 4) |
-			      (uintptr_t)((uintptr_t)ptr << (uintptr_t)((sizeof(id) * 8) - 4)));
+	      (uintptr_t)((uintptr_t)ptr << (uintptr_t)((sizeof(id) * 8) - 4)));
 }
 
 /*
@@ -118,17 +132,11 @@ static inline unsigned int objc_hash_pointer(const void *ptr){
  */
 #define objc_copy_memory memcpy
 
-/**
+/*
  * Clears memory by writing zeroes everywhere.
  */
-static inline void objc_memory_zero(void *mem, unsigned int size){
-	char *mem_prt = (char*)mem;
-	unsigned int i;
-	
-	for (i = 0; i < size; ++i){
-		mem_prt[i] = 0;
-	}
-}
+#define objc_memory_zero(mem, size) memset(mem, 0, size)
 
-#endif /* OBJC_UTILITIES_H_ */
+
+#endif /* !OBJC_UTILITIES_H */
 

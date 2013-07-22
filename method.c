@@ -60,7 +60,7 @@ objc_method_create(SEL selector, IMP implementation)
 	 * anyway.
 	 */
 	m->selector_name = sel_getName(selector);
-	m->selector_types = objc_selector_get_types(selector);
+	m->selector_types = sel_getTypes(selector);
 	
 	m->implementation = implementation;
 	m->version = 0;
@@ -86,7 +86,7 @@ method_getTypeEncoding(Method m)
 	if (m == NULL){
 		return NULL;
 	}
-	return objc_selector_get_types(m->selector);
+	return sel_getTypes(m->selector);
 }
 
 IMP

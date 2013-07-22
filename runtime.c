@@ -3,28 +3,24 @@
 #include "types.h"
 #include "init.h"
 
-/**
+/*
  * This is marked during objc_init() as YES. After that point, no modifications
  * to the setup may be made.
  */
-BOOL objc_runtime_has_been_initialized = NO;
-BOOL objc_runtime_is_initializing = NO;
-
+static BOOL objc_runtime_initialized = NO;
 
 /* See header for documentation */
 
 __attribute__((constructor))
 void objc_runtime_init(void){
-	if (objc_runtime_is_initializing || objc_runtime_has_been_initialized){
+	if (objc_runtime_initialized){
 		/* Make sure that we don't initialize twice */
-		objc_debug_log("Trying to initialize runtime for the second time.\n");
+		objc_debug_log("Trying to initialize runtime for the second "
+			       "time.\n");
 		return;
 	}
 	
 	objc_debug_log("Initializing runtime.\n");
-	
-	/* Run-time has been initialized */
-	objc_runtime_is_initializing = YES;
 	
 	objc_rw_lock_init(&objc_runtime_lock);
 	
@@ -38,8 +34,7 @@ void objc_runtime_init(void){
 	
 	objc_install_base_classes();
 	
-	objc_runtime_has_been_initialized = YES;
-	objc_runtime_is_initializing = NO;
+	objc_runtime_initialized = NO;
 }
 
 

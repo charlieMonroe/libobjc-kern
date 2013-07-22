@@ -1,7 +1,6 @@
-#include "os.h"
 #include "sarray2.h"
 #include "types.h"
-#include "sync.h"
+#include "kernobjc/runtime.h"
 
 typedef SparseArray* dtable_t;
 #define objc_dtable_lookup SparseArrayLookup

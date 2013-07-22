@@ -27,11 +27,7 @@ struct reference_list {
  * The class isn't an actual class, but a fake class.
  */
 struct objc_assoc_fake_class {
-	/* The first 4 fields are identical to the ones in Class. */
-	Class			isa;
-	Class			super_class;
-	void			*dtable;
-	objc_class_flags	flags;
+	OBJC_CLASS_COMMON_FIELDS;
 	
 	/* Reference list follows. */
 	struct reference_list	list;
@@ -377,6 +373,20 @@ objc_set_associated_object(id object, void *key, id value,
 		objc_rw_lock_unlock(&list->lock);
 	}
 	
+}
+
+int
+objc_sync_enter(id obj)
+{
+	// TODO
+	return 0;
+}
+
+int
+objc_sync_exit(id obj)
+{
+	// TODO
+	return 0;
 }
 
 void

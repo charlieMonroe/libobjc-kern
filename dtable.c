@@ -136,7 +136,7 @@ static BOOL installMethodInDtable(Class class,
 		}
 	}
 	struct objc_slot *oldSlot = slot;
-	slot = new_slot_for_method_in_class((void*)method, owner);
+	slot = objc_slot_create_for_method_in_class((void*)method, owner);
 	SparseArrayInsert(dtable, sel_id, slot);
 	
 	// Invalidate the old slot, if there is one.

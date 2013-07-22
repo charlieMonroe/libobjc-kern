@@ -2,8 +2,8 @@
  * This header should contain all public header includes.
 */
 
-#ifndef _OBJC_H_
-#define _OBJC_H_
+#ifndef OBJC_H_
+#define OBJC_H_
 
 #include "class.h"
 #include "method.h"
@@ -11,4 +11,4 @@
 #include "selector.h"
 #include "types.h"
 
-#endif /* _OBJC_H_ */
+#endif /* !OBJC_H_ */

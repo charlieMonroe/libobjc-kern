@@ -5,11 +5,15 @@
 #include "runtime.h"
 #include "class.h"
 
-static inline BOOL _objc_protocols_are_equal(const char *name, Protocol *p){
+static inline BOOL
+_objc_protocols_are_equal(const char *name, Protocol *p)
+{
 	return objc_strings_equal(name, p->name);
 }
 
-static inline int _objc_hash_protocol(Protocol *p){
+static inline int
+_objc_hash_protocol(Protocol *p)
+{
 	return objc_hash_string(p->name);
 }
 
@@ -26,17 +30,22 @@ static inline int _objc_hash_protocol(Protocol *p){
 static objc_protocol_table *objc_protocols;
 static Class objc_protocol_class;
 
-static inline objc_method_description_list **_objc_protocol_get_method_list_ptr(Protocol *p, BOOL required, BOOL instance){
+static inline objc_method_description_list **
+_objc_protocol_get_method_list_ptr(Protocol *p, BOOL required, BOOL instance)
+{
 	if (p == NULL){
 		return NULL;
 	}
 	return (required ?
 		 (instance ? &p->instance_methods : &p->class_methods) :
-		 (instance ? &p->optional_instance_methods : &p->optional_class_methods)
+		 (instance ? &p->optional_instance_methods
+					: &p->optional_class_methods)
 	 );
 }
 
-static inline objc_property_list **_objc_protocol_get_property_list_ptr(Protocol *p, BOOL required, BOOL instance){
+static inline objc_property_list **
+_objc_protocol_get_property_list_ptr(Protocol *p, BOOL required, BOOL instance)
+{
 	if (p == NULL || !instance){
 		return NULL;
 	}
@@ -44,7 +53,8 @@ static inline objc_property_list **_objc_protocol_get_property_list_ptr(Protocol
 }
 
 
-static int isEmptyProtocol(Protocol *aProto)
+static int
+_objc_protocol_is_empty(Protocol *aProto)
 {
 	int isEmpty =
 	((aProto->instance_methods == NULL) ||
@@ -57,13 +67,14 @@ static int isEmptyProtocol(Protocol *aProto)
 	isEmpty &= (aProto->optional_instance_methods->size == 0);
 	isEmpty &= (aProto->optional_class_methods->size == 0);
 	isEmpty &= (aProto->properties == 0) || (aProto->properties->size == 0);
-	isEmpty &= (aProto->optional_properties == 0) || (aProto->optional_properties->size == 0);
+	isEmpty &= (aProto->optional_properties == 0)
+			|| (aProto->optional_properties->size == 0);
 	return isEmpty;
 }
 
-// FIXME: Make p1 adopt all of the stuff in p2
-static void makeProtocolEqualToProtocol(Protocol *p1,
-                                        Protocol *p2)
+/* TODO: Make p1 adopt all of the stuff in p2 */
+static void
+_objc_make_protocols_equal(Protocol *p1, Protocol *p2)
 {
 #define COPY(x) p1->x = p2->x
 	COPY(instance_methods);
@@ -76,45 +87,57 @@ static void makeProtocolEqualToProtocol(Protocol *p1,
 #undef COPY
 }
 
-static Protocol *_objc_unique_protocol(Protocol *aProto){
+static Protocol *
+_objc_unique_protocol(Protocol *aProto)
+{
 	if (objc_protocol_class == Nil){
 		objc_protocol_class = (Class)objc_getClass("Protocol");
 	}
 	
-	Protocol *oldProtocol = objc_protocol_table_get(objc_protocols, aProto->name);
+	Protocol *oldProtocol = objc_protocol_table_get(objc_protocols,
+							aProto->name);
 	if (NULL == oldProtocol){
-		// This is the first time we've seen this protocol, so add it to the
-		// hash table and ignore it.
+		/*
+		 * This is the first time we've seen this protocol, so add it
+		 * to the hash table and ignore it.
+		 */
 		objc_protocol_insert(objc_protocols, aProto);
 		return aProto;
 	}
 	
-	if (isEmptyProtocol(oldProtocol)){
-		if (isEmptyProtocol(aProto)){
+	if (_objc_protocol_is_empty(oldProtocol)){
+		if (_objc_protocol_is_empty(aProto)){
 			return aProto;
-			// Add protocol to a list somehow.
+			/* Add protocol to a list somehow. */
 		}else{
-			// This protocol is not empty, so we use its definitions
-			makeProtocolEqualToProtocol(oldProtocol, aProto);
+			/* 
+			 * This protocol is not empty, so we use its
+			 * definitions
+			 */
+			_objc_make_protocols_equal(oldProtocol, aProto);
 			return aProto;
 		}
 	}else{
-		if (isEmptyProtocol(aProto)){
-			makeProtocolEqualToProtocol(aProto, oldProtocol);
+		if (_objc_protocol_is_empty(aProto)){
+			_objc_make_protocols_equal(aProto, oldProtocol);
 			return oldProtocol;
 		}else{
 			return oldProtocol;
-			//FIXME: We should really perform a check here to make sure the
-			//protocols are actually the same.
+			/*
+			 * TODO: We should really perform a check here to make
+			 * sure the protocols are actually the same.
+			 */
 		}
 	}
 }
 
-typedef enum {
-	protocol_version_kernel_objc = 0x100
-} objc_protocol_version;
+enum objc_protocol_version {
+	PROTOCOL_KERN_OBJC_VERSION = 0x100
+};
 
-static BOOL _objc_init_protocols(objc_protocol_list *protocols){
+static BOOL
+_objc_init_protocols(objc_protocol_list *protocols)
+{
 	if (Nil == objc_protocol_class){
 		return NO;
 	}
@@ -122,19 +145,25 @@ static BOOL _objc_init_protocols(objc_protocol_list *protocols){
 	for (unsigned i=0 ; i<protocols->size ; i++)
 	{
 		Protocol *aProto = protocols->list[i];
-		// Don't initialise a protocol twice
-		if (aProto->isa == objc_protocol_class) { continue ;}
+		/* Don't initialise a protocol twice */
+		if (aProto->isa == objc_protocol_class) { continue; }
 		
-		// Protocols in the protocol list have their class pointers set to the
-		// version of the protocol class that they expect.
-		objc_assert((objc_protocol_version)aProto->isa == protocol_version_kernel_objc,
+		/*
+		 * Protocols in the protocol list have their class pointers set
+		 * to the version of the protocol class that they expect.
+		 */
+		objc_assert((enum objc_protocol_version)aProto->isa
+						== PROTOCOL_KERN_OBJC_VERSION,
 			    "Protocol of unknown version %p!\n", aProto->isa);
 		
-		// Initialize all of the protocols that this protocol refers to
+		/* 
+		 * Initialize all of the protocols that this protocol refers to 
+		 */
 		if (NULL != aProto->protocols){
 			_objc_init_protocols(aProto->protocols);
 		}
-		// Replace this protocol with a unique version of it.
+		
+		/* Replace this protocol with a unique version of it. */
 		protocols->list[i] = _objc_unique_protocol(aProto);
 	}
 	return YES;
@@ -143,7 +172,9 @@ static BOOL _objc_init_protocols(objc_protocol_list *protocols){
 #pragma mark -
 #pragma mark Private Export
 
-PRIVATE void objc_init_protocols(objc_protocol_list *protocols){
+PRIVATE void
+objc_init_protocols(objc_protocol_list *protocols)
+{
 	if (!_objc_init_protocols(protocols))
 	{
 		set_buffered_object_at_index(protocols, buffered_objects++);
@@ -151,7 +182,7 @@ PRIVATE void objc_init_protocols(objc_protocol_list *protocols){
 	}
 	if (buffered_objects > 0) { return; }
 	
-	// If we can load one protocol, then we can load all of them.
+	/* If we can load one protocol, then we can load all of them. */
 	for (unsigned i=0 ; i<buffered_objects ; i++){
 		objc_protocol_list *c = buffered_object_at_index(i);
 		if (NULL != c){
@@ -167,14 +198,18 @@ PRIVATE void objc_init_protocols(objc_protocol_list *protocols){
 #pragma mark -
 #pragma mark Public Functions
 
-Protocol *objc_getProtocol(const char *name){
+Protocol *
+objc_getProtocol(const char *name)
+{
 	if (name == NULL){
 		return NULL;
 	}
 	return objc_protocol_table_get(objc_protocols, name);
 }
 
-BOOL protocol_conformsToProtocol(Protocol *p1, Protocol *p2){
+BOOL
+protocol_conformsToProtocol(Protocol *p1, Protocol *p2)
+{
 	if (p1 == NULL || p2 == NULL){
 		return NO;
 	}
@@ -201,7 +236,9 @@ BOOL protocol_conformsToProtocol(Protocol *p1, Protocol *p2){
 	
 }
 
-BOOL class_addProtocol(Class cls, Protocol *protocol){
+BOOL
+class_addProtocol(Class cls, Protocol *protocol)
+{
 	if (cls == Nil || protocol == NULL){
 		return NO;
 	}
@@ -219,7 +256,9 @@ BOOL class_addProtocol(Class cls, Protocol *protocol){
 	return YES;
 }
 
-BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
+BOOL
+class_conformsToProtocol(Class cls, Protocol *protocol)
+{
 	if (cls == Nil || protocol == NULL){
 		return NO;
 	}
@@ -237,7 +276,9 @@ BOOL class_conformsToProtocol(Class cls, Protocol *protocol){
 	return NO;
 }
 
-Protocol * __unsafe_unretained *class_copyProtocolList(Class cls, unsigned int *outCount){
+Protocol * __unsafe_unretained *
+class_copyProtocolList(Class cls, unsigned int *outCount)
+{
 	if (cls == Nil || cls->protocols == NULL || cls->protocols->size == 0){
 		if (outCount != NULL){
 			*outCount = 0;
@@ -247,17 +288,24 @@ Protocol * __unsafe_unretained *class_copyProtocolList(Class cls, unsigned int *
 	return objc_protocol_list_copy_list(cls->protocols, outCount);
 }
 
-static objc_method_description_list *_objc_protocol_get_method_list(Protocol *p,
+static objc_method_description_list *
+_objc_protocol_get_method_list(Protocol *p,
 			BOOL isRequiredMethod,
-			BOOL isInstanceMethod){
-	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod, isInstanceMethod);
+			BOOL isInstanceMethod)
+{
+	objc_method_description_list **list_ptr;
+	list_ptr = _objc_protocol_get_method_list_ptr(p, isRequiredMethod,
+						      isInstanceMethod);
 	return list_ptr == NULL ? NULL : *list_ptr;
 }
 
-struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
-								   BOOL isRequiredMethod, BOOL isInstanceMethod, unsigned int *count){
-	
-	objc_method_description_list *list = _objc_protocol_get_method_list(p, isRequiredMethod, isInstanceMethod);
+struct objc_method_description *
+protocol_copyMethodDescriptionList(Protocol *p, BOOL isRequiredMethod,
+				   BOOL isInstanceMethod, unsigned int *count)
+{	
+	objc_method_description_list *list;
+	list = _objc_protocol_get_method_list(p, isRequiredMethod,
+					      isInstanceMethod);
 	if (list == NULL || list->size == 0){
 		if (count != NULL){
 			*count = 0;
@@ -269,7 +317,9 @@ struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
 		*count = list->size;
 	}
 	
-	struct objc_method_description *descriptions = objc_zero_alloc(sizeof(struct objc_method_description) * list->size);
+	struct objc_method_description *descriptions;
+	descriptions = objc_zero_alloc(sizeof(struct objc_method_description)
+				       * list->size);
 	for (int i = 0; i < list->size; ++i){
 		descriptions[i] = list->list[i];
 	}
@@ -277,7 +327,9 @@ struct objc_method_description *protocol_copyMethodDescriptionList(Protocol *p,
 	return descriptions;
 }
 
-Protocol*__unsafe_unretained* protocol_copyProtocolList(Protocol *p, unsigned int *count){
+Protocol*__unsafe_unretained*
+protocol_copyProtocolList(Protocol *p, unsigned int *count)
+{
 	if (p == NULL || p->protocols == NULL || p->protocols->size == 0){
 		if (count != NULL){
 			*count = 0;
@@ -287,8 +339,9 @@ Protocol*__unsafe_unretained* protocol_copyProtocolList(Protocol *p, unsigned in
 	return objc_protocol_list_copy_list(p->protocols, count);
 }
 
-Property *protocol_copyPropertyList(Protocol *protocol,
-				    unsigned int *outCount){
+Property *
+protocol_copyPropertyList(Protocol *protocol, unsigned int *outCount)
+{
 	if (outCount != NULL){
 		*outCount = 0;
 	}
@@ -296,8 +349,11 @@ Property *protocol_copyPropertyList(Protocol *protocol,
 		return NULL;
 	}
 	
-	objc_property_list *list = *_objc_protocol_get_property_list_ptr(protocol, YES, NO);
-	objc_property_list *optional_list = *_objc_protocol_get_property_list_ptr(protocol, NO, NO);
+	objc_property_list *list;
+	objc_property_list *optional_list;
+	
+	list = *_objc_protocol_get_property_list_ptr(protocol, YES, NO);
+	optional_list = *_objc_protocol_get_property_list_ptr(protocol, NO, NO);
 	
 	unsigned int list_size = list == NULL ? 0 : list->size;
 	unsigned int optional_list_size = optional_list == NULL ? 0 : list->size;
@@ -312,7 +368,8 @@ Property *protocol_copyPropertyList(Protocol *protocol,
 		objc_property_list_get_list(list, buffer, list_size);
 	}
 	if (optional_list != NULL){
-		objc_property_list_get_list(optional_list, buffer + list_size, optional_list_size);
+		objc_property_list_get_list(optional_list, buffer + list_size,
+					    optional_list_size);
 	}
 	
 	if (outCount != NULL){
@@ -322,11 +379,15 @@ Property *protocol_copyPropertyList(Protocol *protocol,
 	return buffer;
 }
 
-Property protocol_getProperty(Protocol *protocol,
+Property
+protocol_getProperty(Protocol *protocol,
                                      const char *name,
                                      BOOL required,
-                                     BOOL instance){
-	objc_property_list **list_ptr = _objc_protocol_get_property_list_ptr(protocol, required, instance);
+                                     BOOL instance)
+{
+	objc_property_list **list_ptr;
+	list_ptr = _objc_protocol_get_property_list_ptr(protocol, required,
+							instance);
 	if (list_ptr == NULL || *list_ptr == NULL){
 		return NULL;
 	}
@@ -343,11 +404,14 @@ Property protocol_getProperty(Protocol *protocol,
 	return NULL;
 }
 
-struct objc_method_description protocol_getMethodDescription(Protocol *p,
-                              SEL aSel, BOOL required, BOOL instance){
+struct objc_method_description
+protocol_getMethodDescription(Protocol *p, SEL aSel,
+			      BOOL required, BOOL instance)
+{
 	
 	struct objc_method_description result = {0,0};
-	objc_method_description_list *list = _objc_protocol_get_method_list(p, required, instance);
+	objc_method_description_list *list;
+	list = _objc_protocol_get_method_list(p, required, instance);
 	if (list == NULL){
 		return result;
 	}
@@ -361,25 +425,35 @@ struct objc_method_description protocol_getMethodDescription(Protocol *p,
 	return result;
 }
 
-const char *protocol_getName(Protocol *protocol){
+const char *
+protocol_getName(Protocol *protocol)
+{
 	return protocol == NULL ? NULL : protocol->name;
 }
 
-BOOL protocol_isEqual(Protocol *protocol1, Protocol *protocol2){
+BOOL
+protocol_isEqual(Protocol *protocol1, Protocol *protocol2)
+{
 	if (protocol1 == NULL || protocol2 == NULL){
 		return NO;
 	}
 	
-	// We can skip comparing pointers since objc_strings_equal does
-	// this anyway
+	/*
+	 * We can skip comparing pointers since objc_strings_equal does
+	 * this anyway
+	 */
 	return objc_strings_equal(protocol1->name, protocol2->name);
 }
 
-Protocol*__unsafe_unretained* objc_copyProtocolList(Protocol *protocol, unsigned int *outCount){
+Protocol*__unsafe_unretained*
+objc_copyProtocolList(Protocol *protocol, unsigned int *outCount)
+{
 	return objc_protocol_list_copy_list(protocol->protocols, outCount);
 }
 
-Protocol *objc_allocateProtocol(const char *name){
+Protocol *
+objc_allocateProtocol(const char *name)
+{
 	if (objc_getProtocol(name) != NULL) {
 		return NULL;
 	}
@@ -388,7 +462,9 @@ Protocol *objc_allocateProtocol(const char *name){
 	return p;
 }
 
-void objc_registerProtocol(Protocol *protocol){
+void
+objc_registerProtocol(Protocol *protocol)
+{
 	if (protocol == NULL){
 		return;
 	}
@@ -403,30 +479,41 @@ void objc_registerProtocol(Protocol *protocol){
 	objc_protocol_insert(objc_protocols, protocol);
 }
 
-void protocol_addMethodDescription(Protocol *aProtocol,
-                                   SEL selector,
-                                   const char *types,
-                                   BOOL isRequiredMethod,
-                                   BOOL isInstanceMethod){
+void
+protocol_addMethodDescription(Protocol *aProtocol,
+				SEL selector,
+				const char *types,
+				BOOL isRequiredMethod,
+				BOOL isInstanceMethod)
+{
 	if (aProtocol == NULL || selector == 0 || types == NULL){
 		return;
 	}
 	
-	objc_assert(objc_strings_equal(objc_selector_get_types(selector), types), "Trying to add a method description to a protocol with types that are different than the ones of the selector.\n")
+	const char *sel_types = sel_getTypes(selector);
+	objc_assert(objc_strings_equal(sel_types, types),
+		    "Trying to add a method description to a protocol with "
+		    "types that are different than the ones of the selector.\n")
 	
-	objc_method_description_list **list_ptr = _objc_protocol_get_method_list_ptr(aProtocol, isRequiredMethod, isInstanceMethod);
+	objc_method_description_list **list_ptr;
+	list_ptr = _objc_protocol_get_method_list_ptr(aProtocol,
+						      isRequiredMethod,
+						      isInstanceMethod);
 	if (*list_ptr == NULL){
 		*list_ptr = objc_method_description_list_create(1);
 	}else{
 		*list_ptr = objc_method_description_list_expand_by(*list_ptr, 1);
 	}
 	
-	struct objc_method_description *m = &(*list_ptr)->list[(*list_ptr)->size - 1];
+	struct objc_method_description *m;
+	m = &(*list_ptr)->list[(*list_ptr)->size - 1];
 	m->selector = selector;
 	m->types = types;
 }
 
-void protocol_addProtocol(Protocol *aProtocol, Protocol *addition){
+void
+protocol_addProtocol(Protocol *aProtocol, Protocol *addition)
+{
 	if (aProtocol == NULL || addition == NULL){
 		return;
 	}
@@ -434,21 +521,25 @@ void protocol_addProtocol(Protocol *aProtocol, Protocol *addition){
 	if (aProtocol->protocols == NULL){
 		aProtocol->protocols = objc_protocol_list_create(1);
 	}else{
-		aProtocol->protocols = objc_protocol_list_expand_by(aProtocol->protocols, 1);
+		aProtocol->protocols =
+			objc_protocol_list_expand_by(aProtocol->protocols, 1);
 	}
 	
 	aProtocol->protocols->list[aProtocol->protocols->size - 1] = addition;
 }
 
-void protocol_addProperty(Protocol *protocol, const char *name,
-						  const objc_property_attribute_t *atts,
-						  unsigned int att_count, BOOL required, BOOL instance){
+void
+protocol_addProperty(Protocol *protocol, const char *name,
+		     const objc_property_attribute_t *atts,
+		     unsigned int att_count, BOOL required, BOOL instance)
+{
 	// Some basic check of the parameters
 	if (protocol == NULL || name == NULL || atts == NULL || instance == NO){
 		return;
 	}
 	
-	objc_property_list **list_ptr = required ? &protocol->properties : &protocol->optional_properties;
+	objc_property_list **list_ptr = required ? &protocol->properties
+					: &protocol->optional_properties;
 	if (*list_ptr == NULL){
 		*list_ptr = objc_property_list_create(1);
 	}else{
@@ -456,13 +547,17 @@ void protocol_addProperty(Protocol *protocol, const char *name,
 	}
 	
 	const char *ivar_name = NULL;
-	struct objc_property prop = propertyFromAttrs(atts, att_count, &ivar_name);
+	struct objc_property prop = propertyFromAttrs(atts, att_count,
+						      &ivar_name);
 	prop.name = name;
 	constructPropertyAttributes(&prop, ivar_name);
-	objc_copy_memory(&((*list_ptr)->list[(*list_ptr)->size - 1]), &prop, sizeof(prop));
+	objc_copy_memory(&((*list_ptr)->list[(*list_ptr)->size - 1]),
+			 &prop, sizeof(prop));
 }
 
 
-PRIVATE void objc_protocol_init(void){
+PRIVATE void
+objc_protocol_init(void)
+{
 	objc_protocols = objc_protocol_table_create(64);
 }

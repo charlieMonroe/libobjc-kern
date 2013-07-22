@@ -7,12 +7,9 @@
 #error POOL_NAME must be defined
 #endif
 
-// Horrible multiple indirection to satisfy the weird precedence rules in cpp
-#define REALLY_PREFIX_SUFFIX(x,y) x ## y
-#define PREFIX_SUFFIX(x, y) REALLY_PREFIX_SUFFIX(x, y)
 #define NAME(x) PREFIX_SUFFIX(POOL_NAME, x)
 
-// Malloc one page at a time.
+/* Malloc one page at a time. */
 #define POOL_SIZE ((PAGE_SIZE) / sizeof(POOL_TYPE))
 static POOL_TYPE* NAME(_pool);
 static int NAME(_pool_next_index) = -1;
