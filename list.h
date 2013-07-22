@@ -78,9 +78,9 @@ static MALLOC_DEFINE(M_LIST_TYPE, "list", "Objective-C List");
  * OBJC_LIST_CHAINABLE = 1
  *
  * typedef struct objc_method_list_struct {
- *	struct objc_method_list_struct *next;
- *	unsigned size;
- *	Method *method_list;
+ *	struct objc_method_list_struct	*next;
+ *	unsigned			size;
+ *	Method				*list;
  * }
  */
 struct OBJC_LIST_STRUCTURE_NAME {
@@ -262,7 +262,7 @@ __attribute__((unused)) static void PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME,
 		OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK((OBJC_LIST_TYPE_REF head->list[i]));
 	}
 #endif
-	objc_dealloc(head);
+	objc_dealloc(head, M_LIST_TYPE);
 }
 
 #undef OBJC_LIST_TYPE_NAME

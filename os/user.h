@@ -42,28 +42,6 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
 	pthread_rwlock_destroy(&lock->lock);
 }
 
-
-#define objc_log printf
-
-static inline void objc_dealloc(void *mem){
-	free(mem);
-}
-
-/* THREAD */
-static inline void objc_yield(void){
-	sleep(0);
-}
-
-// TODO
-#define panic(reason...) {\
-printf(reason);\
-abort();\
-}
-
-#define objc_abort(reason...) {\
-panic(reason);\
-}
-
 /* MEMORY */
 
 /**
@@ -86,15 +64,19 @@ static inline void *objc_alloc(size_t size, void *type){
 static inline void *objc_alloc_page(void *type){
 	return objc_alloc(PAGE_SIZE, type);
 }
-
-
-
-#define objc_assert(condition, description...) \
-if (!(condition)){\
-panic(description);\
+static inline void objc_dealloc(void *mem, void *type){
+	free(mem);
 }
 
+/* THREAD */
+static inline void objc_yield(void){
+	sleep(0);
+}
 
+#define objc_abort(reason...)	{					\
+					printf(reason);			\
+					abort();			\
+				}
 
-
+#define objc_log printf
 

@@ -457,8 +457,8 @@ objc_disposeClassPair(Class cls)
 	objc_class_table_set(objc_classes, cls->name, NULL);
 	
 	
-	objc_dealloc(cls);
-	objc_dealloc(meta);
+	objc_dealloc(cls, M_CLASS);
+	objc_dealloc(meta, M_CLASS);
 }
 
 Class *

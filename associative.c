@@ -240,7 +240,7 @@ _objc_remove_associative_list(struct reference_list *prev,
 	}
 	
 	if (free){
-		objc_dealloc(list);
+		objc_dealloc(list, M_REFLIST);
 	}
 }
 

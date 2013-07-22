@@ -40,7 +40,10 @@ PRIVATE unsigned int objc_lock_locked_count;
 #endif /* !_KERNEL */
 
 
-
+#define objc_assert(condition, description...)				\
+	if (!(condition)){						\
+		objc_abort(description);				\
+	}
 
 
 #define OBJC_LOCK(x) objc_rw_lock_wlock(x)

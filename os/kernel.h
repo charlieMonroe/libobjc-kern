@@ -1,4 +1,5 @@
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/lock.h>
@@ -59,8 +60,14 @@ static inline void *objc_realloc(void *mem, size_t size,
 static inline void *objc_alloc_page(struct malloc_type *type){
 	return objc_alloc(PAGE_SIZE, type);
 }
+static inline void objc_dealloc(void *mem, struct malloc_type *type){
+	free(mem, type);
+}
 
 /* THREAD */
 static inline void objc_yield(void){
 	pause("objc_yield", 0);
 }
+
+#define objc_abort(reason...) panic(reason)
+

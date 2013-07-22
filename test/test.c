@@ -51,7 +51,7 @@ static void list_classes(void){
 		print_class(classes[i]);
 		print_class(classes[i]->isa);
 	}
-	objc_dealloc(classes);
+	objc_dealloc(classes, NULL);
 }
 
 

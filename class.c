@@ -389,7 +389,7 @@ object_dispose(id obj)
 		return;
 	}
 	
-	objc_dealloc(obj);
+	objc_dealloc(obj, M_OBJECTS);
 }
 
 id

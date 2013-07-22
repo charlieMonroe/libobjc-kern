@@ -166,7 +166,7 @@ _objc_empty_pool_until(struct objc_arc_thread_data *data, id *stop)
 		// Dispose of the pool itself
 		struct objc_autorelease_pool *pool = data->pool;
 		data->pool = pool->previous;
-		objc_dealloc(pool);
+		objc_dealloc(pool, M_AUTORELEASE_POOL);
 	}
 	
 	/*
