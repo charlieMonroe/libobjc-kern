@@ -9,6 +9,9 @@
  */
 static BOOL objc_runtime_initialized = NO;
 
+PRIVATE unsigned int objc_lock_count = 0;
+PRIVATE unsigned int objc_lock_locked_count = 0;
+
 /* See header for documentation */
 
 __attribute__((constructor))

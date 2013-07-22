@@ -1,5 +1,6 @@
 #include "../kernobjc/runtime.h"
 #include "../classes/MRObjects.h"
+#include "../os.h"
 
 static void print_method_list(struct objc_method_list_struct *methods){
 	if (methods == NULL){
@@ -55,6 +56,9 @@ int main(int argc, const char * argv[])
 	
 	associated_objects_test();
 	weak_ref_test();
+	
+	printf("Total number of locks:            %d\n", objc_lock_count);
+	printf("Locks were locked n. times:       %d", objc_lock_locked_count);
 	
 	return 0;
 }

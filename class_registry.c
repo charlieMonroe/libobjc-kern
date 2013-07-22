@@ -70,6 +70,7 @@ static void _objc_class_fixup_instance_size(Class cl);
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
+#define MAP_TABLE_NO_LOCK 1
 #include "hashtable.h"
 
 /*
@@ -600,8 +601,7 @@ objc_class_init(void)
 	objc_debug_log("Initializing classes.\n");
 	
 	objc_classes =
-		objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY,
-					"objc_classes_table");
+		objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
 	objc_load_messages =
 		objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY,
 						"objc_load_messages");

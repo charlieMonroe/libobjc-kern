@@ -4,6 +4,7 @@
 
 #include "MRObjectMethods.h"
 #include "../class_registry.h"
+#include "../runtime.h"
 
 
 /*************** MRObject ***************/
@@ -214,6 +215,7 @@ void objc_install_base_classes(void){
 	
 	objc_debug_log("Registering base classes with the runtime.\n");
 	
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	objc_class_register_classes(classes, 2);
 	
 }
