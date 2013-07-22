@@ -7,13 +7,19 @@
  * or indeed private.
  */
 
-id class_createInstance(Class cl, size_t extraBytes);
+#pragma mark -
+#pragma mark ARC_UNAVAILABLE
 
+id class_createInstance(Class cl, size_t extraBytes);
 id object_copy(id obj, size_t size);
 void object_dispose(id obj);
-
 void *object_getIndexedIvars(id obj);
 
-BOOL objc_register_small_object_class(Class cl, uintptr_t mask);
+
+#pragma mark -
+#pragma mark Private
+
+PRIVATE BOOL objc_register_small_object_class(Class cl, uintptr_t mask);
+PRIVATE Slot objc_class_get_slot(Class cl, SEL selector);
 
 #endif

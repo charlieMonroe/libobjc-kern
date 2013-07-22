@@ -19,6 +19,6 @@
 #endif
 
 #if HAS_SECTION_DIRECTIVE
-//TODO
+// TODO
 	.section .note.GNU-stack,"",%progbits
 #endif
