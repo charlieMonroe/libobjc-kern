@@ -413,12 +413,12 @@ objc_registerClassPair(Class cl)
 		return;
 	}
 	
-	OBJC_LOCK_RUNTIME();
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 		
+	objc_debug_log("registering class pair %s\n", class_getName(cl));
+	
 	objc_class_insert(objc_classes, cl);
 	objc_class_resolve(cl);
-	
-	OBJC_UNLOCK_RUNTIME();
 }
 
 void
@@ -559,6 +559,8 @@ PRIVATE void
 objc_class_resolve_links(void)
 {
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	objc_debug_log("resolving class links\n");
 	
 	Class cl = unresolved_classes;
 	BOOL resolved_class;

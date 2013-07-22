@@ -29,7 +29,7 @@ void objc_runtime_init(void){
 	
 	/* Initialize inner structures */
 	objc_selector_init();
-	init_dispatch_tables();
+	objc_dispatch_tables_init();
 	objc_class_init();
 	objc_arc_init();
 	objc_protocol_init();

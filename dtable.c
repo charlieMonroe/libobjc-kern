@@ -87,7 +87,8 @@ static void collectMethodsForMethodListToSparseArray(
 }
 
 
-PRIVATE void init_dispatch_tables ()
+PRIVATE void
+objc_dispatch_tables_init(void)
 {
 	objc_debug_log("Initializing dispatch tables.\n");
 	
@@ -188,15 +189,11 @@ static void mergeMethodsFromSuperclass(Class super, Class cls, SparseArray *meth
 	}
 }
 
-PRIVATE void objc_update_dtable_for_class(Class cls)
-{
-	// Only update real dtables
-	if (!classHasDtable(cls)) { return; }
-
+static inline void _add_method_list_to_class(Class cls, objc_method_list *list,
+					     BOOL follow){
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
-
 	SparseArray *methods = SparseArrayNew();
-	collectMethodsForMethodListToSparseArray((void*)cls->methods, methods, YES);
+	collectMethodsForMethodListToSparseArray(list, methods, follow);
 	installMethodsInClass(cls, cls, methods, YES);
 	// Methods now contains only the new methods for this class.
 	mergeMethodsFromSuperclass(cls, cls, methods);
@@ -204,21 +201,27 @@ PRIVATE void objc_update_dtable_for_class(Class cls)
 	checkARCAccessors(cls);
 }
 
+
 PRIVATE void dtable_add_method_list_to_class(Class cls,
                                       objc_method_list *list)
 {
 	// Only update real dtables
-	if (!classHasDtable(cls)) { return; }
+	if (!classHasDtable(cls) || list == NULL) { return; }
 
-	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	objc_debug_log("adding method lists to dtable for class %s\n", class_getName(cls));
+	_add_method_list_to_class(cls, list, NO);
+}
 
-	SparseArray *methods = SparseArrayNew();
-	collectMethodsForMethodListToSparseArray(list, methods, NO);
-	installMethodsInClass(cls, cls, methods, YES);
-	// Methods now contains only the new methods for this class.
-	mergeMethodsFromSuperclass(cls, cls, methods);
-	SparseArrayDestroy(methods);
-	checkARCAccessors(cls);
+
+PRIVATE void objc_update_dtable_for_class(Class cls)
+{
+	
+	// Only update real dtables and real classes
+	if (!classHasDtable(cls) || cls->flags.fake) { return; }
+	
+	objc_debug_log("updating dtable for class %s\n", class_getName(cls));
+	
+	_add_method_list_to_class(cls, cls->methods, YES);
 }
 
 static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
@@ -227,6 +230,8 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	if (classHasDtable(class)) { return dtable_for_class(class); }
 
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	objc_debug_log("creating dtable for class %s\n", class_getName(class));
 
 	// Make sure that another thread didn't create the dtable while we were
 	// waiting on the lock.
@@ -374,6 +379,9 @@ PRIVATE void objc_send_initialize(id object)
 	// we're still holding the initialize lock.  We should ensure that we never
 	// acquire the runtime lock after acquiring the initialize lock.
 	OBJC_LOCK_RUNTIME();
+	
+	objc_debug_log("sending initialize to class %s\n", object_getClassName(object));
+	
 	OBJC_LOCK_OBJECT_FOR_SCOPE((id)meta);
 	OBJC_LOCK(&initialize_lock);
 	if (class->flags.initialized)

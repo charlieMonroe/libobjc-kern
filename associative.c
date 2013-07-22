@@ -3,6 +3,7 @@
 #include "arc.h"
 #include "class.h"
 #include "dtable.h"
+#include "spinlock.h"
 
 #define REF_CNT 10
 
@@ -16,7 +17,7 @@ struct reference {
 struct reference_list {
 	struct reference_list	*next;
 	
-	objc_rw_lock		lock; // TODO make mutex from the pool instead
+	objc_rw_lock		lock;
 	
 	struct reference	refs[REF_CNT];
 };
@@ -58,7 +59,15 @@ _objc_class_for_object(id object, BOOL create)
 	Class superclass = object->isa;
 	Class cl = _objc_find_class_for_object(object);
 	if (cl == Nil && create){
-		// TODO locking
+		volatile int *spin_lock = lock_for_pointer(object);
+		lock_spinlock(spin_lock);
+		
+		cl = _objc_find_class_for_object(object);
+		if (cl != Nil){
+			/* Someone was faster. */
+			return cl;
+		}
+		
 		cl = objc_zero_alloc(sizeof(struct objc_assoc_fake_class));
 		cl->isa = superclass->isa;
 		cl->super_class = superclass;
@@ -74,6 +83,7 @@ _objc_class_for_object(id object, BOOL create)
 				  "objc_assoc_fake_class_lock");
 		
 		object->isa = cl;
+		unlock_spinlock(spin_lock);
 	}
 	return cl;
 }
@@ -184,7 +194,7 @@ _objc_find_free_reference_in_list(struct reference_list *list, BOOL create)
 static void
 _objc_remove_associative_list(struct reference_list *prev,
 			      struct reference_list *list,
-			      objc_rw_lock *lock,
+			      volatile int *lock,
 			      BOOL free){
 	if (list->next != NULL){
 		_objc_remove_associative_list(list, list->next, lock, free);
@@ -193,11 +203,10 @@ _objc_remove_associative_list(struct reference_list *prev,
 	/*
 	 * Need to lock it for the pointer reassignement.
 	 */
-	// TODO spinlock
 	if (prev != NULL){
-		objc_rw_lock_wlock(lock);
+		lock_spinlock(lock);
 		prev->next = list->next;
-		objc_rw_lock_unlock(lock);
+		unlock_spinlock(lock);
 	}
 	
 	for (int i = 0; i < REF_CNT; ++i){
@@ -219,6 +228,7 @@ _objc_remove_associative_list(struct reference_list *prev,
 static inline void
 _objc_remove_associative_lists_for_object(id object)
 {
+	volatile int *spin_lock = lock_for_pointer(object);
 	if (object->isa->flags.meta){
 		void **extra_space;
 		extra_space = objc_class_extra_with_identifier(object->isa,
@@ -229,10 +239,16 @@ _objc_remove_associative_lists_for_object(id object)
 		
 		struct reference_list *list = *extra_space;
 		if (list->next != NULL){
-			_objc_remove_associative_list(list, list->next,
-						      &list->lock, NO);
+			_objc_remove_associative_list(list,
+						      list->next,
+						      spin_lock,
+						      NO);
 		}
-		_objc_remove_associative_list(NULL, list, &list->lock, YES);
+		objc_rw_lock_destroy(&list->lock);
+		_objc_remove_associative_list(NULL,
+					      list,
+					      spin_lock,
+					      YES);
 	}else{
 		struct objc_assoc_fake_class *cl;
 		cl = (struct objc_assoc_fake_class*)
@@ -243,10 +259,11 @@ _objc_remove_associative_lists_for_object(id object)
 		
 		if (cl->list.next != NULL){
 			_objc_remove_associative_list(&cl->list, cl->list.next,
-						      &cl->list.lock, YES);
+						      spin_lock, YES);
 		}
+		objc_rw_lock_destroy(&cl->list.lock);
 		_objc_remove_associative_list(NULL, &cl->list,
-					      &cl->list.lock, NO);
+					      spin_lock, NO);
 	}
 }
 
@@ -383,15 +400,25 @@ objc_set_associated_object(id object, void *key, id value,
 int
 objc_sync_enter(id obj)
 {
-	// TODO
-	return 0;
+	if (obj == nil || objc_object_is_small_object(obj)){
+		return 0;
+	}
+	struct reference_list *list = _objc_ref_list_for_object(obj, YES);
+	return objc_rw_lock_wlock(&list->lock);
 }
 
 int
 objc_sync_exit(id obj)
 {
-	// TODO
-	return 0;
+	if (obj == nil || objc_object_is_small_object(obj)){
+		return 0;
+	}
+	struct reference_list *list = _objc_ref_list_for_object(obj, NO);
+	if (list == NULL){
+		return 0;
+	}
+	
+	return objc_rw_lock_unlock(&list->lock);
 }
 
 void

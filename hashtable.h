@@ -94,7 +94,7 @@ typedef struct PREFIX(_table_cell_struct)
  *
  * RW lock for r/w locking, table_size for the allocated
  * table_size, table_used for number of items in the 
- * table, enumerator_count for counting enumerators (TODO),
+ * table, enumerator_count for counting enumerators,
  * old pointing to the old structure when rehashing (resizing),
  * table for the actual data.
  */

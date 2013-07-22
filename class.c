@@ -591,7 +591,8 @@ class_addIvar(Class cls, const char *name, size_t size,
 		return NO;
 	}
 	
-	objc_rw_lock_wlock(&objc_runtime_lock);
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
 	if (cls->ivars == NULL){
 		cls->ivars = objc_ivar_list_create(1);
 	}else{
@@ -612,8 +613,6 @@ class_addIvar(Class cls, const char *name, size_t size,
 	variable->offset = offset;
 	
 	cls->instance_size = offset + size;
-		
-	objc_rw_lock_unlock(&objc_runtime_lock);
 	
 	return YES;
 }
