@@ -4,6 +4,9 @@
 
 #include "sarray2.h"
 
+MALLOC_DECLARE(M_SPARSE_ARRAY);
+static MALLOC_DEFINE(M_SPARSE_ARRAY, "sparse_array", "Objective-C Sparse Array");
+
 static void *EmptyArrayData[256];
 static SparseArray EmptyArray = { 0xff, 0, 0, (void**)&EmptyArrayData};
 static void *EmptyArrayData8[256] = { [0 ... 255] = &EmptyArray };
@@ -31,7 +34,8 @@ void *EmptyChildForShift(uint16_t shift)
 
 static void init_pointers(SparseArray * sarray)
 {
-	sarray->data = objc_zero_alloc(DATA_SIZE(sarray) * sizeof(void*));
+	sarray->data = objc_zero_alloc(DATA_SIZE(sarray) * sizeof(void*),
+				       M_SPARSE_ARRAY);
 	if(sarray->shift != 0)
 	{
 		void *data = EmptyChildForShift(sarray->shift);
@@ -44,7 +48,8 @@ static void init_pointers(SparseArray * sarray)
 
 PRIVATE SparseArray * SparseArrayNewWithDepth(uint16_t depth)
 {
-	SparseArray * sarray = objc_zero_alloc(sizeof(SparseArray));
+	SparseArray * sarray = objc_zero_alloc(sizeof(SparseArray),
+					       M_SPARSE_ARRAY);
 	sarray->refCount = 1;
 	sarray->shift = depth-base_shift;
 	sarray->mask = base_mask << sarray->shift;
@@ -56,7 +61,8 @@ PRIVATE SparseArray *SparseArrayNew()
 {
 	return SparseArrayNewWithDepth(16);
 }
-PRIVATE SparseArray *SparseArrayExpandingArray(SparseArray *sarray, uint16_t new_depth)
+PRIVATE SparseArray *SparseArrayExpandingArray(SparseArray *sarray,
+					       uint16_t new_depth)
 {
 	if (new_depth == sarray->shift)
 	{
@@ -65,11 +71,12 @@ PRIVATE SparseArray *SparseArrayExpandingArray(SparseArray *sarray, uint16_t new
 	assert(new_depth > sarray->shift);
 	// Expanding a child sarray has undefined results.
 	assert(sarray->refCount == 1);
-	SparseArray *new = objc_zero_alloc(sizeof(SparseArray));
+	SparseArray *new = objc_zero_alloc(sizeof(SparseArray), M_SPARSE_ARRAY);
 	new->refCount = 1;
 	new->shift = sarray->shift;
 	new->mask = sarray->mask;
-	void **newData = objc_alloc(DATA_SIZE(sarray) * sizeof(void*));
+	void **newData = objc_alloc(DATA_SIZE(sarray) * sizeof(void*),
+				    M_SPARSE_ARRAY);
 	void *data = EmptyChildForShift(new->shift + 8);
 	for(unsigned i=1 ; i<=MAX_INDEX(sarray) ; i++)
 	{
@@ -154,7 +161,8 @@ PRIVATE void SparseArrayInsert(SparseArray * sarray, uint16_t index, void *value
 		    (&EmptyArray8 == child))
 		{
 			// Insert missing nodes
-			SparseArray * newsarray = objc_zero_alloc(sizeof(SparseArray));
+			SparseArray * newsarray = objc_zero_alloc(sizeof(SparseArray),
+								  M_SPARSE_ARRAY);
 			newsarray->refCount = 1;
 			if (base_shift >= sarray->shift)
 			{
@@ -186,11 +194,13 @@ PRIVATE void SparseArrayInsert(SparseArray * sarray, uint16_t index, void *value
 
 PRIVATE SparseArray *SparseArrayCopy(SparseArray * sarray)
 {
-	SparseArray *copy = objc_zero_alloc(sizeof(SparseArray));
+	SparseArray *copy = objc_zero_alloc(sizeof(SparseArray),
+					    M_SPARSE_ARRAY);
 	copy->refCount = 1;
 	copy->shift = sarray->shift;
 	copy->mask = sarray->mask;
-	copy->data = objc_alloc(sizeof(void*) * DATA_SIZE(sarray));
+	copy->data = objc_alloc(sizeof(void*) * DATA_SIZE(sarray),
+				M_SPARSE_ARRAY);
 	memcpy(copy->data, sarray->data, sizeof(void*) * DATA_SIZE(sarray));
 	// If the sarray has children, increase their refcounts and link them
 	if (sarray->shift > 0)

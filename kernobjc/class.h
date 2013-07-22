@@ -59,7 +59,8 @@ Method *class_copyMethodList(Class cls, unsigned int *outCount);
 BOOL class_respondsToSelector(Class cls, SEL sel);
 
 BOOL class_conformsToProtocol(Class cls, Protocol *protocol);
-Protocol * __unsafe_unretained *class_copyProtocolList(Class cls, unsigned int *outCount);
+Protocol * __unsafe_unretained *class_copyProtocolList(Class cls,
+						       unsigned int *outCount);
 
 objc_property_t class_getProperty(Class cls, const char *name);
 objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
@@ -67,15 +68,6 @@ objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
 
 int class_getVersion(Class theClass);
 void class_setVersion(Class theClass, int version);
-
-
-// TODO
-const uint8_t *class_getIvarLayout(Class cls);
-void class_setIvarLayout(Class cls, const uint8_t *layout);
-
-// TODO
-const uint8_t *class_getWeakIvarLayout(Class cls);
-void class_setWeakIvarLayout(Class cls, const uint8_t *layout);
 
 
 /**
@@ -107,9 +99,13 @@ BOOL class_addIvar(Class cls, const char *name, size_t size,
 BOOL class_addProtocol(Class cls, Protocol *protocol);
 
 
-BOOL class_addProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
+BOOL class_addProperty(Class cls, const char *name,
+		       const objc_property_attribute_t *attributes,
+		       unsigned int attributeCount);
 
-void class_replaceProperty(Class cls, const char *name, const objc_property_attribute_t *attributes, unsigned int attributeCount);
+void class_replaceProperty(Class cls, const char *name,
+			   const objc_property_attribute_t *attributes,
+			   unsigned int attributeCount);
 
 
 #endif

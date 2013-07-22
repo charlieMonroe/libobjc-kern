@@ -4,6 +4,11 @@
 
 #include "encoding.h"
 
+
+MALLOC_DECLARE(M_ENCODING);
+static MALLOC_DEFINE(M_ENCODING, "objc encoding", "Objective-C Encoding Strings");
+
+
 size_t objc_alignof_type (const char *type);
 
 // It would be so nice if this works, but in fact it returns nonsense:
@@ -50,7 +55,7 @@ PRIVATE size_t lengthOfTypeEncoding(const char *types)
 static char* copyTypeEncoding(const char *types)
 {
 	size_t length = lengthOfTypeEncoding(types);
-	char *copy = objc_alloc(length + 1);
+	char *copy = objc_alloc(length + 1, M_ENCODING);
 	objc_copy_memory(copy, types, length);
 	copy[length] = '\0';
 	return copy;

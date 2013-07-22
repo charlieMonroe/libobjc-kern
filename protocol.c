@@ -5,6 +5,9 @@
 #include "runtime.h"
 #include "class.h"
 
+MALLOC_DECLARE(M_PROTOCOL);
+static MALLOC_DEFINE(M_PROTOCOL, "protocol", "Objective-C Protocol");
+
 static inline BOOL
 _objc_protocols_are_equal(const char *name, Protocol *p)
 {
@@ -319,7 +322,7 @@ protocol_copyMethodDescriptionList(Protocol *p, BOOL isRequiredMethod,
 	
 	struct objc_method_description *descriptions;
 	descriptions = objc_zero_alloc(sizeof(struct objc_method_description)
-				       * list->size);
+				       * list->size, M_PROTOCOL);
 	for (int i = 0; i < list->size; ++i){
 		descriptions[i] = list->list[i];
 	}
@@ -363,7 +366,7 @@ protocol_copyPropertyList(Protocol *protocol, unsigned int *outCount)
 		return NULL;
 	}
 	
-	Property *buffer = objc_zero_alloc(size * sizeof(Property));
+	Property *buffer = objc_zero_alloc(size * sizeof(Property), M_PROTOCOL);
 	if (list != NULL){
 		objc_property_list_get_list(list, buffer, list_size);
 	}
@@ -457,7 +460,7 @@ objc_allocateProtocol(const char *name)
 	if (objc_getProtocol(name) != NULL) {
 		return NULL;
 	}
-	Protocol *p = objc_zero_alloc(sizeof(Protocol));
+	Protocol *p = objc_zero_alloc(sizeof(Protocol), M_PROTOCOL);
 	p->name = objc_strcpy(name);
 	return p;
 }

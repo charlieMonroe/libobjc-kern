@@ -77,6 +77,15 @@
  */
 #define PREFIX(x) PREFIX_SUFFIX(MAP_TABLE_NAME, x)
 
+
+/*
+ * Malloc type def.
+ */
+#define M_MAP_TABLE_TYPE PREFIX_SUFFIX(M_, MAP_TABLE_NAME)
+
+MALLOC_DECLARE(M_MAP_TABLE_TYPE);
+static MALLOC_DEFINE(M_MAP_TABLE_TYPE, "hash_table", "Objective-C Hash Table");
+
 /**
  * Hash table cell. Includes the value + secondMaps
  * for collision handling - secondMaps is a bitmap -
@@ -116,7 +125,7 @@ typedef struct PREFIX(_table_struct)
  */
 struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
 {
-	return objc_zero_alloc(count * sizeof(struct PREFIX(_table_cell_struct)));
+	return objc_zero_alloc(count * sizeof(struct PREFIX(_table_cell_struct)), M_MAP_TABLE_TYPE);
 }
 
 /**
@@ -129,7 +138,7 @@ PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity
 #endif
 				      )
 {
-	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)));
+	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)), M_MAP_TABLE_TYPE);
 #if !MAP_TABLE_NO_LOCK
 	MAP_TABLE_LOCK_INIT(&table->lock, lock_name);
 #endif
@@ -159,7 +168,7 @@ static int PREFIX(_table_resize)(PREFIX(_table) *table)
 	
 	// Allocate a new table structure and move the array into that.  Now
 	// lookups will try using that one, if possible.
-	PREFIX(_table) *copy = objc_zero_alloc(sizeof(PREFIX(_table)));
+	PREFIX(_table) *copy = objc_zero_alloc(sizeof(PREFIX(_table)), M_MAP_TABLE_TYPE);
 	memcpy(copy, table, sizeof(PREFIX(_table)));
 	table->old = copy;
 	
@@ -452,7 +461,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 {
 	if (NULL == *state)
 	{
-		*state = objc_zero_alloc(sizeof(struct PREFIX(_table_enumerator)));
+		*state = objc_zero_alloc(sizeof(struct PREFIX(_table_enumerator)), M_MAP_TABLE_TYPE);
 		// Make sure that we are not reallocating the table when we start
 		// enumerating
 		MAP_TABLE_WLOCK(&table->lock);
@@ -517,3 +526,4 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_current)(PREFIX(_table) *
 #undef MAP_TABLE_RLOCK
 #undef MAP_TABLE_UNLOCK
 #undef MAP_TABLE_LOCK_INIT
+#undef M_MAP_TABLE_TYPE

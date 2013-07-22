@@ -23,5 +23,6 @@ PRIVATE BOOL			objc_register_small_object_class(Class cl, uintptr_t mask);
 PRIVATE struct objc_slot	*objc_class_get_slot(Class cl, SEL selector);
 PRIVATE BOOL			objc_class_resolve(Class cl);
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);
+PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
 
 #endif

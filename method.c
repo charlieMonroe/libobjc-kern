@@ -5,6 +5,9 @@
 #include "private.h"
 #include "runtime.h"
 
+MALLOC_DECLARE(M_METHOD);
+static MALLOC_DEFINE(M_METHOD, "objc_methods", "Objective-C method structures");
+
 /*
  * Adds methods from the array 'm' into the method_list. The m array doesn't
  * have to be NULL-terminated, and has to contain 'count' methods.
@@ -51,7 +54,7 @@ objc_method_create(SEL selector, IMP implementation)
 	objc_assert(implementation != NULL, "Trying to create a method with "
 		    "NULL implementation!");
 	
-	Method m = objc_alloc(sizeof(struct objc_method));
+	Method m = objc_alloc(sizeof(struct objc_method), M_METHOD);
 	m->selector = selector;
 	
 	/*

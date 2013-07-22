@@ -5,6 +5,16 @@
 #include "dtable.h"
 #include "spinlock.h"
 
+MALLOC_DECLARE(M_FAKE_CLASS);
+static MALLOC_DEFINE(M_FAKE_CLASS, "fake class", "Objective-C Associated "
+		     "Objects Fake Class");
+
+MALLOC_DECLARE(M_REFLIST);
+static MALLOC_DEFINE(M_REFLIST, "reference list", "Objective-C Associated "
+		     "Objects Reference List");
+
+
+
 #define REF_CNT 10
 
 struct reference {
@@ -68,7 +78,8 @@ _objc_class_for_object(id object, BOOL create)
 			return cl;
 		}
 		
-		cl = objc_zero_alloc(sizeof(struct objc_assoc_fake_class));
+		cl = objc_zero_alloc(sizeof(struct objc_assoc_fake_class),
+				     M_FAKE_CLASS);
 		cl->isa = superclass->isa;
 		cl->super_class = superclass;
 		cl->dtable = uninstalled_dtable;
@@ -110,7 +121,8 @@ _objc_ref_list_for_object(id object, BOOL create)
 					OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
 		if (*extra_space == NULL && create){
 			struct reference_list *list;
-			list = objc_zero_alloc(sizeof(struct reference_list));
+			list = objc_zero_alloc(sizeof(struct reference_list),
+					       M_REFLIST);
 			
 			// TODO different lock name
 			objc_rw_lock_init(&list->lock,
@@ -187,7 +199,9 @@ _objc_find_free_reference_in_list(struct reference_list *list, BOOL create)
 		 * linked list - if creation is allowed, allocate.
 		 */
 		if (list->next == NULL && create){
-			list->next = objc_zero_alloc(sizeof(struct reference_list));
+			list->next = objc_zero_alloc(
+					     sizeof(struct reference_list),
+					     M_REFLIST);
 			return &list->next->refs[0];
 		}
 		

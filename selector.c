@@ -46,6 +46,15 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 
 #include "hashtable.h"
 
+MALLOC_DECLARE(M_SELECTOR_NAMES);
+static MALLOC_DEFINE(M_SELECTOR_NAMES, "selector_names", "Objective-C "
+		     "Selector Names");
+
+MALLOC_DECLARE(M_SELECTORS);
+static MALLOC_DEFINE(M_SELECTORS, "selectors", "Objective-C selectors");
+
+
+
 /* String allocator stuff.*/
 static char *string_allocator = NULL;
 static size_t string_allocator_bytes_remaining = 0;
@@ -112,7 +121,7 @@ _objc_selector_allocate_string(size_t size)
 		 * This also covers the string_allocator == NULL case.
 		 */
 		
-		string_allocator = objc_alloc_page();
+		string_allocator = objc_alloc_page(M_SELECTOR_NAMES);
 		string_allocator_bytes_remaining = PAGE_SIZE;
 		
 		if (string_allocator == NULL){
@@ -202,7 +211,7 @@ _sel_register_name_no_lock(const char *name, const char *types)
 		 * in the meanwhile.
 		 */
 		
-		selector = objc_alloc(sizeof(struct objc_selector));
+		selector = objc_alloc(sizeof(struct objc_selector), M_SELECTORS);
 		selector->name =
 		_objc_selector_copy_name_and_types(name, types);
 		

@@ -9,6 +9,11 @@
 
 #define NAME(x) PREFIX_SUFFIX(POOL_NAME, x)
 
+#define M_POOL_TYPE PREFIX_SUFFIX(M_, POOL_NAME)
+
+MALLOC_DECLARE(M_POOL_TYPE);
+static MALLOC_DEFINE(M_POOL_TYPE, "pool", "Objective-C Pool");
+
 /* Malloc one page at a time. */
 #define POOL_SIZE ((PAGE_SIZE) / sizeof(POOL_TYPE))
 static POOL_TYPE* NAME(_pool);
@@ -31,7 +36,7 @@ static inline POOL_TYPE*NAME(_pool_alloc)(void)
 	pool_allocs++;
 	if (0 > NAME(_pool_next_index))
 	{
-		NAME(_pool) = objc_alloc_page();
+		NAME(_pool) = objc_alloc_page(M_POOL_TYPE);
 		NAME(_pool_next_index) = POOL_SIZE - 1;
 		pool_size += PAGE_SIZE;
 	}

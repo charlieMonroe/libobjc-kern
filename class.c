@@ -11,6 +11,13 @@
 #include "class.h"
 #include "private.h"
 
+MALLOC_DECLARE(M_OBJECTS);
+static MALLOC_DEFINE(M_OBJECTS, "object", "Objective-C Objects");
+
+MALLOC_DECLARE(M_IVARS);
+static MALLOC_DEFINE(M_IVARS, "ivars", "Objective-C Ivar List");
+
+
 /*
  * Class structures are versioned. If a class prototype of a different
  * version is encountered, it is either ignored, if the version is
@@ -362,7 +369,7 @@ class_createInstance(Class cl, size_t extraBytes)
 	
 	size_t size = _instance_size(cl);
 	
-	id obj = (id)objc_zero_alloc(size);
+	id obj = (id)objc_zero_alloc(size, M_OBJECTS);
 	obj->isa = cl;
 	
 	objc_debug_log("Created instance %p of class %s\n", obj,
@@ -392,7 +399,7 @@ object_copy(id obj, size_t size)
 		return nil;
 	}
 	
-	id copy = objc_zero_alloc(size);
+	id copy = objc_zero_alloc(size, M_OBJECTS);
 	objc_copy_memory(copy, obj, size);
 	
 	return copy;
@@ -565,7 +572,7 @@ class_copyIvarList(Class cl, unsigned int *outCount)
 		return NULL;
 	}
 	
-	Ivar *ivars = objc_alloc(sizeof(Ivar) * number_of_ivars);
+	Ivar *ivars = objc_alloc(sizeof(Ivar) * number_of_ivars, M_IVARS);
 	_ivars_copy_to_list(cl, ivars, number_of_ivars);
 	if (outCount != NULL){
 		*outCount = number_of_ivars;

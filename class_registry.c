@@ -25,6 +25,10 @@
  */
 static objc_load_messages_table *objc_load_messages;
 
+MALLOC_DECLARE(M_CLASS);
+static MALLOC_DEFINE(M_CLASS, "class", "Objective-C Class");
+
+
 /*
  * Calls a the load imp on a class if it hasn't been called already.
  */
@@ -366,8 +370,9 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 	}
 	
 	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class)
-						+ extraBytes);
-	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class));
+						+ extraBytes, M_CLASS);
+	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class),
+						    M_CLASS);
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
@@ -461,7 +466,7 @@ objc_copyClassList(unsigned int *out_count)
 {
 	size_t class_count = objc_classes->table_used;
 	
-	Class *classes = objc_alloc(class_count * sizeof(Class));
+	Class *classes = objc_alloc(class_count * sizeof(Class), M_CLASS);
 	
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;
