@@ -64,6 +64,7 @@ _objc_class_for_object(id object, BOOL create)
 		cl->super_class = superclass;
 		cl->dtable = uninstalled_dtable;
 		cl->flags.fake = YES;
+		cl->flags.resolved = YES;
 		
 		// TODO install cxx_destruct
 		
