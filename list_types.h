@@ -2,7 +2,7 @@
 #ifndef OBJC_LIST_TYPES_H
 #define OBJC_LIST_TYPES_H
 
-/**
+/*
  * This file includes the list.h file multiple times,
  * each time with different options, hence creating
  * all the necessary list structures throughout the 
@@ -18,9 +18,9 @@
 /** Ivar list. */
 #define OBJC_LIST_TYPE_NAME ivar
 #define OBJC_LIST_TYPE struct objc_ivar
-#define OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK(x) {\
-	objc_dealloc((void*)x->type);\
-	objc_dealloc((void*)x->name);\
+#define OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK(x) {			\
+	objc_dealloc((void*)x->type);					\
+	objc_dealloc((void*)x->name);					\
 }
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
@@ -50,4 +50,4 @@
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 
-#endif // OBJC_LIST_TYPES_H
+#endif /* !OBJC_LIST_TYPES_H */

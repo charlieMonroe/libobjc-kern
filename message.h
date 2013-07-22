@@ -6,11 +6,12 @@
 #include "selector.h"
 #include "kernobjc/message.h"
 
-/**
+/*
  * The run-time in a few cases sends a direct ARR
  * messages to objects that do not support ARC,
- * i.e. implement their own ARR methods.
+ * i.e. those that implement their own ARR methods.
  */
+
 static inline void objc_send_release_msg(id receiver){
 	objc_msgSend(receiver, objc_release_selector);
 }
