@@ -64,17 +64,22 @@ static inline void *objc_alloc_page(void){
 
 static inline void objc_rw_lock_init(objc_rw_lock *lock){
 	// TODO
+	objc_debug_log("Initing lock at address %p\n", lock);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
+	objc_debug_log("Read-locking a lock at address %p\n", lock);
 	return 0;
 }
 static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
+	objc_debug_log("Write-locking a lock at address %p\n", lock);
 	return 0;
 }
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
+	objc_debug_log("Unlocking a lock at address %p\n", lock);
 	return 0;
 }
 static inline int objc_rw_lock_destroy(objc_rw_lock *lock){
+	objc_debug_log("Destroying a lock at address %p\n", lock);
 	return 0;
 }
 

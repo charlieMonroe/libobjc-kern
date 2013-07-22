@@ -569,8 +569,7 @@ objc_class_register_class(Class cl)
 	
 	objc_class_insert(objc_classes, cl);
 	
-	objc_register_selectors_from_class(cl);
-	objc_register_selectors_from_class(cl->isa);
+	objc_register_selectors_from_class(cl, cl->isa);
 	
 	cl->dtable = cl->isa->dtable = uninstalled_dtable;
 	

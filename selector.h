@@ -32,7 +32,7 @@ objc_selectors_equal(SEL selector1, SEL selector2)
  * Registers all selectors within the class or method list.
  */
 PRIVATE void objc_register_selectors_from_method_list(objc_method_list *list);
-PRIVATE void objc_register_selectors_from_class(Class cl);
+PRIVATE void objc_register_selectors_from_class(Class cl, Class meta);
 PRIVATE void objc_register_selector_array(struct objc_selector *selectors, unsigned int count);
 
 #endif /* !OBJC_SELECTOR_H_ */

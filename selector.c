@@ -32,7 +32,8 @@ PRIVATE SEL objc_load_selector = null_selector;
 
 
 /* Forward declarations needed for the hash table */
-static inline BOOL _objc_selector_struct_name_is_equal_to(void *key, Selector sel);
+static inline BOOL _objc_selector_struct_name_is_equal_to(void *key,
+							  Selector sel);
 static inline uint32_t _objc_selector_hash(Selector sel);
 
 #define MAP_TABLE_NAME objc_selector
@@ -40,6 +41,7 @@ static inline uint32_t _objc_selector_hash(Selector sel);
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_selector_hash
 #define MAP_TABLE_VALUE_TYPE Selector
+#define MAP_TABLE_NO_LOCK 1
 
 #include "hashtable.h"
 
@@ -187,6 +189,47 @@ sel_registerName_direct(Selector selector)
 	return YES;
 }
 
+static inline SEL
+_sel_register_name_no_lock(const char *name, const char *types)
+{
+	Selector selector;
+	selector = objc_selector_table_get(objc_selector_hashtable,
+					   name);
+	if (selector == NULL){
+		/**
+		 * Still NULL -> no other thread inserted it
+		 * in the meanwhile.
+		 */
+		
+		selector = objc_alloc(sizeof(struct objc_selector));
+		selector->name =
+		_objc_selector_copy_name_and_types(name, types);
+		
+		/* Will be populated when registered */
+		selector->sel_uid = null_selector;
+		
+		if (selector->name == NULL){
+			/* Probably ran out of memory */
+			return null_selector;
+		}
+		
+		if (!sel_registerName_direct(selector)){
+			return null_selector;
+		}
+	}
+	return selector->sel_uid;
+}
+
+static inline void
+_sel_register_from_method_list_no_lock(objc_method_list *list)
+{
+	for (int i = 0; i < list->size; ++i){
+		Method m = &list->list[i];
+		m->selector = _sel_register_name_no_lock(m->selector_name,
+							 m->selector_types);
+	}
+}
+
 
 #pragma mark -
 #pragma mark PUBLIC_FUNCTIONS
@@ -202,49 +245,22 @@ sel_registerName(const char *name, const char *types)
 	
 	Selector selector = objc_selector_table_get(objc_selector_hashtable,
 						    name);
-	if (selector == NULL){
-		/*
-		 * Lock for rw access, try to look up again if some
-		 * other thread hasn't inserted the selector and
-		 * if not, allocate the structure and insert it.
-		 */
-		
-		objc_rw_lock_wlock(&objc_selector_lock);
-		
-		selector = objc_selector_table_get(objc_selector_hashtable,
-						   name);
-		if (selector == NULL){
-			/**
-			 * Still NULL -> no other thread inserted it
-			 * in the meanwhile.
-			 */
-			
-			selector = objc_alloc(sizeof(struct objc_selector));
-			selector->name =
-				_objc_selector_copy_name_and_types(name, types);
-			
-			/* Will be populated when registered */
-			selector->sel_uid = 0;
-			
-			if (selector->name == NULL){
-				/* Probably ran out of memory */
-				return 0;
-			}
-			
-			if (!sel_registerName_direct(selector)){
-				return 0;
-			}
-		}
-		
-		objc_rw_lock_unlock(&objc_selector_lock);
-	}else{
+	if (selector != NULL){
 		const char *selector_types = _objc_selector_get_types(selector);
 		objc_assert(objc_strings_equal(types, selector_types),
 			    "Trying to register a selector with the same name"
 			    " but different types!\n");
+		return selector->sel_uid;
 	}
 	
-	return selector->sel_uid;
+	/*
+	 * Lock for rw access, try to look up again if some
+	 * other thread hasn't inserted the selector and
+	 * if not, allocate the structure and insert it.
+	 */
+	
+	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
+	return _sel_register_name_no_lock(name, types);
 }
 
 const char *
@@ -292,20 +308,27 @@ sel_getTypes(SEL selector)
 PRIVATE void
 objc_register_selectors_from_method_list(objc_method_list *list)
 {
-	for (int i = 0; i < list->size; ++i){
-		Method m = &list->list[i];
-		m->selector = sel_registerName(m->selector_name,
-					       m->selector_types);
-	}
+	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
+	_sel_register_from_method_list_no_lock(list);
 }
 
 PRIVATE void
-objc_register_selectors_from_class(Class cl)
+objc_register_selectors_from_class(Class cl, Class meta)
 {
+	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
+	
 	objc_method_list *list = cl->methods;
 	while (list != NULL){
-		objc_register_selectors_from_method_list(list);
+		_sel_register_from_method_list_no_lock(list);
 		list = list->next;
+	}
+	
+	if (meta != Nil){
+		list = meta->methods;
+		while (list != NULL){
+			_sel_register_from_method_list_no_lock(list);
+			list = list->next;
+		}
 	}
 }
 
@@ -313,6 +336,8 @@ PRIVATE void
 objc_register_selector_array(struct objc_selector *selectors,
 			     unsigned int count)
 {
+	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
+	
 	for (int i = 0; i < count; ++i){
 		Selector selector = &selectors[i];
 		sel_registerName_direct(selector);
@@ -348,12 +373,12 @@ objc_selector_init(void)
 	 */
 	objc_selector_sparse = SparseArrayNew();
 	
-	objc_autorelease_selector = sel_registerName("autorelease", "@@:");
-	objc_release_selector = sel_registerName("release", "v@:");
-	objc_retain_selector = sel_registerName("retain", "@@:");
-	objc_dealloc_selector = sel_registerName("dealloc", "v@:");
-	objc_copy_selector = sel_registerName("copy", "@@:");
-	objc_cxx_destruct_selector = sel_registerName(".cxx_destruct", "v@:");
-	objc_load_selector = sel_registerName("load", "v@:");
+	objc_autorelease_selector = _sel_register_name_no_lock("autorelease", "@@:");
+	objc_release_selector = _sel_register_name_no_lock("release", "v@:");
+	objc_retain_selector = _sel_register_name_no_lock("retain", "@@:");
+	objc_dealloc_selector = _sel_register_name_no_lock("dealloc", "v@:");
+	objc_copy_selector = _sel_register_name_no_lock("copy", "@@:");
+	objc_cxx_destruct_selector = _sel_register_name_no_lock(".cxx_destruct", "v@:");
+	objc_load_selector = _sel_register_name_no_lock("load", "v@:");
 }
 
