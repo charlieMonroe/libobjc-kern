@@ -1,6 +1,8 @@
 
 #include "os.h"
 
+#ifndef spinlock_do_not_allocate_page
+
 /**
  * Number of spinlocks.  This allocates one page on 32-bit platforms.
  */
@@ -10,6 +12,7 @@ static const int spinlock_mask = spinlock_count - 1;
  * Integers used as spinlocks for atomic property access.
  */
 extern int spinlocks[spinlock_count];
+
 /**
  * Get a spin lock from a pointer.  We want to prevent lock contention between
  * properties in the same object - if someone is stupid enough to be using
@@ -28,6 +31,8 @@ static inline volatile int *lock_for_pointer(const void *ptr)
 	hash |= low;
 	return spinlocks + (hash & spinlock_mask);
 }
+
+#endif /* !spinlock_do_not_allocate_page */
 
 /**
  * Unlocks the spinlock.  This is not an atomic operation.  We are only ever

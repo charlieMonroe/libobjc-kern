@@ -105,6 +105,27 @@ static Class unresolved_classes;
  */
 objc_rw_lock objc_runtime_lock;
 
+/*
+ * Default class lookup hook.
+ */
+static Class __objc_class_lookup_default_hook(const char *name) { return Nil; }
+
+/*
+ * The basic class lookup hook allowing the app to supply a class.
+ */
+Class(*objc_class_lookup_hook)(const char *name) =
+					__objc_class_lookup_default_hook;
+
+/*
+ * Default load callback.
+ */
+static void __objc_class_default_load_callback(Class cl) { }
+
+/*
+ * Whenever a class gets loaded, this function gets called.
+ */
+void(*objc_class_load_callback)(Class cl) = __objc_class_default_load_callback;
+
 
 static inline BOOL
 _objc_class_name_is_equal_to(void *key, Class cl)
@@ -479,13 +500,11 @@ objc_getClass(const char *name)
 	}
 	
 	Class c = objc_class_table_get(objc_classes, name);
-	if (c != Nil){
-		/* Found it */
-		return (id)c;
+	if (c == Nil){
+		c = objc_class_lookup_hook(name);
 	}
 	
 	// TODO aliases?
-	// TODO hook
 	
 	return (id)c;
 }
@@ -493,10 +512,10 @@ objc_getClass(const char *name)
 id
 objc_lookUpClass(const char *name)
 {
-	if (name != NULL){
-		return (id)objc_class_table_get(objc_classes, name);
+	if (name == NULL){
+		return nil;
 	}
-	return nil;
+	return (id)objc_class_table_get(objc_classes, name);
 }
 
 PRIVATE BOOL
@@ -531,7 +550,7 @@ objc_class_resolve(Class cl)
 	
 	objc_class_send_load_messages(cl);
 	
-	// TODO load call-back
+	objc_class_load_callback(cl);
 	
 	return YES;
 }

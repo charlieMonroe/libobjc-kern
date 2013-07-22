@@ -9,7 +9,6 @@
 PRIVATE void	init_dispatch_tables(void);
 
 PRIVATE void	objc_arc_init(void);
-PRIVATE void	objc_class_extra_init(void);
 PRIVATE void	objc_class_init(void);
 PRIVATE void	objc_install_base_classes(void);
 PRIVATE void	objc_protocol_init(void);

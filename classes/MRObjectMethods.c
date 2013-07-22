@@ -4,6 +4,7 @@
 #include "../kernobjc/runtime.h"
 #include "../private.h"
 #include "../message.h"
+#include "../associative.h"
 
 #pragma mark MRObject
 
@@ -72,6 +73,7 @@ void _C_MRObject_release_noop_(Class self, SEL _cmd){
 }
 
 void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd){
+	objc_remove_associated_objects((id)self);
 	object_dispose((id)self);
 }
 

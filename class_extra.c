@@ -1,17 +1,24 @@
+
 #include "class_extra.h"
+
+#define spinlock_do_not_allocate_page 1
+#include "spinlock.h"
+
+/*
+ * It is expected to happen only once per class per class extra (currently
+ * only used by associated objects) and in current implementation only when
+ * associating objects directly with a class, which is not often.
+ *
+ * Therefore a spinlock is used instead of using a RW lock or mutex, since
+ * the contention is expected to be minimal if any.
+ */
+volatile int class_extra_spinlock;
 
 struct objc_class_extra {
 	struct objc_class_extra		*next;
 	void				*data;
 	unsigned int			identifier;
 };
-
-
-/*
- * RW lock that guards all access to Class->extra_space.
- */
-// TODO use spinlock
-static objc_rw_lock objc_class_extra_lock;
 
 /*
  * Finds an extra space on the class cl that has 'identifier'.
@@ -40,10 +47,11 @@ _objc_class_extra_find_no_lock(Class cl, unsigned int identifier)
 static inline struct objc_class_extra *
 _objc_class_extra_find(Class cl, unsigned int identifier)
 {
-	objc_rw_lock_rlock(&objc_class_extra_lock);
+	
+	lock_spinlock(&class_extra_spinlock);
 	struct objc_class_extra *extra;
 	extra = _objc_class_extra_find_no_lock(cl, identifier);
-	objc_rw_lock_unlock(&objc_class_extra_lock);
+	unlock_spinlock(&class_extra_spinlock);
 	
 	return extra;
 }
@@ -55,7 +63,7 @@ _objc_class_extra_find(Class cl, unsigned int identifier)
 static inline struct objc_class_extra *
 _objc_class_extra_create(Class cl, unsigned int identifier)
 {
-	objc_rw_lock_wlock(&objc_class_extra_lock);
+	lock_spinlock(&class_extra_spinlock);
 	
 	/* See if anyone hasn't added the extra in the meanwhile */
 	struct objc_class_extra *extra;
@@ -80,7 +88,7 @@ _objc_class_extra_create(Class cl, unsigned int identifier)
 		}
 	}
 	
-	objc_rw_lock_unlock(&objc_class_extra_lock);
+	unlock_spinlock(&class_extra_spinlock);
 	
 	return extra;
 }
@@ -98,8 +106,3 @@ objc_class_extra_with_identifier(Class cl, unsigned int identifier)
 	return &extra->data;
 }
 
-
-PRIVATE void objc_class_extra_init(void){
-	// TODO use a spinlock instead
-	objc_rw_lock_init(&objc_class_extra_lock, "objc_class_extra_lock");
-}

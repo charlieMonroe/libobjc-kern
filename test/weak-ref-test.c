@@ -15,9 +15,6 @@ void weak_ref_test(void){
 	
 	objc_assert(weak_ref == (id)obj, "The obj wasn't stored in the weak ref!\n");
 	
-	// TODO this should be called automatically
-	objc_remove_associated_objects((id)obj);
-	
 	objc_release((id)obj);
 	
 	objc_assert(obj->retainCount == -1, "The associated object should have been deallocated!\n");
