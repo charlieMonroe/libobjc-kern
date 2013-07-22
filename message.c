@@ -33,8 +33,7 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 {
 	Class class = objc_object_get_class_inline((*receiver));
 	Slot result = objc_dtable_lookup(class->dtable, selector);
-	//TODO UNLIKELY
-	if ((NULL == result))
+	if (UNLIKELY(NULL == result))
 	{
 		dtable_t dtable = dtable_for_class(class);
 		/* Install the dtable if it hasn't already been initialized. */
@@ -102,8 +101,7 @@ Slot objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
 	 * too, although this is not particularly useful because the nil method
 	 * can be inlined trivially.
 	 */
-	// TODO unlikely
-	if (*receiver == nil){
+	if (UNLIKELY(*receiver == nil)){
 		/* 
 		 * Return the correct kind of zero, depending on the type
 		 * encoding.

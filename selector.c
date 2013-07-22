@@ -29,6 +29,7 @@ PRIVATE SEL objc_autorelease_selector = null_selector;
 PRIVATE SEL objc_copy_selector = null_selector;
 PRIVATE SEL objc_cxx_destruct_selector = null_selector;
 PRIVATE SEL objc_load_selector = null_selector;
+PRIVATE SEL objc_initialize_selector = null_selector;
 
 
 /* Forward declarations needed for the hash table */
@@ -380,5 +381,6 @@ objc_selector_init(void)
 	objc_copy_selector = _sel_register_name_no_lock("copy", "@@:");
 	objc_cxx_destruct_selector = _sel_register_name_no_lock(".cxx_destruct", "v@:");
 	objc_load_selector = _sel_register_name_no_lock("load", "v@:");
+	objc_initialize_selector = _sel_register_name_no_lock("initialize", "v@:");
 }
 

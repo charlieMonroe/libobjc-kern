@@ -14,12 +14,7 @@ static inline BOOL checkAttribute(char field, int attr)
 }
 
 static inline id _objc_copy_object(id obj){
-	static SEL copy_sel = 0;
-	// TODO unlikely
-	if (copy_sel == 0){
-		copy_sel = sel_registerName("copy", "@@:");
-	}
-	obj = objc_msgSend(obj, copy_sel);
+	obj = objc_msgSend(obj, objc_copy_selector);
 	return obj;
 }
 

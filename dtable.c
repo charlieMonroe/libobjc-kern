@@ -400,14 +400,8 @@ PRIVATE void objc_send_initialize(id object)
 	// to finish setting up the temporary dtable.
 	OBJC_UNLOCK_RUNTIME();
 
-	static SEL initializeSel = null_selector;
-	// TODO unlikely
-	if (null_selector == initializeSel){
-		initializeSel = sel_registerName("initialize", "v@:");
-	}
-
 	struct objc_slot *initializeSlot = skipMeta ? 0 :
-			objc_dtable_lookup(dtable, initializeSel);
+			objc_dtable_lookup(dtable, objc_initialize_selector);
 
 	// If there's no initialize method, then don't bother installing and
 	// removing the initialize dtable, just install both dtables correctly now
@@ -453,7 +447,7 @@ PRIVATE void objc_send_initialize(id object)
 	// Store the buffer in the temporary dtables list.  Note that it is safe to
 	// insert it into a global list, even though it's a temporary variable,
 	// because we will clean it up after this function.
-	initializeSlot->implementation((id)class, initializeSel);
+	initializeSlot->implementation((id)class, objc_initialize_selector);
 }
 
 PRIVATE void objc_install_dtable_for_object(id receiver){

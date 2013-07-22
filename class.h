@@ -34,8 +34,7 @@ static inline Class
 objc_class_for_small_object(id obj)
 {
 	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);
-	// TODO unlikely
-	if (mask != 0){
+	if (UNLIKELY(mask != 0)){
 		if (sizeof(void*) == 4){
 			// 32-bit system
 			return objc_small_object_classes[0];
@@ -56,8 +55,7 @@ __attribute__((always_inline)) static inline Class
 objc_object_get_class_inline(id obj)
 {
 	Class cl = objc_class_for_small_object(obj);
-	// TODO unlikely
-	if (cl != Nil){
+	if (UNLIKELY(cl != Nil)){
 		return cl;
 	}
 	

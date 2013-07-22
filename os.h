@@ -34,6 +34,8 @@
 #define REALLY_PREFIX_SUFFIX(x, y) x ## y
 #define PREFIX_SUFFIX(x, y) REALLY_PREFIX_SUFFIX(x, y)
 
+#define LIKELY(x) __builtin_expect(x, 1)
+#define UNLIKELY(x) __builtin_expect(x, 0)
 
 #define objc_debug_log(...) \
 	if (OBJC_DEBUG_LOG) { printf("DEBUG: "); printf(__VA_ARGS__); }
