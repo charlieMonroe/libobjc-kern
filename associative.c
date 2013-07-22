@@ -84,6 +84,10 @@ _objc_class_for_object(id object, BOOL create)
 		
 		object->isa = cl;
 		unlock_spinlock(spin_lock);
+		
+		objc_debug_log("Created fake class (%s) for object %p\n",
+			       class_getName(cl),
+			       object);
 	}
 	return cl;
 }
@@ -109,7 +113,8 @@ _objc_ref_list_for_object(id object, BOOL create)
 			list = objc_zero_alloc(sizeof(struct reference_list));
 			
 			// TODO different lock name
-			objc_rw_lock_init(&list->lock, "objc_reference_list_lock");
+			objc_rw_lock_init(&list->lock,
+					  "objc_reference_list_lock");
 			
 			*extra_space = list;
 		}

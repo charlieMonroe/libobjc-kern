@@ -123,51 +123,7 @@ _lookup_method(Class class, SEL selector)
 	return NULL;
 }
 
-static inline Method
-_lookup_cached_method(Class cl, SEL selector)
-{
-	if (cl != Nil && selector != null_selector && cl->dtable != NULL){
-		return (Method)SparseArrayLookup((SparseArray*)cl->dtable,
-						 selector);
-	}
-	return NULL;
-}
 
-static inline void
-_cache_method(Class cl, Method m)
-{
-	// TODO locking on creation
-	// TODO not method, use a slot
-	if (cl != Nil && m != NULL && cl->dtable != NULL){
-		SparseArrayInsert((SparseArray*)cl->dtable, m->selector, m);
-	}
-}
-
-/*
- * Looks up an instance method implementation within a class.
- * NULL if it hasn't been found, yet no-op function in case
- * the receiver is nil.
- */
-static inline IMP
-_lookup_method_impl(Class cl, SEL selector)
-{
-	Method m = _lookup_cached_method(cl, selector);
-	if (m != NULL){
-		return m->implementation;
-	}
-	
-	while (cl != Nil && cl->flags.fake) {
-		cl = cl->super_class;
-	}
-	
-	m = _lookup_method(cl, selector);
-	if (m == NULL){
-		return NULL;
-	}
-	
-	_cache_method(cl, m);
-	return m->implementation;
-}
 
 /*
  * Returns whether cl is a subclass of superclass_candidate.
@@ -266,33 +222,6 @@ _ivars_copy_to_list(Class cl, Ivar *list, unsigned int max_count)
 	list[max_count] = NULL;
 }
 
-/*
- * Looks up method. If obj is nil, returns the nil receiver method.
- *
- * If the method is not found, forwarding takes place.
- */
-static inline Method
-_lookup_object_method(id obj, SEL selector)
-{
-	Method method = NULL;
-	
-	if (obj == nil){
-		// TODO
-		return NULL;
-	}
-	
-	method = _lookup_cached_method(obj->isa, selector);
-	if (method != NULL){
-		return method;
-	}
-	
-	method = _lookup_method(objc_object_get_class_inline(obj), selector);
-	if (method != NULL){
-		_cache_method(obj->isa, method);
-	}
-	
-	return method;
-}
 
 /*
  * The same scenario as above, but in this case a call to the superclass.

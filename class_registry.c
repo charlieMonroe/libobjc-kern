@@ -542,7 +542,6 @@ objc_class_resolve(Class cl)
 	cl->flags.resolved = YES;
 	cl->isa->flags.resolved = YES;
 	
-	// TODO - fixup instance size here?
 	_objc_class_fixup_instance_size(cl);
 	_objc_class_fixup_instance_size(cl->isa);
 	

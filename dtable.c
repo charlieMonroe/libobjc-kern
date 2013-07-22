@@ -46,7 +46,7 @@ static void checkARCAccessors(Class cls)
 {
 	static SEL isARC;
 	if (null_selector == isARC){
-		// TODO necessary?
+		// TODO make it a static SEL in selector.h
 		isARC = sel_registerName("_ARCCompliantRetainRelease", "v@:");
 	}
 	
@@ -469,7 +469,6 @@ PRIVATE void objc_install_dtable_for_object(id receiver){
 	dtable_t dtable = dtable_for_class(cl);
 	/* Install the dtable if it hasn't already been initialized. */
 	if (dtable == uninstalled_dtable){
-		// TODO
 		objc_send_initialize(receiver);
 		dtable = dtable_for_class(cl);
 	}

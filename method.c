@@ -3,6 +3,7 @@
 #include "dtable.h"
 #include "class.h"
 #include "private.h"
+#include "runtime.h"
 
 /*
  * Adds methods from the array 'm' into the method_list. The m array doesn't
@@ -14,11 +15,12 @@
 static inline void
 _add_methods_to_class(Class cl, Method *m, unsigned int count)
 {
-	// TODO locking
 	objc_method_list *list = objc_method_list_create(count);
 	for (int i = 0; i < count; ++i){
 		list->list[i] = *m[i];
 	}
+	
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
 	cl->methods = objc_method_list_append(cl->methods, list);
 	dtable_add_method_list_to_class(cl, cl->methods);
