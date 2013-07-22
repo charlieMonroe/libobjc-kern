@@ -6,39 +6,44 @@
 
 #define REF_CNT 10
 
-typedef struct {
-	void *key;
-	void *value;
+struct reference {
+	void	*key;
+	void	*value;
 	
 	objc_AssociationPolicy policy;
-} objc_associative_reference;
+};
 
-typedef struct objc_object_ref_list_struct {
-	struct objc_object_ref_list_struct *next;
+struct reference_list {
+	struct reference_list	*next;
 	
-	objc_rw_lock lock; // TODO make mutex from the pool instead
+	objc_rw_lock		lock; // TODO make mutex from the pool instead
 	
-	objc_associative_reference refs[REF_CNT];
-} objc_object_ref_list;
+	struct reference	refs[REF_CNT];
+};
 
-/**
+/*
  * Associated objects install a fake class for each object that uses them.
  * 
  * The class isn't an actual class, but a fake class.
  */
-typedef struct {
-	Class isa;
-	Class super_class;
-	void *dtable;
-	objc_class_flags flags;
-	objc_object_ref_list list;
-} objc_fake_class;
+struct objc_assoc_fake_class {
+	/* The first 4 fields are identical to the ones in Class. */
+	Class			isa;
+	Class			super_class;
+	void			*dtable;
+	objc_class_flags	flags;
+	
+	/* Reference list follows. */
+	struct reference_list	list;
+};
 
 
-/**
+/*
  * Looks for the first fake class in the class hierarchy.
  */
-Class _objc_find_class_for_object(id object){
+Class
+_objc_find_class_for_object(id object)
+{
 	Class cl = object->isa;
 	while (cl != Nil && !cl->flags.fake) {
 		cl = cl->super_class;
@@ -47,16 +52,18 @@ Class _objc_find_class_for_object(id object){
 	return cl;
 }
 
-/**
+/*
  * Looks for the fake class in the class hierarchy. If not found
  * and create == YES, allocates it and installs the isa pointer.
  */
-Class _objc_class_for_object(id object, BOOL create){
+Class
+_objc_class_for_object(id object, BOOL create)
+{
 	Class superclass = object->isa;
 	Class cl = _objc_find_class_for_object(object);
 	if (cl == Nil && create){
 		// TODO locking
-		cl = objc_zero_alloc(sizeof(objc_fake_class));
+		cl = objc_zero_alloc(sizeof(struct objc_assoc_fake_class));
 		cl->isa = superclass->isa;
 		cl->super_class = superclass;
 		cl->dtable = uninstalled_dtable;
@@ -64,24 +71,33 @@ Class _objc_class_for_object(id object, BOOL create){
 		
 		// TODO install cxx_destruct
 		
-		objc_rw_lock_init(&((objc_fake_class*)cl)->list.lock);
+		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)
+					->list.lock);
 		
 		object->isa = cl;
 	}
 	return cl;
 }
 
-/**
+/*
  * Returns a reference to the objc_object_ref_list struct for
  * that particular object, or NULL if none exists and create == NULL.
  */
-objc_object_ref_list *_objc_ref_list_for_object(id object, BOOL create){
+struct reference_list *
+_objc_ref_list_for_object(id object, BOOL create)
+{
 	if (object->isa->flags.meta){
-		// It's a class - install the associated object directly onto the metaclass
+		/*
+		 * It's a class - install the associated object directly onto 
+		 * the metaclass.
+		 */
 		Class cl = object->isa;
-		void **extra_space = objc_class_extra_with_identifier(cl, OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
+		void **extra_space;
+		extra_space = objc_class_extra_with_identifier(cl,
+					OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
 		if (*extra_space == NULL && create){
-			objc_object_ref_list *list = objc_zero_alloc(sizeof(objc_object_ref_list));
+			struct reference_list *list;
+			list = objc_zero_alloc(sizeof(struct reference_list));
 			objc_rw_lock_init(&list->lock);
 			
 			*extra_space = list;
@@ -93,15 +109,17 @@ objc_object_ref_list *_objc_ref_list_for_object(id object, BOOL create){
 	// (if create == YES)
 	Class cl = _objc_class_for_object(object, create);
 	if (cl != Nil){
-		return &((objc_fake_class*)cl)->list;
+		return &((struct objc_assoc_fake_class*)cl)->list;
 	}
 	return NULL;
 }
 
-/**
+/*
  * Returns YES when the policy is one of the atomic ones.
  */
-static inline BOOL _objc_is_policy_atomic(objc_AssociationPolicy policy){
+static inline BOOL
+_objc_is_policy_atomic(objc_AssociationPolicy policy)
+{
 	static objc_AssociationPolicy const OBJC_ASSOCIATION_ATOMIC = 0x300;
 	return (policy & OBJC_ASSOCIATION_ATOMIC) == OBJC_ASSOCIATION_ATOMIC;
 }
@@ -110,7 +128,10 @@ static inline BOOL _objc_is_policy_atomic(objc_AssociationPolicy policy){
  * Disposes of the object according to the policy. This pretty much means 
  * releasing the object unless the policy was assign.
  */
-static inline void _objc_dispose_of_object_according_to_policy(id object, objc_AssociationPolicy policy){
+static inline void
+_objc_dispose_of_object_according_to_policy(id object,
+					    objc_AssociationPolicy policy)
+{
 	if (policy == OBJC_ASSOCIATION_WEAK_REF){
 		void **address = (void**)object;
 		if (address != NULL){
@@ -121,7 +142,9 @@ static inline void _objc_dispose_of_object_according_to_policy(id object, objc_A
 	}
 }
 
-static inline objc_associative_reference *_objc_find_key_reference_in_list(objc_object_ref_list *list, void *key){
+static inline struct reference *
+_objc_find_key_reference_in_list(struct reference_list *list, void *key)
+{
 	while (list != NULL){
 		for (int i = 0; i < REF_CNT; ++i){
 			if (list->refs[i].key == key){
@@ -133,7 +156,9 @@ static inline objc_associative_reference *_objc_find_key_reference_in_list(objc_
 	return NULL;
 }
 
-static inline objc_associative_reference *_objc_find_free_reference_in_list(objc_object_ref_list *list, BOOL create){
+static inline struct reference *
+_objc_find_free_reference_in_list(struct reference_list *list, BOOL create)
+{
 	while (list != NULL){
 		for (int i = 0; i < REF_CNT; ++i){
 			if (list->refs[i].key == NULL){
@@ -141,12 +166,12 @@ static inline objc_associative_reference *_objc_find_free_reference_in_list(objc
 			}
 		}
 		
-		/**
+		/*
 		 * Haven't found any free ref field and we're at the end of the
 		 * linked list - if creation is allowed, allocate.
 		 */
 		if (list->next == NULL && create){
-			list->next = objc_zero_alloc(sizeof(objc_object_ref_list));
+			list->next = objc_zero_alloc(sizeof(struct reference_list));
 			return &list->next->refs[0];
 		}
 		
@@ -155,12 +180,16 @@ static inline objc_associative_reference *_objc_find_free_reference_in_list(objc
 	return NULL;
 }
 
-static void _objc_remove_associative_list(objc_object_ref_list *prev, objc_object_ref_list *list, objc_rw_lock *lock, BOOL free){
+static void
+_objc_remove_associative_list(struct reference_list *prev,
+			      struct reference_list *list,
+			      objc_rw_lock *lock,
+			      BOOL free){
 	if (list->next != NULL){
 		_objc_remove_associative_list(list, list->next, lock, free);
 	}
 	
-	/**
+	/*
 	 * Need to lock it for the pointer reassignement.
 	 */
 	// TODO spinlock
@@ -171,9 +200,10 @@ static void _objc_remove_associative_list(objc_object_ref_list *prev, objc_objec
 	}
 	
 	for (int i = 0; i < REF_CNT; ++i){
-		objc_associative_reference *ref = &list->refs[i];
+		struct reference *ref = &list->refs[i];
 		if (ref->key != NULL){
-			_objc_dispose_of_object_according_to_policy(ref->value, ref->policy);
+			_objc_dispose_of_object_according_to_policy(ref->value,
+								ref->policy);
 		}
 		ref->key = NULL;
 		ref->value = NULL;
@@ -185,37 +215,47 @@ static void _objc_remove_associative_list(objc_object_ref_list *prev, objc_objec
 	}
 }
 
-static inline void _objc_remove_associative_lists_for_object(id object){
+static inline void
+_objc_remove_associative_lists_for_object(id object)
+{
 	if (object->isa->flags.meta){
-		void **extra_space = objc_class_extra_with_identifier(object->isa, OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
+		void **extra_space;
+		extra_space = objc_class_extra_with_identifier(object->isa,
+					OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
 		if (*extra_space == NULL){
 			return;
 		}
 		
-		objc_object_ref_list *list = *extra_space;
+		struct reference_list *list = *extra_space;
 		if (list->next != NULL){
-			_objc_remove_associative_list(list, list->next, &list->lock, NO);
+			_objc_remove_associative_list(list, list->next,
+						      &list->lock, NO);
 		}
 		_objc_remove_associative_list(NULL, list, &list->lock, YES);
 	}else{
-		objc_fake_class *cl = (objc_fake_class*)_objc_class_for_object(object, NO);
-		if (cl == (objc_fake_class*)Nil){
+		struct objc_assoc_fake_class *cl;
+		cl = (struct objc_assoc_fake_class*)
+				_objc_class_for_object(object, NO);
+		if (cl == NULL){
 			return;
 		}
 		
 		if (cl->list.next != NULL){
-			_objc_remove_associative_list(&cl->list, cl->list.next, &cl->list.lock, YES);
+			_objc_remove_associative_list(&cl->list, cl->list.next,
+						      &cl->list.lock, YES);
 		}
-		_objc_remove_associative_list(NULL, &cl->list, &cl->list.lock, NO);
+		_objc_remove_associative_list(NULL, &cl->list,
+					      &cl->list.lock, NO);
 	}
 }
-
 
 
 #pragma mark -
 #pragma mark Public Functions
 
-id objc_get_associated_object(id object, void *key){
+id
+objc_get_associated_object(id object, void *key)
+{
 	if (object == nil || key == NULL){
 		return nil;
 	}
@@ -226,13 +266,13 @@ id objc_get_associated_object(id object, void *key){
 	
 	id result = nil;
 	
-	objc_object_ref_list *list = _objc_ref_list_for_object(object, NO);
+	struct reference_list *list = _objc_ref_list_for_object(object, NO);
 	if (list == NULL){
 		return nil;
 	}
 	
 	objc_rw_lock_rlock(&list->lock);
-	objc_associative_reference *ref = _objc_find_key_reference_in_list(list, key);
+	struct reference *ref = _objc_find_key_reference_in_list(list, key);
 	objc_rw_lock_unlock(&list->lock);
 	
 	
@@ -248,13 +288,13 @@ id objc_get_associated_object(id object, void *key){
 				result = objc_copy(ref->value);
 				break;
 			case OBJC_ASSOCIATION_COPY:
-				// This is atomic, need to lock the WLOCK
+				/* This is atomic, need to lock the WLOCK */
 				objc_rw_lock_wlock(&list->lock);
 				result = objc_copy(ref->value);
 				objc_rw_lock_unlock(&list->lock);
 				break;
 			case OBJC_ASSOCIATION_RETAIN:
-				// This is atomic, need to lock the WLOCK
+				/* This is atomic, need to lock the WLOCK */
 				objc_rw_lock_wlock(&list->lock);
 				result = objc_retain(ref->value);
 				objc_rw_lock_unlock(&list->lock);
@@ -267,7 +307,10 @@ id objc_get_associated_object(id object, void *key){
 	return result;
 }
 
-void objc_set_associated_object(id object, void *key, id value, objc_AssociationPolicy policy){
+void
+objc_set_associated_object(id object, void *key, id value,
+			   objc_AssociationPolicy policy)
+{
 	if (object == nil || key == NULL){
 		return;
 	}
@@ -276,26 +319,28 @@ void objc_set_associated_object(id object, void *key, id value, objc_Association
 		return;
 	}
 	
-	objc_object_ref_list *list = _objc_ref_list_for_object(object, YES);
+	struct reference_list *list = _objc_ref_list_for_object(object, YES);
 	
 	
-	// WLOCK because we may be actually modifying the linked list
+	/* WLOCK because we may be actually modifying the linked list */
 	objc_rw_lock_wlock(&list->lock);
-	objc_associative_reference *ref = _objc_find_key_reference_in_list(list, key);
+	struct reference *ref = _objc_find_key_reference_in_list(list, key);
 	if (ref == NULL){
 		// No reference, perhaps need to allocate some
 		ref = _objc_find_free_reference_in_list(list, YES);
-		objc_assert(ref != NULL, "_objc_reference_create_for_object hasn't"
+		objc_assert(ref != NULL,
+			    "_objc_reference_create_for_object hasn't"
 			    " created reference list for object %p!\n", object);
 	}
 	
 	
-	/**
-	 * See whether either policy is atomic and if not, we can unlock the lock.
-	 * Otherwise, keep it locked and unlock it after all the modification of ref.
+	/*
+	 * See whether either policy is atomic and if not, we can unlock the
+	 * lock. Otherwise, keep it locked and unlock it after all the 
+	 * modification of ref.
 	 */
 	BOOL either_policy_atomic = _objc_is_policy_atomic(policy)
-								|| _objc_is_policy_atomic(ref->policy);
+				    || _objc_is_policy_atomic(ref->policy);
 	if (!either_policy_atomic){
 		objc_rw_lock_unlock(&list->lock);
 	}
@@ -324,7 +369,7 @@ void objc_set_associated_object(id object, void *key, id value, objc_Association
 	_objc_dispose_of_object_according_to_policy(old_value, old_policy);
 	
 	
-	/**
+	/*
 	 * If either of the policies was atomic, the lock is still locked, need
 	 * to unlock it.
 	 */
@@ -334,7 +379,9 @@ void objc_set_associated_object(id object, void *key, id value, objc_Association
 	
 }
 
-void objc_remove_associated_objects(id object){
+void
+objc_remove_associated_objects(id object)
+{
 	if (object == nil){
 		return;
 	}
@@ -346,26 +393,28 @@ void objc_remove_associated_objects(id object){
 	_objc_remove_associative_lists_for_object(object);
 }
 
-void objc_remove_associated_weak_refs(id object){
+void
+objc_remove_associated_weak_refs(id object)
+{
 	
 	if (objc_object_is_small_object(object)){
-		// Small objects do not have associated objects
+		/* Small objects do not have associated objects */
 		return;
 	}
 	
-	/**
+	/*
 	 * This function is quite similar to the objc_remove_associated_objects,
-	 * but doesn't actually free any objects, or any of the objc_object_ref_list
-	 * structures.
+	 * but doesn't actually free any objects, or any of the
+	 * objc_object_ref_list structures.
 	 */
 	
-	objc_object_ref_list *list = _objc_ref_list_for_object(object, NO);
+	struct reference_list *list = _objc_ref_list_for_object(object, NO);
 	if (list == NULL){
 		// Nothing to do
 		return;
 	}
 	
-	/**
+	/*
 	 * Go through the lists and remove all weak refs.
 	 */
 	
@@ -373,7 +422,7 @@ void objc_remove_associated_weak_refs(id object){
 	
 	while (list != NULL) {
 		for (int i = 0; i < REF_CNT; ++i){
-			objc_associative_reference *ref = &list->refs[i];
+			struct reference *ref = &list->refs[i];
 			if (ref->policy == OBJC_ASSOCIATION_WEAK_REF){
 				if (ref->value != NULL){
 					*(void**)ref->value = NULL;
