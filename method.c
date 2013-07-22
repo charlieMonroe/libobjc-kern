@@ -11,7 +11,7 @@
  * The m array is copied over to be NULL-terminated, but the Method 'objects'
  * are not.
  */
-OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
+static inline void _add_methods_to_class(Class cl, Method *m, unsigned int count){
 	
 	// TODO locking
 	objc_method_list *list = objc_method_list_create(count);
@@ -27,7 +27,7 @@ OBJC_INLINE void _add_methods_to_class(Class cl, Method *m, unsigned int count){
 /**
  * Adds instance methods to class cl.
  */
-OBJC_INLINE void _add_methods(Class cl, Method *m, unsigned int count){
+static inline void _add_methods(Class cl, Method *m, unsigned int count){
 	if (cl == NULL || m == NULL){
 		return;
 	}

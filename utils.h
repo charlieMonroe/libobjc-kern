@@ -12,7 +12,7 @@
 /*
   * Just as the regular strlen function, returns a number of non-zero characters.
   */
-OBJC_INLINE unsigned int objc_strlen(const char *str){
+static inline unsigned int objc_strlen(const char *str){
 	unsigned int counter;
 	
 	if (str == NULL){
@@ -30,7 +30,7 @@ OBJC_INLINE unsigned int objc_strlen(const char *str){
 /*
  * Unlike the POSIX function, this one handles allocating the new string itself.
  */
-OBJC_INLINE char *objc_strcpy(const char *str){
+static inline char *objc_strcpy(const char *str){
 	unsigned int len;
 	char *result;
 	char *curr_char;
@@ -56,7 +56,7 @@ OBJC_INLINE char *objc_strcpy(const char *str){
 /*
  * Returns YES if the strings are equal.
  */
-OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
+static inline BOOL objc_strings_equal(const char *str1, const char *str2){
 	unsigned int index;
 	
 	if (str1 ==  str2){
@@ -87,7 +87,7 @@ OBJC_INLINE BOOL objc_strings_equal(const char *str1, const char *str2){
 /*
  * Hashes string str.
  */
-OBJC_INLINE unsigned int objc_hash_string(const char *str){
+static inline unsigned int objc_hash_string(const char *str){
 	register uint32_t hash = 0;
 	register int32_t c;
 	while ((c = *str++)){
@@ -99,14 +99,14 @@ OBJC_INLINE unsigned int objc_hash_string(const char *str){
 /**
  * Returns YES if ptr1 == ptr2;
  */
-OBJC_INLINE BOOL objc_pointers_are_equal(const void *ptr1, const void *ptr2){
+static inline BOOL objc_pointers_are_equal(const void *ptr1, const void *ptr2){
 	return ptr1 == ptr2;
 }
 
 /*
  * Hashes a pointer;
  */
-OBJC_INLINE unsigned int objc_hash_pointer(const void *ptr){
+static inline unsigned int objc_hash_pointer(const void *ptr){
 	// Bit-rotate right 4, since the lowest few bits in an object pointer will
 	// always be 0, which is not so useful for a hash value
 	return (unsigned int)(((uintptr_t)ptr >> 4) |
@@ -121,7 +121,7 @@ OBJC_INLINE unsigned int objc_hash_pointer(const void *ptr){
 /**
  * Clears memory by writing zeroes everywhere.
  */
-OBJC_INLINE void objc_memory_zero(void *mem, unsigned int size){
+static inline void objc_memory_zero(void *mem, unsigned int size){
 	char *mem_prt = (char*)mem;
 	unsigned int i;
 	

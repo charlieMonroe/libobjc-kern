@@ -3,7 +3,7 @@
 #define OBJC_SELECTOR_H_
 
 #include "types.h"
-#include "os.h" // For OBJC_INLINE
+#include "os.h" // For static inline
 
 /**
  * Some basic selectors used throughout the
@@ -29,7 +29,7 @@ extern SEL sel_registerName(const char *name, const char *types);
  * Since SEL is just a 16-bit number pointing into the selector table,
  * simple comparison is sufficient.
  */
-OBJC_INLINE BOOL objc_selectors_equal(SEL selector1, SEL selector2){
+static inline BOOL objc_selectors_equal(SEL selector1, SEL selector2){
 	return selector1 == selector2;
 }
 

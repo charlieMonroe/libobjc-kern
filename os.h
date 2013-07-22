@@ -11,8 +11,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#define OBJC_INLINE static inline
-
 /**
  * Some compilers might not support this attribute
  * that forces the compiler to always inline the functions.

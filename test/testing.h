@@ -296,16 +296,16 @@ static void list_classes(void){
 	objc_dealloc(orig_ptr);
 }
 
-#define OBJC_INLINE_CACHING_NONE 0
-#define OBJC_INLINE_CACHING_SELECTOR 1
-#define OBJC_INLINE_CACHING_COMPLETE 2
+#define static inline_CACHING_NONE 0
+#define static inline_CACHING_SELECTOR 1
+#define static inline_CACHING_COMPLETE 2
 
-#if OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_NONE
+#if static inline_CACHING == static inline_CACHING_NONE
 #define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
 	sel_var = sel_registerName(sel_name);\
 	imp_var = objc_object_lookup_impl(obj, sel_var);\
 }
-#elif OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_SELECTOR
+#elif static inline_CACHING == static inline_CACHING_SELECTOR
 #define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
 	static SEL sel_var##sel_var;\
 	if (sel_var##sel_var == NULL){\
@@ -314,7 +314,7 @@ static void list_classes(void){
 	sel_var = sel_var##sel_var;\
 	imp_var = objc_object_lookup_impl(obj, sel_var);\
 }
-#elif OBJC_INLINE_CACHING == OBJC_INLINE_CACHING_COMPLETE
+#elif static inline_CACHING == static inline_CACHING_COMPLETE
 #define OBJC_GET_IMP(obj, sel_name, sel_var, imp_var) {\
 	static SEL sel_var##sel_var;\
 	static struct {\

@@ -91,11 +91,11 @@ static Class unresolved_classes;
 objc_rw_lock objc_runtime_lock;
 
 
-OBJC_INLINE BOOL _objc_class_name_is_equal_to(void *key, Class cl){
+static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl){
 	return objc_strings_equal(cl->name, (const char*)key);
 }
 
-OBJC_INLINE uint32_t _objc_class_hash(Class cl){
+static inline uint32_t _objc_class_hash(Class cl){
 	// Hash the name
 	return objc_hash_string(cl->name);
 }
