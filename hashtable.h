@@ -63,12 +63,12 @@
 	#define MAP_TABLE_WLOCK(x)
 	#define MAP_TABLE_RLOCK(x)
 	#define MAP_TABLE_UNLOCK(x)
-	#define MAP_TABLE_INIT(x)
+	#define MAP_TABLE_LOCK_INIT(x, name)
 #else
 	#define MAP_TABLE_WLOCK(x) objc_rw_lock_wlock(x)
 	#define MAP_TABLE_RLOCK(x) objc_rw_lock_rlock(x)
 	#define MAP_TABLE_UNLOCK(x) objc_rw_lock_unlock(x)
-	#define MAP_TABLE_INIT(x) objc_rw_lock_init(x);
+	#define MAP_TABLE_LOCK_INIT(x, name) objc_rw_lock_init(x, name);
 #endif
 
 
@@ -123,10 +123,16 @@ struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
  * Allocates the table with initial capacity, initializes
  * the lock.
  */
-PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity)
+PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity
+#if !MAP_TABLE_NO_LOCK
+				      , const char *lock_name
+#endif
+				      )
 {
 	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)));
-	MAP_TABLE_INIT(&table->lock);
+#if !MAP_TABLE_NO_LOCK
+	MAP_TABLE_LOCK_INIT(&table->lock, lock_name);
+#endif
 	table->table = PREFIX(alloc_cells)(capacity);
 	table->table_size = capacity;
 	return table;

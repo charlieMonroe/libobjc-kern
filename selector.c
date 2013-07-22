@@ -366,7 +366,7 @@ objc_selector_init(void)
 	 * Init RW lock for locking the string allocator. The
 	 * allocator itself is lazily allocated.
 	 */
-	objc_rw_lock_init(&objc_selector_lock);
+	objc_rw_lock_init(&objc_selector_lock, "objc_selector_lock");
 	
 	/*
 	 * Sparse array holding the SEL -> Selector mapping.

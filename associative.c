@@ -67,8 +67,10 @@ _objc_class_for_object(id object, BOOL create)
 		
 		// TODO install cxx_destruct
 		
+		// TODO different name for the lock
 		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)
-					->list.lock);
+					->list.lock,
+				  "objc_assoc_fake_class_lock");
 		
 		object->isa = cl;
 	}
@@ -94,7 +96,9 @@ _objc_ref_list_for_object(id object, BOOL create)
 		if (*extra_space == NULL && create){
 			struct reference_list *list;
 			list = objc_zero_alloc(sizeof(struct reference_list));
-			objc_rw_lock_init(&list->lock);
+			
+			// TODO different lock name
+			objc_rw_lock_init(&list->lock, "objc_reference_list_lock");
 			
 			*extra_space = list;
 		}
@@ -428,7 +432,8 @@ objc_remove_associated_weak_refs(id object)
 	 * Go through the lists and remove all weak refs.
 	 */
 	
-	objc_rw_lock_wlock(&list->lock);
+	objc_rw_lock *lock = &list->lock;
+	objc_rw_lock_wlock(lock);
 	
 	while (list != NULL) {
 		for (int i = 0; i < REF_CNT; ++i){
@@ -445,6 +450,6 @@ objc_remove_associated_weak_refs(id object)
 		list = list->next;
 	}
 	
-	objc_rw_lock_unlock(&list->lock);
+	objc_rw_lock_unlock(lock);
 }
 

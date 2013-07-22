@@ -22,7 +22,7 @@ void objc_runtime_init(void){
 	
 	objc_debug_log("Initializing runtime.\n");
 	
-	objc_rw_lock_init(&objc_runtime_lock);
+	objc_rw_lock_init(&objc_runtime_lock, "objc_runtime_lock");
 	
 	/* Initialize inner structures */
 	objc_selector_init();

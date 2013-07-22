@@ -414,7 +414,7 @@ id objc_init_weak(id *object, id value)
 void
 objc_arc_init(void)
 {
-	objc_rw_lock_init(&objc_weak_refs_lock);
+	objc_rw_lock_init(&objc_weak_refs_lock, "objc_weak_refs_lock");
 	
 	// TODO create key for TLS for the autorelease pool
 }

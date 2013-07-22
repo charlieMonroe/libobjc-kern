@@ -1,8 +1,6 @@
 
 #include "os.h"
 
-// TODO use mtx_pool_lock_spin instead
-
 /**
  * Number of spinlocks.  This allocates one page on 32-bit platforms.
  */
@@ -66,9 +64,11 @@ inline static void lock_spinlock(volatile int *spinlock)
 		count++;
 		if (0 == count % 10)
 		{
-			// If it is already 1, let another thread play with the CPU for a
-			// bit then try again.
-			// sleep(0);
+			/*
+			 * If it is already 1, let another thread play with the
+			 * CPU for a bit then try again.
+			 */
+			objc_yield();
 		}
 	}
 }

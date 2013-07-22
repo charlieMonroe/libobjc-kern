@@ -100,5 +100,6 @@ objc_class_extra_with_identifier(Class cl, unsigned int identifier)
 
 
 PRIVATE void objc_class_extra_init(void){
-	objc_rw_lock_init(&objc_class_extra_lock);
+	// TODO use a spinlock instead
+	objc_rw_lock_init(&objc_class_extra_lock, "objc_class_extra_lock");
 }

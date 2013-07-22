@@ -559,5 +559,5 @@ protocol_addProperty(Protocol *protocol, const char *name,
 PRIVATE void
 objc_protocol_init(void)
 {
-	objc_protocols = objc_protocol_table_create(64);
+	objc_protocols = objc_protocol_table_create(64, "objc_protocol_table");
 }
