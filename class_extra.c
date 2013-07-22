@@ -1,18 +1,28 @@
 #include "class_extra.h"
 
-/**
+struct objc_class_extra {
+	struct objc_class_extra		*next;
+	void				*data;
+	unsigned int			identifier;
+};
+
+
+/*
  * RW lock that guards all access to Class->extra_space.
  */
+// TODO use spinlock
 static objc_rw_lock objc_class_extra_lock;
 
-/**
+/*
  * Finds an extra space on the class cl that has 'identifier'.
  * Returns NULL if not found.
  */
-static inline objc_class_extra *_objc_class_extra_find_no_lock(Class cl, unsigned int identifier){
-	objc_class_extra *extra = NULL;
+static inline struct objc_class_extra *
+_objc_class_extra_find_no_lock(Class cl, unsigned int identifier)
+{
+	struct objc_class_extra *extra = NULL;
 	if (cl->extra_space != NULL){
-		extra = (objc_class_extra*)cl->extra_space;
+		extra = (struct objc_class_extra*)cl->extra_space;
 		while (extra != NULL) {
 			if (extra->identifier == identifier){
 				break;
@@ -24,29 +34,35 @@ static inline objc_class_extra *_objc_class_extra_find_no_lock(Class cl, unsigne
 	return extra;
 }
 
-/**
+/*
  * Calls the above method, surrounded by RLOCK.
  */
-static inline objc_class_extra *_objc_class_extra_find(Class cl, unsigned int identifier){
+static inline struct objc_class_extra *
+_objc_class_extra_find(Class cl, unsigned int identifier)
+{
 	objc_rw_lock_rlock(&objc_class_extra_lock);
-	objc_class_extra *extra = _objc_class_extra_find_no_lock(cl, identifier);
+	struct objc_class_extra *extra;
+	extra = _objc_class_extra_find_no_lock(cl, identifier);
 	objc_rw_lock_unlock(&objc_class_extra_lock);
 	
 	return extra;
 }
 
-/**
+/*
  * Locks the WLOCK, and if the extra with the identifier cannot be
  * found, creates one and installs it onto class.
  */
-static inline objc_class_extra *_objc_class_extra_create(Class cl, unsigned int identifier){
+static inline struct objc_class_extra *
+_objc_class_extra_create(Class cl, unsigned int identifier)
+{
 	objc_rw_lock_wlock(&objc_class_extra_lock);
 	
-	// See if anyone hasn't added the extra in the meanwhile
-	objc_class_extra *extra = _objc_class_extra_find_no_lock(cl, identifier);
+	/* See if anyone hasn't added the extra in the meanwhile */
+	struct objc_class_extra *extra;
+	extra = _objc_class_extra_find_no_lock(cl, identifier);
 	if (extra == NULL){
 		// Still NULL, need to allocate it
-		extra = objc_alloc(sizeof(objc_class_extra));
+		extra = objc_alloc(sizeof(struct objc_class_extra));
 		extra->next = NULL;
 		extra->identifier = identifier;
 		extra->data = NULL;
@@ -56,7 +72,7 @@ static inline objc_class_extra *_objc_class_extra_create(Class cl, unsigned int 
 			cl->extra_space = extra;
 		}else{
 			// Need to insert it to the end of the chain
-			objc_class_extra *e = cl->extra_space;
+			struct objc_class_extra *e = cl->extra_space;
 			while (e->next != NULL){
 				e = e->next;
 			}
@@ -69,11 +85,13 @@ static inline objc_class_extra *_objc_class_extra_create(Class cl, unsigned int 
 	return extra;
 }
 
-/**
+/*
  * See header for docs.
  */
-PRIVATE void **objc_class_extra_with_identifier(Class cl, unsigned int identifier){
-	objc_class_extra *extra = _objc_class_extra_find(cl, identifier);
+PRIVATE void **
+objc_class_extra_with_identifier(Class cl, unsigned int identifier)
+{
+	struct objc_class_extra *extra = _objc_class_extra_find(cl, identifier);
 	if (extra == NULL){
 		extra = _objc_class_extra_create(cl, identifier);
 	}

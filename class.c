@@ -9,17 +9,13 @@
 #include "sarray2.h"
 #include "runtime.h"
 #include "class.h"
+#include "private.h"
 
 /*
  * Class structures are versioned. If a class prototype of a different
  * version is encountered, it is either ignored, if the version is
  */
 #define OBJC_MAX_CLASS_VERSION_SUPPORTED ((unsigned int)0)
-
-/*
- * A cached forwarding selectors.
- */
-static SEL objc_forwarding_selector;
 
 
 #pragma mark -

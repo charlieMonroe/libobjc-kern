@@ -5,6 +5,7 @@
 #include "dtable.h"
 #include "class_registry.h"
 #include "class.h"
+#include "private.h"
 
 /**
  * The initial capacities for the hash tables.
@@ -19,27 +20,39 @@
 #define MAP_TABLE_VALUE_TYPE IMP
 #include "hashtable.h"
 
-/**
+/*
  * A hash table with the load messages.
  */
 static objc_load_messages_table *objc_load_messages;
 
-PRIVATE void objc_class_send_load_messages(Class cl){
-	Class meta = cl->isa; // It's a class method, need to link at the meta class
+/*
+ * Calls a the load imp on a class if it hasn't been called already.
+ */
+static inline void
+_objc_handle_load_imp_for_class(IMP load_imp, Class cl)
+{
+	/*
+	 * The IMP mustn't be in the hash table. We hash the already called
+	 * IMPs so that they don't get called twice.
+	 */
+	if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
+		load_imp((id)cl, objc_load_selector);
+		objc_load_messages_insert(objc_load_messages, load_imp);
+	}
+}
+
+PRIVATE void
+objc_class_send_load_messages(Class cl)
+{
+	/* It's a class method, need to link at the meta class */
+	Class meta = cl->isa;
 	objc_method_list *list = meta->methods;
 	while (list != NULL) {
 		for (int i = 0; i < list->size; ++i){
 			Method m = &list->list[i];
 			if (m->selector == objc_load_selector){
 				IMP load_imp = m->implementation;
-				/**
-				 * The IMP mustn't be in the hash table. We hash the already called
-				 * IMPs so that they don't get called twice.
-				 */
-				if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
-					load_imp((id)cl, objc_load_selector);
-					objc_load_messages_insert(objc_load_messages, load_imp);
-				}
+				_objc_handle_load_imp_for_class(load_imp, cl);
 			}
 		}
 		list = list->next;
@@ -47,9 +60,10 @@ PRIVATE void objc_class_send_load_messages(Class cl){
 }
 
 
-// Forward declarations needed for the hash table
+/* Forward declarations */
 static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl);
 static inline uint32_t _objc_class_hash(Class cl);
+static void _objc_class_fixup_instance_size(Class cl);
 
 #define MAP_TABLE_NAME objc_class
 #define MAP_TABLE_COMPARE_FUNCTION _objc_class_name_is_equal_to
@@ -58,12 +72,12 @@ static inline uint32_t _objc_class_hash(Class cl);
 #define MAP_TABLE_VALUE_TYPE Class
 #include "hashtable.h"
 
-/**
+/*
  * A hash map with the classes.
  */
 objc_class_table *objc_classes;
 
-/**
+/*
  * The class tree leverages the fact that each class
  * has a sibling and child pointer in the structure,
  * pointing to an arbitrary child, or sibling respectively.
@@ -77,61 +91,70 @@ objc_class_table *objc_classes;
  */
 static Class class_tree;
 
-/**
+/*
  * A pointer to the first unresolved class. The rest of
  * the unresolved classes are a linked list using
  * the unresolved pointer in the Class structure.
  */
 static Class unresolved_classes;
 
-/**
+/*
  * The runtime lock used for locking when modifying the
  * class hierarchy or modifying the classes in general.
  */
 objc_rw_lock objc_runtime_lock;
 
 
-static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl){
+static inline BOOL
+_objc_class_name_is_equal_to(void *key, Class cl)
+{
 	return objc_strings_equal(cl->name, (const char*)key);
 }
 
-static inline uint32_t _objc_class_hash(Class cl){
-	// Hash the name
+static inline uint32_t
+_objc_class_hash(Class cl)
+{
+	/* Just hash the name */
 	return objc_hash_string(cl->name);
 }
 
-/**
+/*
  * Inserts cl into the siblings linked list
  */
-static inline void _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling){
-	// Inserting into the linked list
+static inline void
+_objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
+{
+	/* Inserting into the linked list */
 	Class last_sibling = sibling->sibling_list;
 	while (last_sibling->sibling_list != Nil){
 		last_sibling = last_sibling->sibling_list;
 	}
 	
-	// Add it to the end of the list
+	/* Add it to the end of the list */
 	last_sibling->sibling_list = cl;
-	// And for the meta classes as well
+	/* And for the meta classes as well */
 	last_sibling->isa->sibling_list = cl->isa;
 }
 
-/**
+/*
  * Inserts a class into the class tree. Note that the run-time
  * lock must be held.
  */
-static inline void _objc_insert_class_into_class_tree(Class cl){
-	// Insert the class into the tree.
+static inline void
+_objc_insert_class_into_class_tree(Class cl)
+{
+	/* Insert the class into the tree. */
 	if (cl->super_class == Nil){
-		// Root class
+		/* Root class */
 		if (class_tree == Nil){
-			// The first one, yay!
+			/* The first one, yay! */
 			class_tree = cl;
 		}else{
-			_objc_insert_class_to_back_of_sibling_list(cl, class_tree);
+			_objc_insert_class_to_back_of_sibling_list(cl,
+								   class_tree);
 		}
 	}else{
-		/**
+		/*
 		 * It is a subclass, so need to insert it into the
 		 * subclass list of the superclass as well as into
 		 * the siblings list of the subclasses.
@@ -141,19 +164,22 @@ static inline void _objc_insert_class_into_class_tree(Class cl){
 			// First subclass
 			super_class->subclass_list = cl;
 		}else{
-			_objc_insert_class_to_back_of_sibling_list(cl, super_class->subclass_list);
+			_objc_insert_class_to_back_of_sibling_list(cl,
+						super_class->subclass_list);
 		}
 	}
 }
 
-/**
+/*
  * Removes a class from the class tree. Note that the run-time
  * lock must be held.
  */
-static inline void _objc_class_remove_from_class_tree(Class cl){
+static inline void
+_objc_class_remove_from_class_tree(Class cl)
+{
 	Class *subclasses_ptr;
 	if (cl->super_class == Nil){
-		// One of the root classes
+		/* One of the root classes */
 		subclasses_ptr = &class_tree;
 	}else{
 		subclasses_ptr = &cl->super_class->subclass_list;
@@ -173,10 +199,12 @@ static inline void _objc_class_remove_from_class_tree(Class cl){
 	}
 }
 
-/**
+/*
  * Removes the class from the unresolved list.
  */
-static inline void _objc_class_remove_from_unresolved_list(Class cl){
+static inline void
+_objc_class_remove_from_unresolved_list(Class cl)
+{
 	if (cl->unresolved_class_next == Nil &&
 	    cl->unresolved_class_previous == Nil &&
 	    cl != unresolved_classes){
@@ -186,25 +214,34 @@ static inline void _objc_class_remove_from_unresolved_list(Class cl){
 	
 	if (cl->unresolved_class_previous == Nil){
 		// The first class
-		objc_assert(cl == unresolved_classes, "There are possibly two unresolved class lists? (%p != %p)", cl, unresolved_classes);
+		objc_assert(cl == unresolved_classes, "There are possibly two "
+			    "unresolved class lists? (%p != %p)", cl,
+			    unresolved_classes);
 		unresolved_classes = cl->unresolved_class_next;
 	}else{
-		cl->unresolved_class_previous->unresolved_class_next = cl->unresolved_class_next;
+		cl->unresolved_class_previous->unresolved_class_next =
+						cl->unresolved_class_next;
 	}
 	
 	if (cl->unresolved_class_next != Nil){
 		// Not the end of the linked list
-		cl->unresolved_class_next->unresolved_class_previous = cl->unresolved_class_previous;
+		cl->unresolved_class_next->unresolved_class_previous =
+						cl->unresolved_class_previous;
 	}
 	
 	cl->unresolved_class_previous = Nil;
 	cl->unresolved_class_next = Nil;
 }
 
-// Forward declaration
-static void _objc_class_fixup_instance_size(Class cl);
+static unsigned int
+_padding_for_ivar(Ivar ivar, size_t offset)
+{
+	return ((ivar->align - (offset % ivar->align)) % ivar->align);
+}
 
-static size_t _objc_class_calculate_instance_size(Class cl){
+static size_t
+_objc_class_calculate_instance_size(Class cl)
+{
 	size_t size = 0;
 	Class superclass = cl->super_class;
 	if (superclass != Nil){
@@ -221,16 +258,17 @@ static size_t _objc_class_calculate_instance_size(Class cl){
 			Ivar ivar = &cl->ivars->list[i];
 			size_t offset = size;
 			if (size % ivar->align != 0){
-				unsigned int padding = (ivar->align - (offset % ivar->align)) % ivar->align;
+				unsigned int padding = _padding_for_ivar(ivar,
+									 offset);
 				offset += padding;
 			}
 			ivar->offset = offset;
 			size = offset + ivar->size;
 			
-			/**
+			/*
 			 * The ->ivar_offsets can be generated by the compiler
-			 * since the number of ivars in this class is known at compile
-			 * time.
+			 * since the number of ivars in this class is known at
+			 * compile time.
 			 */
 			cl->ivar_offsets[i] = offset;
 			
@@ -239,7 +277,9 @@ static size_t _objc_class_calculate_instance_size(Class cl){
 	return size;
 }
 
-static void _objc_class_fixup_instance_size(Class cl){
+static void
+_objc_class_fixup_instance_size(Class cl)
+{
 	if (cl->flags.fake || cl->flags.resolved){
 		return;
 	}
@@ -247,21 +287,31 @@ static void _objc_class_fixup_instance_size(Class cl){
 	objc_assert(cl != Nil, "Cannot fixup instance size of Nil class!\n");
 	
 	if (cl->flags.meta){
-		// Meta class has the size of the class structure
+		/* Meta class has the size of the class structure */
 		cl->instance_size = sizeof(struct objc_class);
 	}else{
 		cl->instance_size = _objc_class_calculate_instance_size(cl);
 	}
 	
-	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n", cl->name, cl->flags.meta ? " (meta)" : "", (unsigned int)cl->instance_size);
+	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n",
+		       cl->name, cl->flags.meta ? " (meta)" : "",
+		       (unsigned int)cl->instance_size);
 }
 
 
-PRIVATE void objc_updateDtableForClassContainingMethod(Method m){
-	Class nextClass = Nil;
+PRIVATE void
+objc_updateDtableForClassContainingMethod(Method m)
+{
+	Class nextClass;
 	void *state = NULL;
 	SEL sel = method_getName(m);
-	while (Nil != (nextClass = objc_class_next(objc_classes, (struct objc_class_table_enumerator**)&state))){
+	for (;;) {
+		nextClass = objc_class_next(objc_classes,
+			          (struct objc_class_table_enumerator**)&state);
+		if (nextClass == Nil){
+			break;
+		}
+		
 		if (class_getInstanceMethodNonRecursive(nextClass, sel) == m){
 			objc_update_dtable_for_class(nextClass);
 			return;
@@ -270,17 +320,21 @@ PRIVATE void objc_updateDtableForClassContainingMethod(Method m){
 }
 
 
-Class objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes) {
+Class
+objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
+{
 	if (name == NULL || *name == '\0'){
 		objc_abort("Trying to create a class with NULL or empty name.");
 	}
 	
 	if (superclass != Nil && !superclass->flags.resolved){
-		/** Cannot create a subclass of an unfinished class.
+		/*
+		 * Cannot create a subclass of an unfinished class.
 		 * The reason is simple: what if the superclass added
 		 * a variable after the subclass did so?
 		 */
-		objc_abort("Trying to create a subclass of an unresolved class.");
+		objc_abort("Trying to create a subclass of an unresolved "
+			   "class.");
 	}
 	
 	if (objc_class_table_get(objc_classes, name) != NULL){
@@ -289,22 +343,22 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 		return NULL;
 	}
 	
-	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class) + extraBytes);
+	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class)
+						+ extraBytes);
 	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class));
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
-		// Creating a new root class
-		newMetaClass->isa = newMetaClass; // isa-loop for the root class
-		newMetaClass->super_class = newClass; // It's a subclass of its own instance
+		/* Creating a new root class */
+		/* isa-loop for the root class */
+		newMetaClass->isa = newMetaClass;
+		/* It's a subclass of its own instance */
+		newMetaClass->super_class = newClass;
 	}else{
-		// Set the isa to the superclass's meta class name,
-		// it will be resolved later
-		newMetaClass->isa = (Class)superclass->isa->name;
+		newMetaClass->isa = superclass->isa;
 		newMetaClass->super_class = superclass->isa;
 	}
 	
-	// TODO - copy the name twice?
 	newClass->name = newMetaClass->name = objc_strcpy(name);
 	
 	/*
@@ -324,12 +378,14 @@ Class objc_allocateClassPair(Class superclass, const char *name, size_t extraByt
 	
 	newClass->dtable = newMetaClass->dtable = uninstalled_dtable;
 	
-	// It is inserted into the class tree and hash table on class_finish
+	/* It is inserted into the class tree and hash table on class_finish */
 	
 	return newClass;
 }
 
-void objc_registerClassPair(Class cl){
+void
+objc_registerClassPair(Class cl)
+{
 	if (cl == Nil){
 		objc_abort("Cannot finish a NULL class!\n");
 		return;
@@ -343,7 +399,9 @@ void objc_registerClassPair(Class cl){
 	OBJC_UNLOCK_RUNTIME();
 }
 
-void objc_disposeClassPair(Class cls){
+void
+objc_disposeClassPair(Class cls)
+{
 	if (cls == Nil){
 		return;
 	}
@@ -376,10 +434,11 @@ void objc_disposeClassPair(Class cls){
 	objc_dealloc(meta);
 }
 
-Class *objc_copyClassList(unsigned int *out_count){
+Class *
+objc_copyClassList(unsigned int *out_count)
+{
 	size_t class_count = objc_classes->table_used;
 	
-	// NULL-terminated
 	Class *classes = objc_alloc(class_count * sizeof(Class));
 	
 	int count = 0;
@@ -396,7 +455,10 @@ Class *objc_copyClassList(unsigned int *out_count){
 	
 	return classes;
 }
-int objc_getClassList(Class *buffer, int len){
+
+int
+objc_getClassList(Class *buffer, int len)
+{
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;
 	Class next;
@@ -408,7 +470,9 @@ int objc_getClassList(Class *buffer, int len){
 	return count;
 }
 
-id objc_getClass(const char *name){
+id
+objc_getClass(const char *name)
+{
 	if (name == NULL){
 		return nil;
 	}
@@ -425,21 +489,23 @@ id objc_getClass(const char *name){
 	return (id)c;
 }
 
-id objc_lookUpClass(const char *name){
+id
+objc_lookUpClass(const char *name)
+{
 	if (name != NULL){
 		return (id)objc_class_table_get(objc_classes, name);
 	}
 	return nil;
 }
 
-PRIVATE BOOL objc_class_resolve(Class cl){
+PRIVATE BOOL
+objc_class_resolve(Class cl)
+{
 	if (cl->flags.resolved){
 		return YES;
 	}
 	
-	/**
-	 * The class needs to be resolved.
-	 */
+	/* The superclass needs to be resolved. */
 	Class superclass = cl->super_class;
 	if (superclass != Nil && !superclass->flags.resolved){
 		if (!objc_class_resolve(superclass)){
@@ -447,9 +513,7 @@ PRIVATE BOOL objc_class_resolve(Class cl){
 		}
 	}
 	
-	/**
-	 * Beyond this point, the superclasses are resolved.
-	 */
+	/* Beyond this point, the superclasses are resolved. */
 	
 	_objc_class_remove_from_unresolved_list(cl);
 	
@@ -458,7 +522,7 @@ PRIVATE BOOL objc_class_resolve(Class cl){
 	cl->flags.resolved = YES;
 	cl->isa->flags.resolved = YES;
 	
-	// TODO - here?
+	// TODO - fixup instance size here?
 	_objc_class_fixup_instance_size(cl);
 	_objc_class_fixup_instance_size(cl->isa);
 	
@@ -471,7 +535,9 @@ PRIVATE BOOL objc_class_resolve(Class cl){
 	return YES;
 }
 
-PRIVATE void objc_class_resolve_links(void){
+PRIVATE void
+objc_class_resolve_links(void)
+{
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
 	Class cl = unresolved_classes;
@@ -479,7 +545,7 @@ PRIVATE void objc_class_resolve_links(void){
 	do {
 		resolved_class = NO;
 		while (cl != Nil) {
-			// Need to remember the next before resolving
+			/* Need to remember the next before resolving */
 			Class next = cl->unresolved_class_next;
 			
 			objc_class_resolve(cl);
@@ -490,7 +556,9 @@ PRIVATE void objc_class_resolve_links(void){
 	} while (resolved_class);
 }
 
-PRIVATE void objc_class_register_class(Class cl){
+PRIVATE void
+objc_class_register_class(Class cl)
+{
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
 			 " Which one will be used is undefined.\n", cl->name);
@@ -507,28 +575,33 @@ PRIVATE void objc_class_register_class(Class cl){
 	cl->dtable = cl->isa->dtable = uninstalled_dtable;
 	
 	if (cl->super_class == Nil){
-		// Root class
+		/* Root class */
 		cl->isa->super_class = cl;
 		cl->isa->isa = cl->isa;
 	}
 }
 
-void objc_class_register_classes(Class *cl, unsigned int count){
+void
+objc_class_register_classes(Class *cl, unsigned int count)
+{
 	for (int i = 0; i < count; ++i){
 		objc_class_register_class(cl[i]);
 	}
 }
 
-/***** INITIALIZATION *****/
 #pragma mark -
 #pragma mark Initializator-related
 
-/**
+/*
  * Initializes the class extensions and internal class structures.
  */
-void objc_class_init(void){
+void
+objc_class_init(void)
+{
 	objc_debug_log("Initializing classes.\n");
 	
-	objc_classes = objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
-	objc_load_messages = objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY);
+	objc_classes =
+		objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
+	objc_load_messages =
+		objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY);
 }
