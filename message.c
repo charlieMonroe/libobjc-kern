@@ -18,21 +18,21 @@ static struct objc_slot nil_slot_f = { Nil, Nil, (IMP)nil_method_f, 0, 1, 0 };
 
 // TODO
 static id objc_proxy_lookup_null(id receiver, SEL op) { return nil; }
-static Slot objc_msg_forward3_null(id receiver, SEL op) { return &nil_slot; }
+static struct objc_slot *objc_msg_forward3_null(id receiver, SEL op) { return &nil_slot; }
 id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_null;
-Slot (*__objc_msg_forward3)(id receiver, SEL op) = objc_msg_forward3_null;
+struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op) = objc_msg_forward3_null;
 
-Slot objc_msg_lookup_sender(id *receiver, SEL selector, id sender);
+struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender);
 
 
 static
 // Uncomment for debugging
 //__attribute__((noinline))
-__attribute__((always_inline)) Slot
+__attribute__((always_inline)) struct objc_slot *
 objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 {
 	Class class = objc_object_get_class_inline((*receiver));
-	Slot result = objc_dtable_lookup(class->dtable, selector);
+	struct objc_slot *result = objc_dtable_lookup(class->dtable, selector);
 	if (UNLIKELY(NULL == result))
 	{
 		dtable_t dtable = dtable_for_class(class);
@@ -82,10 +82,10 @@ slowMsgLookup(id *receiver, SEL cmd)
 	return objc_msg_lookup_sender(receiver, cmd, nil)->implementation;
 }
 
-Slot (*objc_plane_lookup)(id *receiver, SEL op, id sender) =
+struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
 						objc_msg_lookup_internal;
 
-Slot
+struct objc_slot *
 objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender)
 {
 	return objc_msg_lookup_internal(receiver, selector, sender);
@@ -95,7 +95,7 @@ objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender)
  * New Objective-C lookup function.  This permits the lookup to modify the
  * receiver and also supports multi-dimensional dispatch based on the sender.
  */
-Slot objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
+struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
 	/*
 	 * Returning a nil slot allows the caller to cache the lookup for nil
 	 * too, although this is not particularly useful because the nil method
@@ -125,10 +125,10 @@ Slot objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
 	return objc_msg_lookup_internal(receiver, selector, sender);
 }
 
-PRIVATE Slot
+PRIVATE struct objc_slot *
 objc_class_get_slot(Class cl, SEL selector)
 {
-	Slot slot = objc_dtable_lookup(cl->dtable, selector);
+	struct objc_slot *slot = objc_dtable_lookup(cl->dtable, selector);
 	if (slot == NULL){
 		dtable_t dtable = dtable_for_class(cl);
 		if (dtable == uninstalled_dtable){
@@ -140,14 +140,14 @@ objc_class_get_slot(Class cl, SEL selector)
 	return slot;
 }
 
-PRIVATE Slot
+PRIVATE struct objc_slot *
 objc_slot_lookup_super(struct objc_super *super, SEL selector)
 {
 	if (super->receiver == nil){
 		return &nil_slot;
 	}
 	
-	Slot sl = objc_dtable_lookup(dtable_for_class(super->class), selector);
+	struct objc_slot *sl = objc_dtable_lookup(dtable_for_class(super->class), selector);
 	if (sl == NULL){
 		Class cl = objc_object_get_class_inline(super->receiver);
 		if (dtable_for_class(cl) == uninstalled_dtable){

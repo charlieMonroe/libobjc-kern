@@ -34,14 +34,14 @@ PRIVATE SEL objc_initialize_selector = null_selector;
 
 /* Forward declarations needed for the hash table */
 static inline BOOL _objc_selector_struct_name_is_equal_to(void *key,
-							  Selector sel);
-static inline uint32_t _objc_selector_hash(Selector sel);
+						struct objc_selector *sel);
+static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 
 #define MAP_TABLE_NAME objc_selector
 #define MAP_TABLE_COMPARE_FUNCTION _objc_selector_struct_name_is_equal_to
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_selector_hash
-#define MAP_TABLE_VALUE_TYPE Selector
+#define MAP_TABLE_VALUE_TYPE struct objc_selector *
 #define MAP_TABLE_NO_LOCK 1
 
 #include "hashtable.h"
@@ -64,7 +64,7 @@ static SparseArray *objc_selector_sparse;
  * based on string comparison of names.
  */
 static inline BOOL
-_objc_selector_struct_name_is_equal_to(void *key, Selector sel)
+_objc_selector_struct_name_is_equal_to(void *key, struct objc_selector *sel)
 {
 	return objc_strings_equal(sel->name, (const char*)key);
 }
@@ -73,14 +73,14 @@ _objc_selector_struct_name_is_equal_to(void *key, Selector sel)
  * Hashes the selector using its name field.
  */
 static inline uint32_t
-_objc_selector_hash(Selector sel)
+_objc_selector_hash(struct objc_selector *sel)
 {
 	objc_assert(sel != NULL, "Can't hash NULL selector!");
 	return objc_hash_string(sel->name);
 }
 
 static inline const char *
-_objc_selector_get_types(Selector sel)
+_objc_selector_get_types(struct objc_selector *sel)
 {
 	return sel->name + objc_strlen(sel->name) + 1;
 }
@@ -154,7 +154,7 @@ _objc_selector_copy_name_and_types(const char *name, const char *types)
  * Requires objc_selector_lock to be locked.
  */
 static BOOL
-sel_registerName_direct(Selector selector)
+sel_registerName_direct(struct objc_selector *selector)
 {
 	objc_assert(selector != NULL, "Registering NULL selector!");
 	
@@ -163,7 +163,7 @@ sel_registerName_direct(Selector selector)
 		return NO;
 	}
 	
-	Selector registered_sel;
+	struct objc_selector *registered_sel;
 	registered_sel = objc_selector_table_get(objc_selector_hashtable,
 						 selector->name);
 	if (registered_sel != NULL){
@@ -193,7 +193,7 @@ sel_registerName_direct(Selector selector)
 static inline SEL
 _sel_register_name_no_lock(const char *name, const char *types)
 {
-	Selector selector;
+	struct objc_selector *selector;
 	selector = objc_selector_table_get(objc_selector_hashtable,
 					   name);
 	if (selector == NULL){
@@ -244,8 +244,9 @@ sel_registerName(const char *name, const char *types)
 	objc_assert(objc_strlen(types) > 2,
 		    "Not enough types for registering selector.");
 	
-	Selector selector = objc_selector_table_get(objc_selector_hashtable,
-						    name);
+	struct objc_selector *selector;
+	selector = objc_selector_table_get(objc_selector_hashtable, name);
+	
 	if (selector != NULL){
 		const char *selector_types = _objc_selector_get_types(selector);
 		objc_assert(objc_strings_equal(types, selector_types),
@@ -277,8 +278,10 @@ sel_getName(SEL selector)
 	 * going anywhere.
 	 */
 	
-	Selector sel_struct = (Selector)SparseArrayLookup(objc_selector_sparse,
-							  selector);
+	struct objc_selector *sel_struct;
+	sel_struct = (struct objc_selector *)
+			SparseArrayLookup(objc_selector_sparse, selector);
+	
 	objc_assert(sel_struct != NULL,
 		    "Trying to get name from an unregistered selector.");
 	return sel_struct->name;
@@ -297,8 +300,9 @@ sel_getTypes(SEL selector)
 	 * going anywhere.
 	 */
 	
-	Selector sel_struct = (Selector)SparseArrayLookup(objc_selector_sparse,
-							  selector);
+	struct objc_selector *sel_struct = (struct objc_selector *)
+			SparseArrayLookup(objc_selector_sparse, selector);
+	
 	objc_assert(sel_struct != NULL,
 		    "Trying to get types from an unregistered selector.");
 	
@@ -340,7 +344,7 @@ objc_register_selector_array(struct objc_selector *selectors,
 	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
 	
 	for (int i = 0; i < count; ++i){
-		Selector selector = &selectors[i];
+		struct objc_selector *selector = &selectors[i];
 		sel_registerName_direct(selector);
 	}
 }

@@ -18,12 +18,10 @@ typedef signed char BOOL;
 #define Nil ((Class)0)
 
 typedef struct objc_class *Class;
-typedef struct objc_selector *Selector;
 typedef struct objc_ivar *Ivar;
 typedef struct objc_category *Category;
 typedef struct objc_method *Method;
 typedef struct objc_protocol Protocol;
-typedef struct objc_slot *Slot;
 typedef struct objc_object *id;
 
 typedef struct objc_property *Property;
