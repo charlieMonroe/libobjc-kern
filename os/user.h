@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <setjmp.h>
 
 /* LOGGING */
 #define objc_log printf
