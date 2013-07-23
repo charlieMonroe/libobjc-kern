@@ -2,6 +2,8 @@
 #include "selector.h"
 #include "dtable.h"
 #include "class.h"
+#include "protocol.h"
+#include "private.h"
 
 #define BUFFER_TYPE struct objc_category
 #include "buffer.h"
@@ -43,10 +45,9 @@ _objc_category_load(Category cat, Class class)
 	_objc_register_methods(class->isa, cat->class_methods);
 	
 	if (cat->protocols){
-		// TODO protocols
-		/*objc_init_protocols(cat->protocols);
+		objc_init_protocols(cat->protocols);
 		cat->protocols->next = class->protocols;
-		class->protocols = cat->protocols;*/
+		class->protocols = cat->protocols;
 	}
 }
 

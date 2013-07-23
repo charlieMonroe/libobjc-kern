@@ -191,6 +191,7 @@ _objc_empty_pool_until(struct objc_arc_thread_data *data, id *stop)
 static void
 _objc_cleanup_pools(struct objc_arc_thread_data *data)
 {
+	// TODO to be used as cleanup for TLS data
 	if (data->pool != NULL){
 		_objc_empty_pool_until(data, NULL);
 		objc_assert(data->pool == NULL,
@@ -421,5 +422,5 @@ objc_arc_init(void)
 {
 	objc_rw_lock_init(&objc_weak_refs_lock, "objc_weak_refs_lock");
 	
-	// TODO create key for TLS for the autorelease pool
+	// TODO create key for TLS for the autorelease pool and add _objc_cleanup_pools as destroy hookup
 }

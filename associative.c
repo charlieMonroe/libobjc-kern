@@ -4,6 +4,7 @@
 #include "class.h"
 #include "dtable.h"
 #include "spinlock.h"
+#include "selector.h"
 
 MALLOC_DECLARE(M_FAKE_CLASS);
 static MALLOC_DEFINE(M_FAKE_CLASS, "fake class", "Objective-C Associated "
@@ -53,10 +54,25 @@ _objc_find_class_for_object(id object)
 {
 	Class cl = object->isa;
 	while (cl != Nil && !cl->flags.fake) {
-		cl = cl->super_class;
+		cl = class_getSuperclass(cl);
 	}
 	
 	return cl;
+}
+
+static void
+_objc_associated_object_cxx_destruct(id self, SEL _cmd)
+{
+	struct objc_assoc_fake_class *cl;
+	cl = (struct objc_assoc_fake_class *)_objc_find_class_for_object(self);
+	
+	struct reference_list *list = &cl->list;
+	
+	objc_remove_associated_objects(self);
+	objc_rw_lock_destroy(&list->lock);
+	free_dtable(cl->dtable);
+	
+	objc_dealloc(cl, M_FAKE_CLASS);
 }
 
 /*
@@ -86,9 +102,10 @@ _objc_class_for_object(id object, BOOL create)
 		cl->flags.fake = YES;
 		cl->flags.resolved = YES;
 		
-		// TODO install cxx_destruct
-		
-		// TODO different name for the lock
+		class_addMethod(cl,
+				objc_cxx_destruct_selector,
+				(IMP)_objc_associated_object_cxx_destruct);
+
 		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)
 					->list.lock,
 				  "objc_assoc_fake_class_lock");
@@ -124,7 +141,6 @@ _objc_ref_list_for_object(id object, BOOL create)
 			list = objc_zero_alloc(sizeof(struct reference_list),
 					       M_REFLIST);
 			
-			// TODO different lock name
 			objc_rw_lock_init(&list->lock,
 					  "objc_reference_list_lock");
 			

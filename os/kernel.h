@@ -7,6 +7,15 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 
+/* LOGGING */
+#define objc_log printf
+
+#define objc_debug_log(...)						\
+		if (OBJC_DEBUG_LOG) {					\
+			objc_log("DEBUG: ");				\
+			objc_log(__VA_ARGS__);				\
+		}
+
 /* LOCKING */
 typedef struct rwlock objc_rw_lock;
 

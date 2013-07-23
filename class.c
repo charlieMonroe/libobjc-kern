@@ -355,7 +355,6 @@ class_createInstance(Class cl, size_t extraBytes)
 		cl = (Class)objc_getClass(cl->name);
 	}
 	
-	// TODO add a flag on the class?
 	// Check if cl is a small object class
 	if (sizeof(void *) == 4 && objc_small_object_classes[0] == cl){
 		return (id)1;

@@ -6,12 +6,21 @@
 #include <unistd.h>
 #include <pthread.h>
 
+/* LOGGING */
+#define objc_log printf
+
+#define objc_debug_log(...)						\
+		if (OBJC_DEBUG_LOG) {					\
+			objc_log("DEBUG: ");				\
+			objc_log(__VA_ARGS__);				\
+		}
 
 /* LOCKING */
 typedef struct {
 	pthread_rwlock_t	lock;
 	const char		*name;
 } objc_rw_lock;
+
 
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
 	objc_debug_log("Initing lock %s at address %p\n", name, lock);
@@ -77,6 +86,4 @@ static inline void objc_yield(void){
 					printf(reason);			\
 					abort();			\
 				}
-
-#define objc_log printf
 

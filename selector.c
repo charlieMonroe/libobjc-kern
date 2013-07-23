@@ -387,13 +387,24 @@ objc_selector_init(void)
 	 */
 	objc_selector_sparse = SparseArrayNew();
 	
-	objc_autorelease_selector = _sel_register_name_no_lock("autorelease", "@@:");
-	objc_release_selector = _sel_register_name_no_lock("release", "v@:");
-	objc_retain_selector = _sel_register_name_no_lock("retain", "@@:");
-	objc_dealloc_selector = _sel_register_name_no_lock("dealloc", "v@:");
-	objc_copy_selector = _sel_register_name_no_lock("copy", "@@:");
-	objc_cxx_destruct_selector = _sel_register_name_no_lock(".cxx_destruct", "v@:");
-	objc_load_selector = _sel_register_name_no_lock("load", "v@:");
-	objc_initialize_selector = _sel_register_name_no_lock("initialize", "v@:");
+	const char *void_return_types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
+	const char *object_return_types = sizeof(void*) == 4 ? "@0@0:4" : "@0@0:8";
+	
+	objc_autorelease_selector = _sel_register_name_no_lock("autorelease",
+						       object_return_types);
+	objc_release_selector = _sel_register_name_no_lock("release",
+							   void_return_types);
+	objc_retain_selector = _sel_register_name_no_lock("retain",
+							  object_return_types);
+	objc_dealloc_selector = _sel_register_name_no_lock("dealloc",
+							   void_return_types);
+	objc_copy_selector = _sel_register_name_no_lock("copy",
+							object_return_types);
+	objc_cxx_destruct_selector = _sel_register_name_no_lock(".cxx_destruct",
+							void_return_types);
+	objc_load_selector = _sel_register_name_no_lock("load",
+							void_return_types);
+	objc_initialize_selector = _sel_register_name_no_lock("initialize",
+						      void_return_types);
 }
 

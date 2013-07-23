@@ -24,5 +24,6 @@ PRIVATE struct objc_slot	*objc_class_get_slot(Class cl, SEL selector);
 PRIVATE BOOL			objc_class_resolve(Class cl);
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);
 PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
+PRIVATE void			objc_init_protocols(objc_protocol_list *protocols);
 
 #endif
