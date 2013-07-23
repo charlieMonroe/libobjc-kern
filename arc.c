@@ -14,6 +14,19 @@ MALLOC_DECLARE(M_AUTORELEASE_POOL);
 static MALLOC_DEFINE(M_AUTORELEASE_POOL, "autorelease pool", "Objective-C "
 		     "Autorelease Pool");
 
+/* Default hook for _objc_weak_load() */
+static id
+__objc_weak_load_default_hook(id object) { return object; }
+
+/*
+ * Returns the object if it is not currently in the process of being
+ * deallocated.  Returns nil otherwise.
+ *
+ * This hook must be set for weak references to work with automatic reference 
+ * counting.
+ */
+id (*_objc_weak_load)(id object) = __objc_weak_load_default_hook;
+
 struct objc_autorelease_pool {
 	struct objc_autorelease_pool *previous;
 	id *top;
@@ -36,6 +49,7 @@ static objc_tls_key objc_autorelease_pool_tls_key = 0;
 /* Forward declarations of inline functions: */
 static inline struct objc_autorelease_pool *
 _objc_create_pool_if_necessary(struct objc_arc_thread_data *data);
+
 
 static inline struct objc_arc_thread_data *
 _objc_get_arc_thread_data(void){
@@ -324,6 +338,17 @@ objc_storeWeak(id *addr, id obj)
 					   OBJC_ASSOCIATION_WEAK_REF);
 		*addr = nil;
 		return nil;
+	}
+	
+	// TODO blocks
+	
+	Class cl = objc_object_get_class_inline(obj);
+	if (cl->flags.has_custom_arr){
+		obj = _objc_weak_load(obj);
+	}else{
+		if (((struct object*)obj)->retain_count < 0){
+			obj = nil;
+		}
 	}
 	
 	objc_set_associated_object(obj, addr, (id)addr,
