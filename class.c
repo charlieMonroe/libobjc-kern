@@ -657,11 +657,9 @@ object_getIvar(id obj, Ivar ivar)
 		return NULL;
 	}
 	
-	// TODO check for weak refs and use loadWeak
-	
 	var_ptr = (char*)obj;
 	var_ptr += ivar->offset;
-	return (id)var_ptr;
+	return *(id*)var_ptr;
 }
 
 void
@@ -670,8 +668,9 @@ object_setIvar(id obj, Ivar ivar, id value)
 	if (obj == nil || ivar == NULL){
 		return;
 	}
-	
-	// TODO - check for weak refs and use storeWeak
-	objc_copy_memory((char*)obj + ivar->offset, value, ivar->size);
+
+	char *var_ptr = (char*)obj;
+	var_ptr += ivar->offset;
+	*(id*)var_ptr = value;
 }
 

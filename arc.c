@@ -383,8 +383,7 @@ objc_loadWeakRetained(id *addr)
 	// TODO malloc block
 	
 	if (obj->isa->flags.has_custom_arr){
-		// TODO
-		// obj = _objc_weak_load(obj);
+		obj = _objc_weak_load(obj);
 	}else{
 		if (((struct object *)obj)->retain_count < 0){
 			return nil;
