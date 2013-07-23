@@ -2,7 +2,7 @@
 #ifndef OBJC_ARC_H
 #define OBJC_ARC_H
 
-#include "types.h"
+#include "runtime.h"
 
 /* Autorelease-pool related stuff */
 void	objc_autoreleasePoolPop(void *pool);

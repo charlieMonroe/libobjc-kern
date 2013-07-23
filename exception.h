@@ -13,12 +13,6 @@ struct objc_exception_handler {
 	
 	/* jmp_buf for setjmp, longjmp. */
 	jmp_buf jump_buffer;
-	
-	/* Indicates the number of classes in classes[]. */
-	unsigned int class_count;
-	
-	/* List of classes in the catch statements. */
-	Class *classes;
 };
 
 /* 
@@ -41,6 +35,7 @@ void objc_install_exception_handler(struct objc_exception_handler *handler);
  */
 void objc_throw_exception(id exception);
 
+
 #define TRY_CATCH_FINALLY(TRY, CATCH, FINALLY)				\
 {									\
 	struct objc_exception_handler __exc_handler;			\
@@ -53,9 +48,18 @@ void objc_throw_exception(id exception);
 		{ TRY }							\
 	}else{								\
 		/* Getting into the catch block. */			\
-		/* TODO */						\
-		objc_abort("Should be catching exception %p\n",		\
-				__exc_handler.exception);		\
+		id exception = __exc_handler.exception;			\
+		CATCH							\
+		else{							\
+			/* Not caught by any of the catch statements. */\
+			{						\
+				/* Restore the previous handler. */	\
+				objc_install_exception_handler(		\
+					__exc_handler.previous);	\
+				FINALLY					\
+			}						\
+			objc_throw_exception(__exc_handler.exception);	\
+		}							\
 	}								\
 	{								\
 		/* Need to restore the previous handler. */		\

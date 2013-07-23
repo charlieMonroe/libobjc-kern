@@ -152,6 +152,12 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 {
 	/* Inserting into the linked list */
 	Class last_sibling = sibling->sibling_list;
+	if (last_sibling == Nil){
+		sibling->sibling_list = cl;
+		sibling->isa->sibling_list = cl->isa;
+		return;
+	}
+	
 	while (last_sibling->sibling_list != Nil){
 		last_sibling = last_sibling->sibling_list;
 	}

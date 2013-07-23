@@ -2,7 +2,7 @@
 #include "../class.h"
 #include "../classes/MRObjects.h"
 #include "../message.h"
-#include "../arc.h"
+#include "../kernobjc/runtime.h"
 #include "associative.h"
 
 void weak_ref_test(void){

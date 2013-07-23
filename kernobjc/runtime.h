@@ -17,6 +17,7 @@
 #include "property.h"
 #include "protocol.h"
 #include "message.h"
+#include "arc.h"
 
 
 
