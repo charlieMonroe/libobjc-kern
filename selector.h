@@ -13,9 +13,11 @@ PRIVATE SEL objc_release_selector;
 PRIVATE SEL objc_dealloc_selector;
 PRIVATE SEL objc_autorelease_selector;
 PRIVATE SEL objc_copy_selector;
+PRIVATE SEL objc_cxx_construct_selector;
 PRIVATE SEL objc_cxx_destruct_selector;
 PRIVATE SEL objc_load_selector;
 PRIVATE SEL objc_initialize_selector;
+PRIVATE SEL objc_is_arc_compatible_selector;
 
 
 /* 

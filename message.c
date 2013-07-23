@@ -16,13 +16,45 @@ static struct objc_slot nil_slot_d = { Nil, Nil, (IMP)nil_method_d, 0, 1, 0 };
 static struct objc_slot nil_slot_f = { Nil, Nil, (IMP)nil_method_f, 0, 1, 0 };
 
 
-// TODO
-static id objc_proxy_lookup_null(id receiver, SEL op) { return nil; }
-static struct objc_slot *objc_msg_forward3_null(id receiver, SEL op) { return &nil_slot; }
-id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_null;
-struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op) = objc_msg_forward3_null;
+/* Default proxy lookup. */
+static id
+objc_proxy_lookup_null(id receiver, SEL op)
+{
+	return nil;
+}
 
+/* Default forwarding hook. */
+static struct objc_slot *
+objc_msg_forward3_null(id receiver, SEL op)
+{
+	return &nil_slot;
+}
+
+/* Forward declarations. */
 struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender);
+static struct objc_slot *objc_msg_lookup_internal(id *receiver, SEL selector, id sender);
+
+/* 
+ * The proxy lookup. When the method isn't cached the slow msg lookup goes on
+ * to ask the proxy hook to supply a different receiver. If none is supplied,
+ * the dispatch goes to the the __objc_msg_forward3 hook.
+ */
+id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_null;
+
+/*
+ * When slow method lookup fails and the proxy lookup hook returns no receiver,
+ * the dispatch tries this hook for forwarding.
+ */
+struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op)
+						= objc_msg_forward3_null;
+
+/*
+ * An export of the other otherwise 
+ */
+struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
+							objc_msg_lookup_internal;
+
+
 
 
 static
@@ -33,40 +65,32 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 {
 	Class class = objc_object_get_class_inline((*receiver));
 	struct objc_slot *result = objc_dtable_lookup(class->dtable, selector);
-	if (UNLIKELY(NULL == result))
-	{
+	if (UNLIKELY(NULL == result)) {
 		dtable_t dtable = dtable_for_class(class);
 		/* Install the dtable if it hasn't already been initialized. */
-		if (dtable == uninstalled_dtable)
-		{
+		if (dtable == uninstalled_dtable){
 			objc_send_initialize(*receiver);
 			dtable = dtable_for_class(class);
 			result = objc_dtable_lookup(dtable, selector);
-		}
-		else
-		{
+		}else{
 			/*
 			 * Check again incase another thread updated the dtable
 			 * while we weren't looking.
 			 */
 			result = objc_dtable_lookup(dtable, selector);
 		}
-		if (0 == result)
-		{
+		if (NULL == result) {
 			id newReceiver = objc_proxy_lookup(*receiver, selector);
 			/*
 			 * If some other library wants us to play forwarding 
 			 * games, try again with the new object.
 			 */
-			if (nil != newReceiver)
-			{
+			if (nil != newReceiver) {
 				*receiver = newReceiver;
 				return objc_msg_lookup_sender(receiver,
 							      selector,
 							      sender);
-			}
-			if (0 == result)
-			{
+			} else {
 				result = __objc_msg_forward3(*receiver,
 							     selector);
 			}
@@ -82,8 +106,7 @@ slowMsgLookup(id *receiver, SEL cmd)
 	return objc_msg_lookup_sender(receiver, cmd, nil)->implementation;
 }
 
-struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
-						objc_msg_lookup_internal;
+
 
 struct objc_slot *
 objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender)
@@ -95,7 +118,9 @@ objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender)
  * New Objective-C lookup function.  This permits the lookup to modify the
  * receiver and also supports multi-dimensional dispatch based on the sender.
  */
-struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
+struct objc_slot *
+objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
+{
 	/*
 	 * Returning a nil slot allows the caller to cache the lookup for nil
 	 * too, although this is not particularly useful because the nil method
@@ -126,7 +151,7 @@ struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender){
 }
 
 PRIVATE struct objc_slot *
-objc_class_get_slot(Class cl, SEL selector)
+objc_get_slot(Class cl, SEL selector)
 {
 	struct objc_slot *slot = objc_dtable_lookup(cl->dtable, selector);
 	if (slot == NULL){
@@ -173,7 +198,7 @@ class_respondsToSelector(Class cl, SEL selector)
 	if (cl == Nil || selector == null_selector){
 		return NO;
 	}
-	return objc_class_get_slot(cl, selector) != NULL;
+	return objc_get_slot(cl, selector) != NULL;
 }
 
 #pragma mark -
@@ -186,7 +211,7 @@ class_getMethodImplementation(Class cl, SEL selector)
 	 * No forwarding here! This is simply to lookup
 	 * a method implementation.
 	 */
-	return objc_class_get_slot(cl, selector)->implementation;
+	return objc_get_slot(cl, selector)->implementation;
 }
 
 IMP

@@ -27,9 +27,11 @@ PRIVATE SEL objc_release_selector = null_selector;
 PRIVATE SEL objc_dealloc_selector = null_selector;
 PRIVATE SEL objc_autorelease_selector = null_selector;
 PRIVATE SEL objc_copy_selector = null_selector;
+PRIVATE SEL objc_cxx_construct_selector = null_selector;
 PRIVATE SEL objc_cxx_destruct_selector = null_selector;
 PRIVATE SEL objc_load_selector = null_selector;
 PRIVATE SEL objc_initialize_selector = null_selector;
+PRIVATE SEL objc_is_arc_compatible_selector = null_selector;
 
 
 /* Forward declarations needed for the hash table */
@@ -387,8 +389,9 @@ objc_selector_init(void)
 	 */
 	objc_selector_sparse = SparseArrayNew();
 	
-	const char *void_return_types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
-	const char *object_return_types = sizeof(void*) == 4 ? "@0@0:4" : "@0@0:8";
+	BOOL cpu32_bit = sizeof(void*) == 4;
+	const char *void_return_types = cpu32_bit ? "v8@0:4" : "v16@0:8";
+	const char *object_return_types = cpu32_bit == 4 ? "@8@0:4" : "@16@0:8";
 	
 	objc_autorelease_selector = _sel_register_name_no_lock("autorelease",
 						       object_return_types);
@@ -402,9 +405,13 @@ objc_selector_init(void)
 							object_return_types);
 	objc_cxx_destruct_selector = _sel_register_name_no_lock(".cxx_destruct",
 							void_return_types);
+	objc_cxx_construct_selector = _sel_register_name_no_lock(".cxx_construct",
+							void_return_types);
 	objc_load_selector = _sel_register_name_no_lock("load",
 							void_return_types);
 	objc_initialize_selector = _sel_register_name_no_lock("initialize",
 						      void_return_types);
+	objc_is_arc_compatible_selector = _sel_register_name_no_lock("_ARCCompliantRetainRelease",
+								     void_return_types);
 }
 

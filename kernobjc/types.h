@@ -80,9 +80,6 @@ struct objc_super {
 typedef struct {
 	const char *name;
 	const char *value;
-	size_t length;
-	
-	// TODO
 } objc_property_attribute_t;
 
 

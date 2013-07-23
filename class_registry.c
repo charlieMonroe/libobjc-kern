@@ -509,8 +509,6 @@ objc_getClass(const char *name)
 		c = objc_class_lookup_hook(name);
 	}
 	
-	// TODO aliases?
-	
 	return (id)c;
 }
 
@@ -541,8 +539,6 @@ objc_class_resolve(Class cl)
 	/* Beyond this point, the superclasses are resolved. */
 	
 	_objc_class_remove_from_unresolved_list(cl);
-	
-	// TODO resolving the superclass pointer char * -> Class - really necessary?
 	
 	cl->flags.resolved = YES;
 	cl->isa->flags.resolved = YES;

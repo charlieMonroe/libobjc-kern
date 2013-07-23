@@ -243,8 +243,33 @@ _lookup_method_super(struct objc_super *sup, SEL selector)
 	return _lookup_method(sup->class, selector);
 }
 
+/*
+ * Calls .cxx_construct on a particular class and all the superclasses that
+ * implement it.
+ */
+static void
+call_cxx_construct_for_class(Class cls, id obj)
+{
+	struct objc_slot *slot;
+	slot = objc_get_slot(cls, objc_cxx_construct_selector);
+	
+	if (NULL != slot) {
+		cls = slot->owner->super_class;
+		if (Nil != cls) {
+			call_cxx_construct_for_class(cls, obj);
+		}
+		slot->implementation(obj, objc_cxx_construct_selector);
+	}
+}
 
-
+/*
+ * Calls .cxx_construct methods on all classes obj inherits from.
+ */
+PRIVATE void
+call_cxx_construct(id obj)
+{
+	call_cxx_construct_for_class(objc_object_get_class_inline(obj), obj);
+}
 
 
 #pragma mark -
@@ -374,7 +399,7 @@ class_createInstance(Class cl, size_t extraBytes)
 	objc_debug_log("Created instance %p of class %s\n", obj,
 		       class_getName(cl));
 	
-	// TODO - cxx_construct?
+	call_cxx_construct(obj);
 	
 	return obj;
 }

@@ -21,7 +21,7 @@ PRIVATE objc_rw_lock initialize_lock;
  */
 static BOOL ownsMethod(Class cls, SEL sel)
 {
-	struct objc_slot *slot = objc_class_get_slot(cls, sel);
+	struct objc_slot *slot = objc_get_slot(cls, sel);
 	if ((NULL != slot) && (slot->owner == cls))
 	{
 		return YES;
@@ -30,7 +30,7 @@ static BOOL ownsMethod(Class cls, SEL sel)
 }
 
 static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
-	struct objc_slot *slot = objc_class_get_slot(cls, sel);
+	struct objc_slot *slot = objc_get_slot(cls, sel);
 	if (NULL != slot){
 		cls->flags.has_custom_arr = YES;
 		return YES;
@@ -44,16 +44,11 @@ static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
  */
 static void checkARCAccessors(Class cls)
 {
-	static SEL isARC;
-	if (null_selector == isARC){
-		// TODO make it a static SEL in selector.h
-		isARC = sel_registerName("_ARCCompliantRetainRelease", "v@:");
-	}
-	
-	if (!ownsMethod(cls, isARC)){
-		// The class doesn't implement the isARC selector,
-		// which means we need to check is it implements
-		// custom ARR methods.
+	if (!ownsMethod(cls, objc_is_arc_compatible_selector)){
+		/*
+		 * The class doesn't implement the isARC selector, which means 
+		 * we need to check if it implements custom ARR methods.
+		 */
 		if (_objc_check_class_for_custom_arr_method(cls, objc_retain_selector)){
 			return;
 		}
@@ -61,9 +56,6 @@ static void checkARCAccessors(Class cls)
 			return;
 		}
 		if (_objc_check_class_for_custom_arr_method(cls, objc_autorelease_selector)){
-			return;
-		}
-		if (_objc_check_class_for_custom_arr_method(cls, isARC)){
 			return;
 		}
 	}
