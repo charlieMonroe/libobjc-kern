@@ -24,7 +24,7 @@ static inline id _objc_copy_object(id obj){
 	return obj;
 }
 
-/**
+/*
  * Public function for getting a property.  
  */
 id objc_getProperty(id obj, SEL _cmd, ptrdiff_t offset, BOOL isAtomic)
@@ -45,7 +45,7 @@ id objc_getProperty(id obj, SEL _cmd, ptrdiff_t offset, BOOL isAtomic)
 	else
 	{
 		ret = *(id*)addr;
-		ret = objc_retain_autorelease(ret);
+		ret = objc_retainAutorelease(ret);
 	}
 	return ret;
 }
@@ -128,7 +128,7 @@ void objc_setProperty_nonatomic_copy(id obj, SEL _cmd, id arg, ptrdiff_t offset)
 }
 
 
-/**
+/*
  * Structure copy function.  This is provided for compatibility with the Apple
  * APIs (it's an ABI function, so it's semi-public), but it's a bad design so
  * it's not used.  The problem is that it does not identify which of the
@@ -157,7 +157,7 @@ void objc_copyPropertyStruct(void *dest,
 	}
 }
 
-/**
+/*
  * Get property structure function.  Copies a structure from an ivar to another
  * variable.  Locks on the address of src.
  */
@@ -180,7 +180,7 @@ void objc_getPropertyStruct(void *dest,
 	}
 }
 
-/**
+/*
  * Set property structure function.  Copes a structure to an ivar.  Locks on
  * dest.
  */
@@ -260,7 +260,7 @@ const char *property_getName(Property property)
 
 // PRIVATE size_t lengthOfTypeEncoding(const char *types);
 
-/**
+/*
  * The compiler stores the type encoding of the getter.  We replace this with
  * the type encoding of the property itself.  We use a 0 byte at the start to
  * indicate that the swap has taken place.

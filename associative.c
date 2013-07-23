@@ -149,8 +149,10 @@ _objc_ref_list_for_object(id object, BOOL create)
 		return *extra_space;
 	}
 	
-	// It's not a class, create a fake class and update the isa pointer
-	// (if create == YES)
+	/*
+	 * It's not a class, create a fake class and update the isa pointer
+	 * (if create == YES)
+	 */
 	Class cl = _objc_class_for_object(object, create);
 	if (cl != Nil){
 		return &((struct objc_assoc_fake_class*)cl)->list;
@@ -379,7 +381,7 @@ objc_set_associated_object(id object, void *key, id value,
 	objc_rw_lock_wlock(&list->lock);
 	struct reference *ref = _objc_find_key_reference_in_list(list, key);
 	if (ref == NULL){
-		// No reference, perhaps need to allocate some
+		/* No reference, perhaps need to allocate some */
 		ref = _objc_find_free_reference_in_list(list, YES);
 		objc_assert(ref != NULL,
 			    "_objc_reference_create_for_object hasn't"
@@ -487,7 +489,7 @@ objc_remove_associated_weak_refs(id object)
 	
 	struct reference_list *list = _objc_ref_list_for_object(object, NO);
 	if (list == NULL){
-		// Nothing to do
+		/* Nothing to do */
 		return;
 	}
 	

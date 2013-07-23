@@ -1,4 +1,4 @@
-/**
+/*
  * This header should contain all public header includes.
 */
 

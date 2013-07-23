@@ -24,7 +24,7 @@ clock_t direct_call_test(void){
 }
 
 int main(int argc, const char * argv[]){
-	/** 
+	/* 
 	 * Need to make sure that it doesn't get inlined,
 	 * and a method is indeed called.
 	 */

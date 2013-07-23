@@ -2,32 +2,32 @@
 #ifndef LIBKERNOBJC_CLASS_H
 #define LIBKERNOBJC_CLASS_H
 
-/**
+/*
  * Returns the name of the class.
  */
 const char *class_getName(Class cls);
 
-/**
+/*
  * Returns true if it is a meta class.
  */
 BOOL class_isMetaClass(Class cls);
 
-/**
+/*
  * Returns the classes superclass, 
  */
 Class class_getSuperclass(Class cls);
 
-/**
+/*
  * Returns size of an instance of a class.
  */
 size_t class_getInstanceSize(Class cls);
 
-/**
+/*
  * Returns an ivar for name.
  */
 Ivar class_getInstanceVariable(Class cls, const char *name);
 
-/**
+/*
  * Returns a list of ivars. The caller is responsible for
  * freeing it using the free function.
  *
@@ -45,7 +45,7 @@ Method class_getClassMethod(Class cls, SEL name);
 IMP class_getMethodImplementation(Class cls, SEL name);
 IMP class_getMethodImplementation_stret(Class cls, SEL name);
 
-/**
+/*
  * The following function returns a list of methods
  * implemented on a class. The caller is responsible 
  * for freeing it using the free function.
@@ -70,7 +70,7 @@ int class_getVersion(Class theClass);
 void class_setVersion(Class theClass, int version);
 
 
-/**
+/*
  * The following functions add methods or a single method to the class.
  *
  * If a method with the same selector is already attached to the class,
@@ -80,14 +80,14 @@ void class_setVersion(Class theClass, int version);
  */
 BOOL class_addMethod(Class cls, SEL name, IMP imp);
 
-/**
+/*
  * Replaces a method implementation for another one.
  *
  * Returns the old implementation.
  */
 IMP class_replaceMethod(Class cls, SEL name, IMP imp);
 
-/**
+/*
  * Adds an ivar to a class. If the class is resolved,
  * calling this function aborts the program.
  */

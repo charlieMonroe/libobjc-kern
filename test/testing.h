@@ -137,20 +137,20 @@ static Ivar _MyClass_ivars_[] = {
 };
 
 static struct objc_class_prototype MyClass_class = {
-	NULL, /** isa pointer gets connected when registering. */
-	"MRObject", /** Superclass */
+	NULL, /* isa pointer gets connected when registering. */
+	"MRObject", /* Superclass */
 	"MyClass",
-	_MyClass_class_methods, /** Class methods */
-	_MyClass_instance_methods, /** Instance methods */
-	_MyClass_ivars_, /** Ivars */
-	NULL, /** Class cache. */
-	NULL, /** Instance cache. */
-	0, /** Instance size - computed from ivars. */
-	0, /** Version. */
+	_MyClass_class_methods, /* Class methods */
+	_MyClass_instance_methods, /* Instance methods */
+	_MyClass_ivars_, /* Ivars */
+	NULL, /* Class cache. */
+	NULL, /* Instance cache. */
+	0, /* Instance size - computed from ivars. */
+	0, /* Version. */
 	{
-		YES /** In construction. */
+		YES /* In construction. */
 	},
-	NULL /** Extra space. */
+	NULL /* Extra space. */
 };
 
 static void _I_MySubclass_increment_(MyClass *self, SEL _cmd, ...){
@@ -173,20 +173,20 @@ static struct objc_method_prototype _I_MySubclass_increment_mp_ = {
 };
 
 static struct objc_class_prototype MySubclass_class = {
-	NULL, /** isa pointer gets connected when registering. */
-	"MyClass", /** Superclass */
+	NULL, /* isa pointer gets connected when registering. */
+	"MyClass", /* Superclass */
 	"MySubclass",
-	NULL, /** Class methods */
-	NULL, /** Instance methods */
-	NULL, /** Ivars */
-	NULL, /** Class cache. */
-	NULL, /** Instance cache. */
-	0, /** Instance size - computed from ivars. */
-	0, /** Version. */
+	NULL, /* Class methods */
+	NULL, /* Instance methods */
+	NULL, /* Ivars */
+	NULL, /* Class cache. */
+	NULL, /* Instance cache. */
+	0, /* Instance size - computed from ivars. */
+	0, /* Version. */
 	{
-		YES /** In construction. */
+		YES /* In construction. */
 	},
-	NULL /** Extra space. */
+	NULL /* Extra space. */
 };
 
 #if OBJC_HAS_CATEGORIES_EXTENSION

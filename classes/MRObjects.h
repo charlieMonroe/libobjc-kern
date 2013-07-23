@@ -4,7 +4,7 @@
 
 #include "../types.h"
 
-/**
+/*
  * Structure of a MRObject instance.
  */
 typedef struct {
@@ -12,7 +12,7 @@ typedef struct {
 	int retainCount;
 } MRObject_instance_t;
 
-/**
+/*
  * Structure of a __MRConstrString instance.
  */
 typedef struct {
@@ -21,7 +21,7 @@ typedef struct {
 	const char *cString;
 } __MRConstString_instance_t;
 
-/** 
+/* 
  * Exported class prototypes.
  *
  * Note that the same structures are then
@@ -30,11 +30,11 @@ typedef struct {
 extern struct objc_class MRObject_class;
 extern struct objc_class __MRConstString_class;
 
-/**
+/*
  * A macro for creating a constant string instance.
  */
 #define OBJC_STRING(VAR_NAME, STR) static __MRConstString_instance_t VAR_NAME##_stat_str = { (Class)(&__MRConstString_class), 1, STR };\
 							     id VAR_NAME = (id)(&VAR_NAME##_stat_str);
 
 
-#endif /** _MRObject_H_ */
+#endif /* _MRObject_H_ */

@@ -58,8 +58,8 @@ struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
 
 
 static
-// Uncomment for debugging
-//__attribute__((noinline))
+/* Uncomment for debugging */
+/* __attribute__((noinline)) */
 __attribute__((always_inline)) struct objc_slot *
 objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 {

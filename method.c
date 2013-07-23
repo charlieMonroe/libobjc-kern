@@ -25,7 +25,11 @@ _add_methods_to_class(Class cl, Method *m, unsigned int count)
 	
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
-	cl->methods = objc_method_list_append(cl->methods, list);
+	if (cl->methods == NULL){
+		cl->methods = list;
+	}else{
+		cl->methods = objc_method_list_append(cl->methods, list);
+	}
 	dtable_add_method_list_to_class(cl, cl->methods);
 }
 

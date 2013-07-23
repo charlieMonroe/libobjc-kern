@@ -1,9 +1,9 @@
 
-/** No guards as we want this to be reincluded multiple times. */
+/* No guards as we want this to be reincluded multiple times. */
 
-#include "os.h" // Needed for some macros
+#include "os.h" /* Needed for some macros */
 
-/**
+/*
  * This header defines a template for a list
  * that can be chained using the ->next variable
  * if OBJC_LIST_CHAINABLE is defined as 1.
@@ -52,7 +52,7 @@ MALLOC_DECLARE(M_LIST_TYPE);
 static MALLOC_DEFINE(M_LIST_TYPE, "list", "Objective-C List");
 
 
-/**
+/*
  * These macros define the structure name.
  * See the example below for better understanding.
  */
@@ -68,7 +68,7 @@ static MALLOC_DEFINE(M_LIST_TYPE, "list", "Objective-C List");
 		_struct\
 	)
 
-/**
+/*
  * The list structure.
  *
  * Example:
@@ -84,7 +84,7 @@ static MALLOC_DEFINE(M_LIST_TYPE, "list", "Objective-C List");
  * }
  */
 struct OBJC_LIST_STRUCTURE_NAME {
-	/**
+	/*
 	 * If chainable, include a pointer to the next
 	 * structure.
 	 */
@@ -92,18 +92,18 @@ struct OBJC_LIST_STRUCTURE_NAME {
 		struct OBJC_LIST_STRUCTURE_NAME *next;
 	#endif
 	
-	/**
+	/*
 	 * Size of the *_list below.
 	 */
 	unsigned int size;
 	
-	/**
+	/*
 	 * Actual list of the items.
 	 */
 	OBJC_LIST_TYPE list[];
 };
 
-/**
+/*
  * Creates a new structure (the above one).
  */
 static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _create)(unsigned int count){
@@ -119,7 +119,7 @@ static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_T
 }
 
 #if OBJC_LIST_CHAINABLE
-/**
+/*
  * Appends a structure to the end of the list.
  */
 static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _append)(
@@ -142,49 +142,15 @@ static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_T
 	return to_prepend;
 }
 
-/**
- * Goes through the whole linked list and copies all the ->*_list items into one big list.
- */
-static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _flatten)(
-												    OBJC_LIST_STRUCTURE_TYPE_NAME *head
-												    ){
-	// First, figure out how much to allocate.
-	size_t size = 0;
-	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
-	while (list != NULL){
-		size += list->size;
-		list = list->next;
-	}
-	
-	// NULL-terminated
-	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF*objs = objc_alloc((size + 1) * sizeof(OBJC_LIST_TYPE*), M_LIST_TYPE);
-	unsigned int counter = 0;
-	list = head;
-	while (list != NULL && counter < size){
-		for (int i = 0; i < list->size; ++i){
-			objs[counter] = OBJC_LIST_TYPE_REF (list->list[i]);
-			++counter;
-			
-			if (counter >= size){
-				// Someone probably added something in the meanwhile
-				break;
-			}
-		}
-		
-		list = list->next;
-	}
-	objs[size] = NULL; // NULL-terminate
-	return objs;
-}
 
-/**
+/*
  * Goes through the whole linked list and copies all the ->*_list items into one big list.
  */
 static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _copy_list)(
 										      OBJC_LIST_STRUCTURE_TYPE_NAME *head,
 										      unsigned int *outCount
 										      ){
-	// First, figure out how much to allocate.
+	/* First, figure out how much to allocate. */
 	unsigned int size = 0;
 	OBJC_LIST_STRUCTURE_TYPE_NAME *list = head;
 	while (list != NULL){
@@ -201,7 +167,7 @@ static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_
 			++counter;
 			
 			if (counter > size){
-				// Someone probably added something in the meanwhile
+				/* Someone probably added something in the meanwhile */
 				break;
 			}
 		}
@@ -217,7 +183,7 @@ static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_
 }
 
 
-/**
+/*
  * Goes through the whole linked list and copies all the ->*_list items into the buffer
  * of max size size. Returns the number actually put into the buffer.
  */
@@ -235,7 +201,7 @@ static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_lis
 			++counter;
 			
 			if (counter > buffer_size){
-				// Someone probably added something in the meanwhile
+				/* Someone probably added something in the meanwhile */
 				break;
 			}
 		}
@@ -246,7 +212,7 @@ static inline unsigned int PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _get_lis
 	return counter;
 }
 
-#endif // OBJC_LIST_CHAINABLE
+#endif /* OBJC_LIST_CHAINABLE */
 
 
 __attribute__((unused)) static void PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _free)(

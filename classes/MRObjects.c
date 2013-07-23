@@ -1,4 +1,4 @@
-/**
+/*
  * A basic object class with R/R methods.
  */
 
@@ -7,8 +7,7 @@
 #include "../runtime.h"
 
 
-/*************** MRObject ***************/
-/** MRObject class, ivars and methods. */
+/* MRObject class, ivars and methods. */
 
 #pragma mark -
 #pragma mark MRObject
@@ -108,7 +107,7 @@ static struct objc_ivar_list_struct MRObject_ivar_list = {
 	}
 };
 
-/**
+/*
  * Non-static to export a pointer to the classes directly.
  *
  * In particular, the MRString export allows compile-time
@@ -116,10 +115,10 @@ static struct objc_ivar_list_struct MRObject_ivar_list = {
  */
 
 struct objc_class MRObject_metaclass = {
-	.isa = Nil, /** isa pointer gets connected when registering. */
-	.super_class = Nil, /** Root class */
+	.isa = Nil, /* isa pointer gets connected when registering. */
+	.super_class = Nil, /* Root class */
 	.name = "MRObject",
-	.methods = &MRObject_class_method_list, /** Class methods */
+	.methods = &MRObject_class_method_list, /* Class methods */
 	.flags = {
 		.meta = 1
 	}
@@ -128,11 +127,11 @@ struct objc_class MRObject_metaclass = {
 static size_t MRObject_class_ivar_offsets[2] = { 0, 0 };
 
 struct objc_class MRObject_class = {
-	.isa = &MRObject_metaclass, /** isa pointer going to the meta class. */
-	.super_class = Nil, /** Root class */
+	.isa = &MRObject_metaclass, /* isa pointer going to the meta class. */
+	.super_class = Nil, /* Root class */
 	.name = "MRObject",
-	.methods = &MRObject_instance_method_list, /** Methods */
-	.ivars = &MRObject_ivar_list, /** Ivars */
+	.methods = &MRObject_instance_method_list, /* Methods */
+	.ivars = &MRObject_ivar_list, /* Ivars */
 	.ivar_offsets = (size_t*)&MRObject_class_ivar_offsets
 };
 
@@ -144,7 +143,7 @@ static struct objc_method_list_struct __MRConstString_instance_method_list = {
 	4, // Size
 	{
 		{
-			(IMP)_C_MRObject_retain_noop_, /** We can use the no-op class implementation. */
+			(IMP)_C_MRObject_retain_noop_, /* We can use the no-op class implementation. */
 			"retain",
 			"@@:",
 			0
@@ -185,8 +184,8 @@ static struct objc_ivar_list_struct __MRConstString_ivar_list = {
 };
 
 struct objc_class __MRConstString_metaclass = {
-	.isa = &MRObject_metaclass, /** isa pointer gets connected when registering. */
-	.super_class = &MRObject_metaclass, /** Superclass */
+	.isa = &MRObject_metaclass, /* isa pointer gets connected when registering. */
+	.super_class = &MRObject_metaclass, /* Superclass */
 	.name = "__MRConstString",
 	.flags = {
 		.meta = 1,
@@ -196,10 +195,10 @@ struct objc_class __MRConstString_metaclass = {
 static size_t __MRConstString_class_ivar_offsets[2] = { 0, 0 };
 
 struct objc_class __MRConstString_class = {
-	.isa = &__MRConstString_metaclass, /** isa pointer gets connected when registering. */
-	.super_class = &MRObject_class, /** Superclass */
+	.isa = &__MRConstString_metaclass, /* isa pointer gets connected when registering. */
+	.super_class = &MRObject_class, /* Superclass */
 	.name = "__MRConstString",
-	.methods = &__MRConstString_instance_method_list, /** Class methods */
+	.methods = &__MRConstString_instance_method_list, /* Class methods */
 	.ivars = &__MRConstString_ivar_list,
 	.ivar_offsets = (size_t*)&__MRConstString_class_ivar_offsets
 };

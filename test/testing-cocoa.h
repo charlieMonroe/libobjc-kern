@@ -52,7 +52,7 @@
 	
 #else
 	
-/**
+/*
  * The Foundation wraps the forwarding into NSInvocation.
  */
 	
@@ -118,7 +118,7 @@
 @implementation NewClass
 
 -(void)unknownSelector{
-	/** No-op */
+	/* No-op */
 }
 @end
 

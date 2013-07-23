@@ -21,4 +21,4 @@ void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd);
 const char *_I___MRConstString_cString_(__MRConstString_instance_t *self, SEL _cmd);
 unsigned int _I___MRConstString_length_(__MRConstString_instance_t *self, SEL _cmd);
 
-#endif /** _MRObjectMethods_H_ */
+#endif /* _MRObjectMethods_H_ */

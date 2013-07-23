@@ -1,4 +1,4 @@
-/**
+/*
  * hash_table.h provides a template for implementing hopscotch hash tables.
  *
  * Several macros must be defined before including this file:
@@ -72,7 +72,7 @@
 #endif
 
 
-/**
+/*
  * PREFIX(x) macro adds the table name prefix to the argument.
  */
 #define PREFIX(x) PREFIX_SUFFIX(MAP_TABLE_NAME, x)
@@ -86,7 +86,7 @@
 MALLOC_DECLARE(M_MAP_TABLE_TYPE);
 static MALLOC_DEFINE(M_MAP_TABLE_TYPE, "hash_table", "Objective-C Hash Table");
 
-/**
+/*
  * Hash table cell. Includes the value + secondMaps
  * for collision handling - secondMaps is a bitmap -
  * if n-th bit is 1, then an item with this hash is also
@@ -98,7 +98,7 @@ typedef struct PREFIX(_table_cell_struct)
 	MAP_TABLE_VALUE_TYPE value;
 } *PREFIX(_table_cell);
 
-/**
+/*
  * Actual table structure.
  *
  * RW lock for r/w locking, table_size for the allocated
@@ -120,7 +120,7 @@ typedef struct PREFIX(_table_struct)
 } PREFIX(_table);
 
 
-/**
+/*
  * Allocating count cells for the table.
  */
 struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
@@ -128,7 +128,7 @@ struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
 	return objc_zero_alloc(count * sizeof(struct PREFIX(_table_cell_struct)), M_MAP_TABLE_TYPE);
 }
 
-/**
+/*
  * Allocates the table with initial capacity, initializes
  * the lock.
  */
@@ -147,13 +147,13 @@ PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity
 	return table;
 }
 
-/**
+/*
  * Forward declaration.
  */
 static int PREFIX(_insert)(PREFIX(_table) *table, MAP_TABLE_VALUE_TYPE value);
 
 
-/**
+/*
  * Resizes the table by growing twice the current size.
  *
  * Returns 0 on failure, 1 on success.
@@ -201,7 +201,7 @@ static int PREFIX(_table_resize)(PREFIX(_table) *table)
 	return 1;
 }
 
-/**
+/*
  * Struct defining an enumerator.
  */
 struct PREFIX(_table_enumerator)
@@ -212,7 +212,7 @@ struct PREFIX(_table_enumerator)
 };
 
 
-/**
+/*
  * Finds the table cell corresponding to the already
  * computed hash.
  */
@@ -223,7 +223,7 @@ static inline PREFIX(_table_cell) PREFIX(_table_lookup)(PREFIX(_table) *table,
 	return &table->table[hash];
 }
 
-/**
+/*
  * There is an empty space in cell at fromHash
  */
 static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
@@ -265,7 +265,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 	return 0;
 }
 
-/**
+/*
  * Rebalancing the table.
  */
 static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
@@ -283,7 +283,7 @@ static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 }
 
 
-/**
+/*
  * Inserting into the table - the RW lock associated
  * with the table gets locked and the following steps
  * are performed:
@@ -346,7 +346,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
-	/** If rebalancing failed, resize even if we are <80% full.  This can
+	/* If rebalancing failed, resize even if we are <80% full.  This can
 	 * happen if your hash function sucks.  If you don't want this to happen,
 	 * get a better hash function. */
 	if (PREFIX(_table_resize)(table))
@@ -494,7 +494,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 
-/**
+/*
  * Returns the current value for an enumerator.  This is used when you remove
  * objects during enumeration.  It may cause others to be shuffled up the
  * table.

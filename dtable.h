@@ -5,12 +5,12 @@
 typedef SparseArray* dtable_t;
 #define objc_dtable_lookup SparseArrayLookup
 
-/**
+/*
  * Pointer to the sparse array representing the pretend (uninstalled) dtable.
  */
 PRIVATE extern dtable_t uninstalled_dtable;
 
-/**
+/*
  * Structure for maintaining a linked list of temporary dtables.  When sending
  * an +initialize message to a class, we create a temporary dtables and store
  * it in a linked list.  This is then used when sending other messages to
@@ -18,19 +18,19 @@ PRIVATE extern dtable_t uninstalled_dtable;
  */
 typedef struct _InitializingDtable
 {
-	/** The class that owns the dtable. */
+	/* The class that owns the dtable. */
 	Class class;
-	/** The dtable for this class. */
+	/* The dtable for this class. */
 	dtable_t dtable;
-	/** The next uninstalled dtable in the list. */
+	/* The next uninstalled dtable in the list. */
 	struct _InitializingDtable *next;
 } InitializingDtable;
 
-/** Head of the list of temporary dtables.  Protected by initialize_lock. */
+/* Head of the list of temporary dtables.  Protected by initialize_lock. */
 extern InitializingDtable *temporary_dtables;
 extern objc_rw_lock initialize_lock;
 
-/**
+/*
  * Returns whether a class has an installed dtable.
  */
 static inline int classHasInstalledDtable(struct objc_class *cls)
@@ -38,7 +38,7 @@ static inline int classHasInstalledDtable(struct objc_class *cls)
 	return (cls->dtable != uninstalled_dtable);
 }
 
-/**
+/*
  * Returns the dtable for a given class.  If we are currently in an +initialize
  * method then this will block if called from a thread other than the one
  * running the +initialize method.  
@@ -91,7 +91,7 @@ static inline dtable_t dtable_for_class(Class cls)
 	return dtable;
 }
 
-/**
+/*
  * Returns whether a class has had a dtable created.  The dtable may be
  * installed, or stored in the look-aside buffer.
  */
@@ -100,34 +100,34 @@ static inline int classHasDtable(struct objc_class *cls)
 	return (dtable_for_class(cls) != uninstalled_dtable);
 }
 
-/**
+/*
  * Updates the dtable for a class and its subclasses.  Must be called after
  * modifying a class's method list.
  */
 void objc_update_dtable_for_class(Class);
 
 
-/**
+/*
  * Installs the actual dtable on the class of obj and
  * calls the +initialize method if the class 
  * implements it.
  */
 void objc_install_dtable_for_object(id obj);
 
-/**
+/*
  * Initializing.
  */
 PRIVATE void objc_send_initialize(id object);
 
 
-/**
+/*
  * Adds a single method list to a class.  This is used when loading categories,
  * and is faster than completely rebuilding the dtable.
  */
 void dtable_add_method_list_to_class(Class cls,
                               objc_method_list *list);
 
-/**
+/*
  * Destroys a dtable.
  */
 void free_dtable(dtable_t dtable);

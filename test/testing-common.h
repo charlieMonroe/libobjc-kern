@@ -39,7 +39,7 @@ static clock_t avarage_time(void){
 }
 
 static clock_t median_time(void){
-	/**
+	/*
 	 * No intelligent sorting mechanism
 	 * is used since it is just 128 items.
 	 */
@@ -79,7 +79,7 @@ static clock_t median_time(void){
 static void perform_tests(clock_t(*testing_function)(void)){
 	int i;
 	
-	/** Warm-up */
+	/* Warm-up */
 	for (i = 0; i < WARMUP_ITERATIONS; ++i){
 		testing_function();
 	}

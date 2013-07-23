@@ -3,17 +3,17 @@
 
 #ifndef spinlock_do_not_allocate_page
 
-/**
+/*
  * Number of spinlocks.  This allocates one page on 32-bit platforms.
  */
 #define spinlock_count (1<<10)
 static const int spinlock_mask = spinlock_count - 1;
-/**
+/*
  * Integers used as spinlocks for atomic property access.
  */
 extern int spinlocks[spinlock_count];
 
-/**
+/*
  * Get a spin lock from a pointer.  We want to prevent lock contention between
  * properties in the same object - if someone is stupid enough to be using
  * atomic property access, they are probably stupid enough to do it for
@@ -24,7 +24,7 @@ extern int spinlocks[spinlock_count];
 static inline volatile int *lock_for_pointer(const void *ptr)
 {
 	intptr_t hash = (intptr_t)ptr;
-	// Most properties will be pointers, so disregard the lowest few bits
+	/* Most properties will be pointers, so disregard the lowest few bits */
 	hash >>= sizeof(void*) == 4 ? 2 : 8;
 	intptr_t low = hash & spinlock_mask;
 	hash >>= 16;
@@ -34,7 +34,7 @@ static inline volatile int *lock_for_pointer(const void *ptr)
 
 #endif /* !spinlock_do_not_allocate_page */
 
-/**
+/*
  * Unlocks the spinlock.  This is not an atomic operation.  We are only ever
  * modifying the lowest bit of the spinlock word, so it doesn't matter if this
  * is two writes because there is no contention among the high bit.  There is
@@ -46,7 +46,7 @@ inline static void unlock_spinlock(volatile int *spinlock)
 	__sync_synchronize();
 	*spinlock = 0;
 }
-/**
+/*
  * Attempts to lock a spinlock.  This is heavily optimised for the uncontended
  * case, because property access should (generally) not be contended.  In the
  * uncontended case, this is a single atomic compare and swap instruction and a
@@ -63,7 +63,7 @@ inline static void unlock_spinlock(volatile int *spinlock)
 inline static void lock_spinlock(volatile int *spinlock)
 {
 	int count = 0;
-	// Set the spin lock value to 1 if it is 0.
+	/* Set the spin lock value to 1 if it is 0. */
 	while(!__sync_bool_compare_and_swap(spinlock, 0, 1))
 	{
 		count++;

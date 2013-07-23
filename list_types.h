@@ -9,13 +9,13 @@
  * runtime, such as objc_method_list, etc.
  */
 
-/** Method list. */
+/* Method list. */
 #define OBJC_LIST_TYPE_NAME method
 #define OBJC_LIST_TYPE struct objc_method
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 
-/** Ivar list. */
+/* Ivar list. */
 #define OBJC_LIST_TYPE_NAME ivar
 #define OBJC_LIST_TYPE struct objc_ivar
 #define OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK(x) {			\
@@ -25,26 +25,26 @@
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
-/** Categories. */
+/* Categories. */
 #define OBJC_LIST_TYPE_NAME category
 #define OBJC_LIST_TYPE struct objc_category
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
-/** Method description list */
+/* Method description list */
 #define OBJC_LIST_TYPE_NAME method_description
 #define OBJC_LIST_TYPE struct objc_method_description
 #define OBJC_LIST_CHAINABLE 0
 #include "list.h"
 
-/** Protocols. */
+/* Protocols. */
 #define OBJC_LIST_TYPE_NAME protocol
 #define OBJC_LIST_TYPE struct objc_protocol *
 #define OBJC_LIST_VALUES_ARE_POINTERS 1
 #define OBJC_LIST_CHAINABLE 1
 #include "list.h"
 
-/** Properties. */
+/* Properties. */
 #define OBJC_LIST_TYPE_NAME property
 #define OBJC_LIST_TYPE struct objc_property
 #define OBJC_LIST_CHAINABLE 1

@@ -6,6 +6,7 @@
 #include <sys/rwlock.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/osd.h>
 
 /* LOGGING */
 #define objc_log printf
@@ -79,4 +80,18 @@ static inline void objc_yield(void){
 }
 
 #define objc_abort(reason...) panic(reason)
+
+typedef uint32_t objc_tls_key;
+typedef void(*objc_tls_descructor)(void*);
+
+static inline void objc_register_tls(objc_tls_key *key __unused,
+				     objc_tls_descructor destructor){
+	osd_thread_register(destructor);
+}
+static inline void *objc_get_tls_for_key(objc_tls_key key){
+	return osd_thread_get(curthread, key);
+}
+static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
+	return osd_thread_set(curthread, key, data);
+}
 

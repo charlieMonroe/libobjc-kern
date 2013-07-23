@@ -14,7 +14,6 @@ MALLOC_DECLARE(M_AUTORELEASE_POOL);
 static MALLOC_DEFINE(M_AUTORELEASE_POOL, "autorelease pool", "Objective-C "
 		     "Autorelease Pool");
 
-
 struct objc_autorelease_pool {
 	struct objc_autorelease_pool *previous;
 	id *top;
@@ -32,7 +31,7 @@ struct object {
 };
 
 static int objc_autorelease_object_count = 0;
-
+static objc_tls_key objc_autorelease_pool_tls_key = 0;
 
 /* Forward declarations of inline functions: */
 static inline struct objc_autorelease_pool *
@@ -40,8 +39,8 @@ _objc_create_pool_if_necessary(struct objc_arc_thread_data *data);
 
 static inline struct objc_arc_thread_data *
 _objc_get_arc_thread_data(void){
-	// TODO
-	return NULL;
+	return (struct objc_arc_thread_data*)
+			objc_get_tls_for_key(objc_autorelease_pool_tls_key);
 }
 
 static inline id
@@ -116,7 +115,6 @@ _objc_autorelease(id obj)
 		return obj;
 	}
 	
-	// TODO
 	return objc_send_autorelease_msg(obj);
 }
 
@@ -163,7 +161,7 @@ _objc_empty_pool_until(struct objc_arc_thread_data *data, id *stop)
 			--objc_autorelease_object_count;
 		}
 		
-		// Dispose of the pool itself
+		/* Dispose of the pool itself */
 		struct objc_autorelease_pool *pool = data->pool;
 		data->pool = pool->previous;
 		objc_dealloc(pool, M_AUTORELEASE_POOL);
@@ -191,7 +189,6 @@ _objc_empty_pool_until(struct objc_arc_thread_data *data, id *stop)
 static void
 _objc_cleanup_pools(struct objc_arc_thread_data *data)
 {
-	// TODO to be used as cleanup for TLS data
 	if (data->pool != NULL){
 		_objc_empty_pool_until(data, NULL);
 		objc_assert(data->pool == NULL,
@@ -288,13 +285,13 @@ objc_release(id obj)
 }
 
 id
-objc_retain_autorelease(id obj)
+objc_retainAutorelease(id obj)
 {
 	return objc_autorelease(objc_retain(obj));
 }
 
 id
-objc_store_strong(id *addr, id value)
+objc_storeStrong(id *addr, id value)
 {
 	value = objc_retain(value);
 	objc_release(*addr);
@@ -316,7 +313,7 @@ objc_store_strong(id *addr, id value)
 objc_rw_lock objc_weak_refs_lock;
 
 id
-objc_store_weak(id *addr, id obj)
+objc_storeWeak(id *addr, id obj)
 {
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
 	
@@ -345,7 +342,7 @@ objc_delete_weak_refs(id obj)
 }
 
 id
-objc_load_weak_retained(id *addr)
+objc_loadWeakRetained(id *addr)
 {
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
 	
@@ -372,19 +369,19 @@ objc_load_weak_retained(id *addr)
 }
 
 id
-objc_load_weak(id *obj)
+objc_loadWeak(id *obj)
 {
-	return objc_autorelease(objc_load_weak_retained(obj));
+	return objc_autorelease(objc_loadWeakRetained(obj));
 }
 
 void
-objc_copy_weak(id *dest, id *src)
+objc_copyWeak(id *dest, id *src)
 {
-	objc_release(objc_init_weak(dest, objc_load_weak_retained(src)));
+	objc_release(objc_initWeak(dest, objc_loadWeakRetained(src)));
 }
 
 void
-objc_move_weak(id *dest, id *src)
+objc_moveWeak(id *dest, id *src)
 {
 	OBJC_LOCK_FOR_SCOPE(&objc_weak_refs_lock);
 	
@@ -394,7 +391,7 @@ objc_move_weak(id *dest, id *src)
 	*src = nil;
 	
 	if (obj != nil){
-		// Set nil for the old reference and add the new reference
+		/* Set nil for the old reference and add the new reference */
 		objc_set_associated_object(obj, src, nil,
 					   OBJC_ASSOCIATION_WEAK_REF);
 		objc_set_associated_object(obj, dest, (id)dest,
@@ -403,15 +400,15 @@ objc_move_weak(id *dest, id *src)
 }
 
 void
-objc_destroy_weak(id *obj)
+objc_destroyWeak(id *obj)
 {
-	objc_store_weak(obj, nil);
+	objc_storeWeak(obj, nil);
 }
 
-id objc_init_weak(id *object, id value)
+id objc_initWeak(id *object, id value)
 {
 	*object = nil;
-	return objc_store_weak(object, value);
+	return objc_storeWeak(object, value);
 }
 
 #pragma mark -
@@ -421,6 +418,6 @@ void
 objc_arc_init(void)
 {
 	objc_rw_lock_init(&objc_weak_refs_lock, "objc_weak_refs_lock");
-	
-	// TODO create key for TLS for the autorelease pool and add _objc_cleanup_pools as destroy hookup
+	objc_register_tls(&objc_autorelease_pool_tls_key,
+			  (objc_tls_descructor)_objc_cleanup_pools);
 }

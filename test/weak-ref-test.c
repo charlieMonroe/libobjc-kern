@@ -11,7 +11,7 @@ void weak_ref_test(void){
 	
 	id weak_ref = (id)0x1234;
 	
-	objc_store_weak(&weak_ref, (id)obj);
+	objc_storeWeak(&weak_ref, (id)obj);
 	
 	objc_assert(weak_ref == (id)obj, "The obj wasn't stored in the weak ref!\n");
 	

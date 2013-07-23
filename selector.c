@@ -149,7 +149,7 @@ _objc_selector_copy_name_and_types(const char *name, const char *types)
 {
 	size_t name_size = objc_strlen(name);
 	size_t types_size = objc_strlen(types);
-	size_t size = name_size + types_size + 2; // +2 for two \0
+	size_t size = name_size + types_size + 2; /* +2 for two \0 */
 	
 	char *result = _objc_selector_allocate_string(size);
 	
@@ -208,7 +208,7 @@ _sel_register_name_no_lock(const char *name, const char *types)
 	selector = objc_selector_table_get(objc_selector_hashtable,
 					   name);
 	if (selector == NULL){
-		/**
+		/*
 		 * Still NULL -> no other thread inserted it
 		 * in the meanwhile.
 		 */

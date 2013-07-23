@@ -7,7 +7,7 @@
 #include "class.h"
 #include "private.h"
 
-/**
+/*
  * The initial capacities for the hash tables.
  */
 #define OBJC_CLASS_TABLE_INITIAL_CAPACITY 512
@@ -187,7 +187,7 @@ _objc_insert_class_into_class_tree(Class cl)
 		 */
 		Class super_class = cl->super_class;
 		if (cl->subclass_list == Nil){
-			// First subclass
+			/* First subclass */
 			super_class->subclass_list = cl;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
@@ -234,12 +234,12 @@ _objc_class_remove_from_unresolved_list(Class cl)
 	if (cl->unresolved_class_next == Nil &&
 	    cl->unresolved_class_previous == Nil &&
 	    cl != unresolved_classes){
-		// Not on the list
+		/* Not on the list */
 		return;
 	}
 	
 	if (cl->unresolved_class_previous == Nil){
-		// The first class
+		/* The first class */
 		objc_assert(cl == unresolved_classes, "There are possibly two "
 			    "unresolved class lists? (%p != %p)", cl,
 			    unresolved_classes);
@@ -250,7 +250,7 @@ _objc_class_remove_from_unresolved_list(Class cl)
 	}
 	
 	if (cl->unresolved_class_next != Nil){
-		// Not the end of the linked list
+		/* Not the end of the linked list */
 		cl->unresolved_class_next->unresolved_class_previous =
 						cl->unresolved_class_previous;
 	}

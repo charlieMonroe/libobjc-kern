@@ -10,12 +10,12 @@
 
 PRIVATE dtable_t uninstalled_dtable;
 
-/** Head of the list of temporary dtables.  Protected by initialize_lock. */
+/* Head of the list of temporary dtables.  Protected by initialize_lock. */
 PRIVATE InitializingDtable *temporary_dtables;
-/** Lock used to protect the temporary dtables list. */
+/* Lock used to protect the temporary dtables list. */
 PRIVATE objc_rw_lock initialize_lock;
 
-/**
+/*
  * Returns YES if the class implements a method for the specified selector, NO
  * otherwise.
  */
@@ -38,7 +38,7 @@ static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
 	return NO;
 }
 
-/**
+/*
  * Checks whether the class implements memory management methods, and whether
  * they are safe to use with ARC.
  */
@@ -289,7 +289,7 @@ __attribute__((unused)) static void objc_release_object_lock(id *x)
 {
 	objc_sync_exit(*x);
 }
-/**
+/*
  * Macro that is equivalent to @synchronize, for use in C code.
  */
 #define LOCK_OBJECT_FOR_SCOPE(obj) \
@@ -297,7 +297,7 @@ __attribute__((unused)) static void objc_release_object_lock(id *x)
 	__attribute__((unused)) id lock_object_pointer = obj;\
 	objc_sync_enter(obj);
 
-/**
+/*
  * Remove a buffer from an entry in the initializing dtables list.  This is
  * called as a cleanup to ensure that it runs even if +initialize throws an
  * exception.
@@ -326,7 +326,7 @@ static void remove_dtable(InitializingDtable* meta_buffer)
 	OBJC_UNLOCK(&initialize_lock);
 }
 
-/**
+/*
  * Send a +initialize message to the receiver, if required.  
  */
 PRIVATE void objc_send_initialize(id object)

@@ -105,9 +105,6 @@ static void parse_struct_or_union(const char **type, type_parser callback, void 
 		// Structure elements sometimes have their names in front of each
 		// element, as in {NSPoint="x"f"y"f} - We need to skip the type name
 		// here.
-		//
-		// TODO: In a future version we should provide a callback that lets
-		// users of this code get the field name
 		if ('"'== **type)
 		{
 			
@@ -367,21 +364,21 @@ size_t objc_promoted_size(const char *type)
 	return size + (size % sizeof(void*));
 }
 
+static inline void _getType(char *dst, const char *types, size_t dst_len){
+	size_t length = lengthOfTypeEncoding(types);
+	if (length < dst_len){
+		objc_copy_memory(dst, types, length);
+		dst[length] = '\0';
+	}else{
+		objc_copy_memory(dst, types, dst_len);
+	}
+}
+
 void method_getReturnType(Method method, char *dst, size_t dst_len)
 {
 	if (NULL == method) { return; }
-	//TODO: Coped and pasted code.  Factor it out.
 	const char *types = method->selector_types;
-	size_t length = lengthOfTypeEncoding(types);
-	if (length < dst_len)
-	{
-		objc_copy_memory(dst, types, length);
-		dst[length] = '\0';
-	}
-	else
-	{
-		objc_copy_memory(dst, types, dst_len);
-	}
+	_getType(dst, types, dst_len);
 }
 
 void method_getArgumentType(Method method,
@@ -396,16 +393,7 @@ void method_getArgumentType(Method method,
 		strncpy(dst, "", dst_len);
 		return;
 	}
-	size_t length = lengthOfTypeEncoding(types);
-	if (length < dst_len)
-	{
-		objc_copy_memory(dst, types, length);
-		dst[length] = '\0';
-	}
-	else
-	{
-		objc_copy_memory(dst, types, dst_len);
-	}
+	_getType(dst, types, dst_len);
 }
 
 unsigned method_getNumberOfArguments(Method method)

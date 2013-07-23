@@ -73,18 +73,18 @@ _objc_class_extra_create(Class cl, unsigned int identifier)
 	struct objc_class_extra *extra;
 	extra = _objc_class_extra_find_no_lock(cl, identifier);
 	if (extra == NULL){
-		// Still NULL, need to allocate it
+		/* Still NULL, need to allocate it */
 		extra = objc_alloc(sizeof(struct objc_class_extra),
 				   M_CLASS_EXTRA);
 		extra->next = NULL;
 		extra->identifier = identifier;
 		extra->data = NULL;
 		
-		// Insert it
+		/* Insert it */
 		if (cl->extra_space == NULL){
 			cl->extra_space = extra;
 		}else{
-			// Need to insert it to the end of the chain
+			/* Need to insert it to the end of the chain */
 			struct objc_class_extra *e = cl->extra_space;
 			while (e->next != NULL){
 				e = e->next;

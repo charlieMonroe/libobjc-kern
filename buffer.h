@@ -1,4 +1,4 @@
-/**
+/*
  * buffer.h defines a simple dynamic array that is used to store temporary
  * values for later processing.  Define BUFFER_TYPE before including this file.
  */
@@ -52,7 +52,7 @@ static BUFFER_TYPE *buffered_object_at_index(unsigned int i)
 
 static void compact_buffer(void)
 {
-	// Move up all of the non-NULL pointers
+	/* Move up all of the non-NULL pointers */
 	unsigned size = buffered_objects;
 	unsigned insert = 0;
 	for (unsigned i=0 ; i<size ; i++)

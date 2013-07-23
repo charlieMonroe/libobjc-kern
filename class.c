@@ -104,7 +104,7 @@ _lookup_method_in_method_list(objc_method_list *method_list, SEL selector)
 		method_list = method_list->next;
 	}
 	
-	// Nothing found.
+	/* Nothing found. */
 	return NULL;
 }
 
@@ -272,6 +272,32 @@ call_cxx_construct(id obj)
 }
 
 
+/*
+ * Calls .cxx_destruct methods on all classes obj inherits from.
+ */
+PRIVATE void
+call_cxx_destruct(id obj)
+{
+	/*
+	 * Don't call object_getClass(), because we want to get hidden 
+	 * classes too.
+	 */
+	Class cls = objc_object_get_class_inline(obj);
+	
+	while (cls) {
+		struct objc_slot *slot;
+		slot = objc_get_slot(cls, objc_cxx_destruct_selector);
+		
+		if (NULL != slot) {
+			cls = slot->owner->super_class;
+			slot->implementation(obj, objc_cxx_destruct_selector);
+		}else{
+			cls = Nil;
+		}
+	}
+}
+
+
 #pragma mark -
 #pragma mark Regular lookup functions
 
@@ -380,7 +406,7 @@ class_createInstance(Class cl, size_t extraBytes)
 		cl = (Class)objc_getClass(cl->name);
 	}
 	
-	// Check if cl is a small object class
+	/* Check if cl is a small object class */
 	if (sizeof(void *) == 4 && objc_small_object_classes[0] == cl){
 		return (id)1;
 	}else{
@@ -413,6 +439,7 @@ object_dispose(id obj)
 		return;
 	}
 	
+	call_cxx_destruct(obj);
 	objc_dealloc(obj, M_OBJECTS);
 }
 
@@ -429,7 +456,6 @@ object_copy(id obj, size_t size)
 	return copy;
 }
 
-/***** INFORMATION GETTERS *****/
 #pragma mark -
 #pragma mark Information getters
 
@@ -524,8 +550,6 @@ class_copyMethodList(Class cls, unsigned int *outCount)
 	return objc_method_list_copy_list(cls->methods, outCount);
 }
 
-
-/***** IVAR-RELATED *****/
 #pragma mark -
 #pragma mark Ivar-related
 

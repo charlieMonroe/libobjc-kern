@@ -1,4 +1,4 @@
-/**
+/*
  * Sparse Array
  *
  * Author: David Chisnall
@@ -12,7 +12,7 @@
 
 #include "os.h"
 
-/**
+/*
  * Sparse arrays, used to implement dispatch tables.  Current implementation is
  * quite RAM-intensive and could be optimised.  Maps 32-bit integers to pointers.
  *
@@ -24,38 +24,38 @@
  */
 typedef struct 
 {
-	/**
+	/*
 	 * Mask value applied to the index when generating an index in this
 	 * sub-array.
 	 */
 	uint16_t mask;
-	/**
+	/*
 	 * Number of bits that the masked value should be right shifted by to get
 	 * the index in the subarray.  If this value is greater than zero, then the
 	 * value in the array is another SparseArray*.
 	 */
 	uint16_t shift;
-	/**
+	/*
 	 * The reference count for this.  Used for copy-on-write.  When making a
 	 * copy of a sparse array, we only copy the root node, and increment the
 	 * reference count of the remaining nodes.  When modifying any leaf node,
 	 * we copy if its reference count is greater than one.
 	 */
 	uint16_t refCount;
-	/**
+	/*
 	 * The data stored in this sparse array node.
 	 */
 	void ** data;
 } SparseArray;
 
-/**
+/*
  * Turn an index in the array into an index in the current depth.
  */
 #define MASK_INDEX(index) \
 	((index & sarray->mask) >> sarray->shift)
 
 #define SARRAY_EMPTY ((void*)0)
-/**
+/*
  * Look up the specified value in the sparse array.  This is used in message
  * dispatch and so has been put in the header to allow compilers to inline it,
  * even though this breaks the abstraction.
@@ -82,31 +82,31 @@ static inline void* SparseArrayLookup(SparseArray * sarray, uint16_t index)
 						data[(i & 0xff00)>>8])->data[(i & 0xff)];
 	}
 }
-/**
+/*
  * Create a new sparse array.
  */
 SparseArray *SparseArrayNew();
-/**
+/*
  * Creates a new sparse array with the specified capacity.  The depth indicates
  * the number of bits to use for the key.  Must be a value between 8 and 32 and
  * should ideally be a multiple of base_shift.
  */
 SparseArray *SparseArrayNewWithDepth(uint16_t depth);
-/**
+/*
  * Returns a new sparse array created by adding this one as the first child
  * node in an expanded one.
  */
 SparseArray *SparseArrayExpandingArray(SparseArray *sarray, uint16_t new_depth);
-/**
+/*
  * Insert a value at the specified index.
  */
 void SparseArrayInsert(SparseArray * sarray, uint16_t index, void * value);
-/**
+/*
  * Destroy the sparse array.  Note that calling this while other threads are
  * performing lookups is guaranteed to break.
  */
 void SparseArrayDestroy(SparseArray * sarray);
-/**
+/*
  * Iterate through the array.  Returns the next non-NULL value after index and
  * sets index to the following value.  For example, an array containing values
  * at 0 and 10 will, if called with index set to 0 first return the value at 0
@@ -115,12 +115,12 @@ void SparseArrayDestroy(SparseArray * sarray);
  */
 void * SparseArrayNext(SparseArray * sarray, uint16_t * index);
 
-/**
+/*
  * Creates a copy of the sparse array.
  */
 SparseArray *SparseArrayCopy(SparseArray * sarray);
 
-/**
+/*
  * Returns the total memory usage of a sparse array.  
  */
 int SparseArraySize(SparseArray *sarray);

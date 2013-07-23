@@ -1,4 +1,4 @@
-/** 
+/* 
  * type_encoding_cases.h -  expects the APPLY_TYPE macro to be defined.  This
  * macro is invoked once for every type and its Objective-C name.  Use this
  * file when implementing things like the -unsignedIntValue family of methods.

@@ -74,7 +74,7 @@ objc_category_try_load(Category category)
 	objc_assert(category != NULL, "Trying to load a NULL category.\n");
 	
 	if (!_objc_category_try_load(category)){
-		// Save it for later
+		/* Save it for later */
 		set_buffered_object_at_index(category, buffered_objects++);
 	}
 }

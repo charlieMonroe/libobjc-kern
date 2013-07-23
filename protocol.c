@@ -75,7 +75,6 @@ _objc_protocol_is_empty(Protocol *aProto)
 	return isEmpty;
 }
 
-/* TODO: Make p1 adopt all of the stuff in p2 */
 static void
 _objc_make_protocols_equal(Protocol *p1, Protocol *p2)
 {
@@ -126,10 +125,6 @@ _objc_unique_protocol(Protocol *aProto)
 			return oldProtocol;
 		}else{
 			return oldProtocol;
-			/*
-			 * TODO: We should really perform a check here to make
-			 * sure the protocols are actually the same.
-			 */
 		}
 	}
 }
@@ -536,7 +531,7 @@ protocol_addProperty(Protocol *protocol, const char *name,
 		     const objc_property_attribute_t *atts,
 		     unsigned int att_count, BOOL required, BOOL instance)
 {
-	// Some basic check of the parameters
+	/* Some basic check of the parameters */
 	if (protocol == NULL || name == NULL || atts == NULL || instance == NO){
 		return;
 	}

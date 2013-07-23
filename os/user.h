@@ -53,7 +53,7 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
 
 /* MEMORY */
 
-/**
+/*
  * Two macros that fake the type declarations.
  */
 #define	MALLOC_DEFINE(type, shortdesc, longdesc) void *type
@@ -86,4 +86,19 @@ static inline void objc_yield(void){
 					printf(reason);			\
 					abort();			\
 				}
+
+typedef pthread_key_t objc_tls_key;
+typedef void(*objc_tls_descructor)(void*);
+
+static inline void objc_register_tls(objc_tls_key *key,
+				     objc_tls_descructor destructor){
+	pthread_key_create(key, destructor);
+}
+static inline void *objc_get_tls_for_key(objc_tls_key key){
+	return pthread_getspecific(key);
+}
+static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
+	pthread_setspecific(key, data);
+}
+
 

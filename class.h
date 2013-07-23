@@ -36,7 +36,7 @@ objc_class_for_small_object(id obj)
 	uintptr_t mask = ((uintptr_t)obj & OBJC_SMALL_OBJECT_MASK);
 	if (UNLIKELY(mask != 0)){
 		if (sizeof(void*) == 4){
-			// 32-bit system
+			/* 32-bit system */
 			return objc_small_object_classes[0];
 		}else{
 			return objc_small_object_classes[mask];

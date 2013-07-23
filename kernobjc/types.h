@@ -9,7 +9,7 @@ typedef signed char BOOL;
 
 #define null_selector ((SEL)0)
 
-/**
+/*
  * Definitions of nil and Nil.
  * nil is used for objects, Nil for classes. It doesn't really matter,
  * but all traditional run-times use this as "type checking".
@@ -27,7 +27,7 @@ typedef struct objc_object *id;
 typedef struct objc_property *Property;
 typedef Property objc_property_t;
 
-/**
+/*
  * Need to make forward typedefs since they are used
  * in structures which are needed in the actual defs.
  */
@@ -45,22 +45,22 @@ typedef uint16_t SEL;
 typedef id(*IMP)(id target, SEL _cmd, ...);
 
 
-/**
+/*
  * Used generally only in protocols to describe a method.
  */
 struct objc_method_description {
-	/**
+	/*
 	 * The types of this method.
 	 */
 	const char *types;
 	
-	/**
+	/*
 	 * The name of this method.
 	 */
 	SEL   selector;
 };
 
-/**
+/*
  * Definition of id - a pointer to an object - a struct, where the first field
  * is so-called isa, pointer to the class the object is an instance of.
  */
@@ -68,7 +68,7 @@ struct objc_object {
 	Class isa;
 };
 
-/**
+/*
  * Definition of super. As the super calls may
  * be chained, this is quite necessary.
  */
@@ -87,7 +87,7 @@ struct objc_protocol {
 	Class isa;
 	const char *name;
 	
-	objc_protocol_list *protocols; // other protocols
+	objc_protocol_list *protocols; /* other protocols */
 	objc_method_description_list *instance_methods;
 	objc_method_description_list *class_methods;
 	
@@ -99,44 +99,44 @@ struct objc_protocol {
 };
 
 
-/**
+/*
  * Valid values for objc_AssociationPolicy.  This is really a bitfield, but
  * only specific combinations of flags are permitted.
  */
 enum{
-	/**
+	/*
 	 * Perform straight assignment, no message sends.
 	 */
 	OBJC_ASSOCIATION_ASSIGN = 0,
 	
-	/**
+	/*
 	 * Retain the associated object.
 	 */
 	OBJC_ASSOCIATION_RETAIN_NONATOMIC = 1,
 	
-	/**
+	/*
 	 * Copy the associated object, by sending it a -copy message.
 	 */
 	OBJC_ASSOCIATION_COPY_NONATOMIC = 3,
 	
-	/**
+	/*
 	 * Atomic retain.
 	 */
 	OBJC_ASSOCIATION_RETAIN = 0x301,
 	
-	/**
+	/*
 	 * Atomic copy.
 	 */
 	OBJC_ASSOCIATION_COPY = 0x303,
 	
-	/**
+	/*
 	 * A special association for storing weak refs. The weak refs are zeroed on
 	 * either objc_remove_associated_objects or objc_remove_associated_weak_refs.
 	 */
 	OBJC_ASSOCIATION_WEAK_REF = 0x401
 };
 
-/**
+/*
  * Association policy, used when setting associated objects.
  */
 typedef uintptr_t objc_AssociationPolicy;

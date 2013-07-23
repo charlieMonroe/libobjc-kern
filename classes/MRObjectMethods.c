@@ -40,12 +40,12 @@ id _C_MRObject_new_(id self, SEL _cmd){
 }
 
 id _I_MRObject_init_(MRObject_instance_t *self, SEL _cmd){
-	/** Retain count is set to 1 in +alloc. */
+	/* Retain count is set to 1 in +alloc. */
 	return (id)self;
 }
 
 id _I_MRObject_retain_(MRObject_instance_t *self, SEL _cmd){
-	/** Warning, this atomic function is a GCC builtin function */
+	/* Warning, this atomic function is a GCC builtin function */
 	__sync_add_and_fetch(&self->retainCount, 1);
 	return (id)self;
 }
@@ -53,7 +53,7 @@ id _I_MRObject_retain_(MRObject_instance_t *self, SEL _cmd){
 void _I_MRObject_release_(MRObject_instance_t *self, SEL _cmd){
 	int retain_cnt = __sync_sub_and_fetch(&self->retainCount, 1);
 	if (retain_cnt == 0){
-		/** Dealloc */
+		/* Dealloc */
 		static SEL dealloc_selector;
 		if (dealloc_selector == null_selector){
 			dealloc_selector = sel_registerName("dealloc", "v@:");
@@ -69,11 +69,10 @@ id _C_MRObject_retain_noop_(Class self, SEL _cmd){
 }
 
 void _C_MRObject_release_noop_(Class self, SEL _cmd){
-	/** No-op. */
+	/* No-op. */
 }
 
 void _I_MRObject_dealloc_(MRObject_instance_t *self, SEL _cmd){
-	objc_remove_associated_objects((id)self);
 	object_dispose((id)self);
 }
 

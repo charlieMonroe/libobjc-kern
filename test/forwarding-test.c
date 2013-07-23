@@ -1,4 +1,4 @@
-/**
+/*
  * WARNING: This test doesn't return times,
  * but a proxy / normal call ratio.
  */
