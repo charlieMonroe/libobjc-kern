@@ -16,6 +16,7 @@
 #include "method.h"
 #include "property.h"
 #include "protocol.h"
+#include "message.h"
 
 
 

@@ -94,6 +94,8 @@ static BOOL installMethodInDtable(Class class,
                                   struct objc_method *method,
                                   BOOL replaceExisting)
 {
+	objc_debug_log("Installing method %s into dtable of class %s\n", sel_getName(method->selector), class_getName(class));
+	
 	objc_assert(uninstalled_dtable != dtable, "");
 	SEL sel_id = method->selector;
 	struct objc_slot *slot = SparseArrayLookup(dtable, sel_id);

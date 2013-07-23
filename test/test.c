@@ -57,6 +57,8 @@ static void list_classes(void){
 
 void associated_objects_test(void);
 void weak_ref_test(void);
+void ivar_test(void);
+void handmade_class_test(void);
 
 int main(int argc, const char * argv[])
 {
@@ -64,6 +66,8 @@ int main(int argc, const char * argv[])
 	
 	associated_objects_test();
 	weak_ref_test();
+	ivar_test();
+	handmade_class_test();
 	
 	printf("Total number of locks:            %d\n", objc_lock_count);
 	printf("Locks were locked n. times:       %d", objc_lock_locked_count);

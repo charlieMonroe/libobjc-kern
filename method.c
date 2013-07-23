@@ -30,7 +30,10 @@ _add_methods_to_class(Class cl, Method *m, unsigned int count)
 	}else{
 		cl->methods = objc_method_list_append(cl->methods, list);
 	}
-	dtable_add_method_list_to_class(cl, cl->methods);
+	
+	if (cl->flags.resolved){
+		dtable_add_method_list_to_class(cl, cl->methods);
+	}
 }
 
 /*
