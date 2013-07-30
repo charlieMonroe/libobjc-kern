@@ -50,9 +50,14 @@ typedef id(*IMP)(id target, SEL _cmd, ...);
  */
 struct objc_method_description {
 	/*
+	 * The selector name of this method.
+	 */
+	const char *selector_name;
+	
+	/*
 	 * The types of this method.
 	 */
-	const char *types;
+	const char *selector_types;
 	
 	/*
 	 * The name of this method.

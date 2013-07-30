@@ -45,9 +45,9 @@ struct objc_method {
 struct objc_ivar {
 	const char	*name;
 	const char	*type;
-	size_t		size;
-	uintptr_t	offset; /* Filled by runtime. */
-	uint8_t		align;
+	size_t      size;
+	int         offset; /* Filled by runtime. */
+	uint8_t     align;
 };
 
 struct objc_property {
@@ -58,8 +58,8 @@ struct objc_property {
 	const char	*getter_types;
 	const char	*setter_types;
 	
-	char		attributes;
-	char		attributes2;
+	char        attributes;
+	char        attributes2;
 };
 
 
@@ -88,48 +88,47 @@ typedef struct {
 	BOOL		fake : 1;
 } objc_class_flags;
 
-#define OBJC_CLASS_COMMON_FIELDS					\
-	Class			isa; /* Points to meta class. */	\
-	Class			super_class;				\
-	void			*dtable; /* Disptach table. */		\
+#define OBJC_CLASS_COMMON_FIELDS                                              \
+	Class			isa; /* Points to meta class. */                                  \
+	Class			super_class;                                                      \
+	void			*dtable; /* Disptach table. */                                    \
 	objc_class_flags	flags; /* Flags. */			
 
 /* Actual structure of Class. */
 struct objc_class {
 	OBJC_CLASS_COMMON_FIELDS;
 	
-	const char		*name;
+	const char          *name;
 	
 	/*
 	 * On class registration, the run-time calculates
 	 * offsets of all ivars, allocs an array here and 
 	 * populates it with ivar offsets.
 	 */
-	size_t			*ivar_offsets;
+	size_t              *ivar_offsets;
 	
 	/*
 	 * WARNING: All of the lists are lazily created -> may be NULL!
 	 */
-	objc_method_list	*methods;
-	objc_ivar_list		*ivars;
-	objc_category_list	*categories;
+	objc_method_list    *methods;
+	objc_ivar_list      *ivars;
 	objc_protocol_list	*protocols;
 	objc_property_list	*properties;
 		
-	Class			subclass_list;
-	Class			sibling_list;
+	Class               subclass_list;
+	Class               sibling_list;
 	
-	Class			unresolved_class_previous;
-	Class			unresolved_class_next;
+	Class               unresolved_class_previous;
+	Class               unresolved_class_next;
 	
 	/*
 	 * Extra space for the run-time to use. Currently used for objects
 	 * associated with classes.
 	 */
-	void			*extra_space;
+	void                *extra_space;
 	
-	size_t			instance_size;
-	int			version; /* Right now 0. */
+	size_t              instance_size;
+	int                 version; /* Right now 0. */
 };
 
 

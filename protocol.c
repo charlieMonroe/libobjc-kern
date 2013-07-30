@@ -506,7 +506,7 @@ protocol_addMethodDescription(Protocol *aProtocol,
 	struct objc_method_description *m;
 	m = &(*list_ptr)->list[(*list_ptr)->size - 1];
 	m->selector = selector;
-	m->types = types;
+	m->selector_types = types;
 }
 
 void
