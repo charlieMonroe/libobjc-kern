@@ -2,7 +2,7 @@
 #include "selector.h"
 #include "dtable.h"
 #include "class.h"
-#include "protocol.h"
+#include "kernobjc/protocol.h"
 #include "private.h"
 
 #define BUFFER_TYPE struct objc_category

@@ -1,6 +1,6 @@
 #include "associative.h"
 #include "class_extra.h"
-#include "arc.h"
+#include "kernobjc/arc.h"
 #include "class.h"
 #include "dtable.h"
 #include "spinlock.h"
@@ -53,7 +53,9 @@ Class
 _objc_find_class_for_object(id object)
 {
 	Class cl = object->isa;
+  objc_debug_log("Looking for a class for object (%p), obj->isa = %p\n", object, cl);
 	while (cl != Nil && !cl->flags.fake) {
+    objc_debug_log("Getting a superclass of %p[%s]\n", cl, class_getName(cl));
 		cl = class_getSuperclass(cl);
 	}
 	

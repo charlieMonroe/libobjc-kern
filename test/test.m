@@ -1,6 +1,8 @@
+#import "../classes/KKObjects.h"
+
 #include "../kernobjc/runtime.h"
-#include "../classes/MRObjects.h"
-#include "../os.h"
+#include "../types.h"
+
 
 static void print_method_list(struct objc_method_list_struct *methods){
 	if (methods == NULL){
@@ -60,6 +62,7 @@ void weak_ref_test(void);
 void ivar_test(void);
 void handmade_class_test(void);
 void exception_test(void);
+void compiler_test(void);
 
 int main(int argc, const char * argv[])
 {
@@ -70,9 +73,11 @@ int main(int argc, const char * argv[])
 	ivar_test();
 	handmade_class_test();
 	exception_test();
+  compiler_test();
 	
-	printf("Total number of locks:            %d\n", objc_lock_count);
-	printf("Locks were locked n. times:       %d", objc_lock_locked_count);
+	printf("Total number of locks created:              %d\n", objc_lock_count);
+  printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);
+	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 	
 	return 0;
 }

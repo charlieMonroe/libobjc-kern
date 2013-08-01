@@ -4,7 +4,7 @@
 #include "message.h"
 #include "utils.h"
 #include "runtime.h"
-#include "arc.h"
+#include "kernobjc/arc.h"
 #include "private.h"
 
 

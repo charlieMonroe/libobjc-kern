@@ -374,7 +374,7 @@ PRIVATE void objc_send_initialize(id object)
 	// acquire the runtime lock after acquiring the initialize lock.
 	OBJC_LOCK_RUNTIME();
 	
-	objc_debug_log("sending initialize to class %s\n", object_getClassName(object));
+	objc_debug_log("sending initialize to class %s - meta[%p]\n", object_getClassName(object), meta);
 	
 	OBJC_LOCK_OBJECT_FOR_SCOPE((id)meta);
 	OBJC_LOCK(&initialize_lock);

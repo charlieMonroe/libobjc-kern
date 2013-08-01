@@ -30,12 +30,23 @@ objc_selectors_equal(SEL selector1, SEL selector2)
 	return selector1 == selector2;
 }
 
+struct objc_selector_reference {
+	/* Selector name + '\0' + types. */
+	const char *selector_name;
+		
+	/*
+	 * Pointer to the variable with the actual SEL, which gets populated by the
+	 * runtme.
+	 */
+	SEL *sel_uid;
+};
 
 /*
  * Registers all selectors within the class or method list.
  */
 PRIVATE void objc_register_selectors_from_method_list(objc_method_list *list);
 PRIVATE void objc_register_selectors_from_class(Class cl, Class meta);
-PRIVATE void objc_register_selector_array(struct objc_selector *selectors, unsigned int count);
+PRIVATE void objc_register_selector_array(struct objc_selector_reference *selectors,
+										  unsigned int count);
 
 #endif /* !OBJC_SELECTOR_H_ */

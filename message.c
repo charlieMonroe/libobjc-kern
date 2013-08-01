@@ -103,6 +103,8 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 PRIVATE IMP
 slowMsgLookup(id *receiver, SEL cmd)
 {
+  objc_debug_log("slowMsgLookup: selector (%i), receiver (%p)\n", (int)cmd,
+                 *receiver);
 	return objc_msg_lookup_sender(receiver, cmd, nil)->implementation;
 }
 

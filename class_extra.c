@@ -33,7 +33,8 @@ _objc_class_extra_find_no_lock(Class cl, unsigned int identifier)
 {
 	struct objc_class_extra *extra = NULL;
 	if (cl->extra_space != NULL){
-		extra = (struct objc_class_extra*)cl->extra_space;
+    extra = (struct objc_class_extra*)cl->extra_space;
+    objc_debug_log("Getting extra at address %p\n", extra);
 		while (extra != NULL) {
 			if (extra->identifier == identifier){
 				break;

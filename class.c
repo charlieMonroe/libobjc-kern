@@ -565,8 +565,8 @@ class_addIvar(Class cls, const char *name, size_t size,
 	
 	if (cls->flags.initialized){
 		objc_log("Class %s is already initialized!\n", cls->name);
-		objc_abort("Trying to add ivar to a class that is already"
-			   " initialized.");
+		objc_abort("Trying to add ivar (%s) to a class that is already"
+			   " initialized.", name);
 	}
 	
 	if (_ivar_named(cls, name) != NULL){
@@ -594,7 +594,7 @@ class_addIvar(Class cls, const char *name, size_t size,
 		long padding = (alignment - (offset % alignment)) % alignment;
 		offset = offset + padding;
 	}
-	variable->offset = offset;
+	variable->offset = (int)offset;
 	
 	cls->instance_size = offset + size;
 	

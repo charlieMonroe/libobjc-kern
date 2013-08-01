@@ -2,6 +2,8 @@
 #ifndef OBJC_PRIVATE_H
 #define OBJC_PRIVATE_H
 
+#include "types.h"
+
 /*
  * These functions are either marked as unavailble with ARC,
  * or indeed private.
@@ -20,6 +22,7 @@ void	*object_getIndexedIvars(id obj);
 #pragma mark Private
 
 PRIVATE BOOL			objc_register_small_object_class(Class cl, uintptr_t mask);
+PRIVATE void  objc_category_try_load(Category category);
 PRIVATE struct objc_slot	*objc_get_slot(Class cl, SEL selector);
 PRIVATE BOOL			objc_class_resolve(Class cl);
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);

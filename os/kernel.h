@@ -24,34 +24,21 @@ static inline const char *objc_rw_lock_get_name(objc_rw_lock *lock){
 	return lock->lock_object.lo_name;
 }
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
-	objc_debug_log("Initing lock %s at address %p\n", name, lock);
 	rw_init(lock, name);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
-	objc_debug_log("Read-locking lock %s at address %p\n",
-		       objc_rw_lock_get_name(lock),
-		       lock);
 	rw_rlock(lock);
 	return 0;
 }
 static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
-	objc_debug_log("Write-locking lock %s at address %p\n",
-		       objc_rw_lock_get_name(lock),
-		       lock);
 	rw_wlock(lock);
 	return 0;
 }
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
-	objc_debug_log("Unlocking lock %s at address %p\n",
-		       objc_rw_lock_get_name(lock),
-		       lock);
 	rw_unlock(lock);
 	return 0;
 }
 static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
-	objc_debug_log("Destroying lock %s at address %p\n",
-		       objc_rw_lock_get_name(lock),
-		       lock);
 	rw_destroy(lock);
 }
 

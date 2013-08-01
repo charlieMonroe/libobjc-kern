@@ -6,6 +6,7 @@
 #include "class_registry.h"
 #include "class.h"
 #include "private.h"
+#include "encoding.h"
 
 /*
  * The initial capacities for the hash tables.
@@ -288,13 +289,16 @@ _objc_class_calculate_instance_size(Class cl)
 	if (cl->ivars != NULL){
 		for (int i = 0; i < cl->ivars->size; ++i){
 			Ivar ivar = &cl->ivars->list[i];
+      ivar->size = objc_sizeof_type(ivar->type);
+      ivar->align = objc_alignof_type(ivar->type);
+      
 			size_t offset = size;
 			if (size % ivar->align != 0){
 				unsigned int padding = _padding_for_ivar(ivar,
 									 offset);
 				offset += padding;
 			}
-			ivar->offset = offset;
+			ivar->offset = (int)offset;
 			size = offset + ivar->size;
 			
 			/*
@@ -519,6 +523,13 @@ objc_getClass(const char *name)
 }
 
 id
+objc_lookup_class(const char *name)
+{
+  objc_debug_log("Class lookup: %s\n", name);
+  return objc_getClass(name);
+}
+
+id
 objc_lookUpClass(const char *name)
 {
 	if (name == NULL){
@@ -548,9 +559,6 @@ objc_class_resolve(Class cl)
 	
 	cl->flags.resolved = YES;
 	cl->isa->flags.resolved = YES;
-	
-	_objc_class_fixup_instance_size(cl);
-	_objc_class_fixup_instance_size(cl->isa);
 	
 	_objc_insert_class_into_class_tree(cl);
 	
@@ -595,6 +603,9 @@ objc_class_register_class(Class cl)
 	
 	objc_debug_log("Registering class %s with the runtime.\n", cl->name);
 	
+  _objc_class_fixup_instance_size(cl);
+	_objc_class_fixup_instance_size(cl->isa);
+  
 	objc_class_insert(objc_classes, cl);
 	
 	objc_register_selectors_from_class(cl, cl->isa);

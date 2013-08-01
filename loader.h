@@ -2,27 +2,48 @@
 #ifndef OBJC_PROTOTYPES_H
 #define OBJC_PROTOTYPES_H
 
-typedef enum {
-	objc_abi_version_kernel_1 = (unsigned long)'ker1'
-} objc_abi_version;
+#include "types.h"
+#include "selector.h"
 
+/* Defined ABI versions. */
+enum objc_abi_version {
+	objc_abi_version_kernel_1 = 0x301
+};
 
-typedef struct {
-	unsigned long selector_count;
-	struct objc_selector *selectors;
+struct objc_symbol_table {
+	/* Number of selector references in the 'selector_references' field. */
+	unsigned int                      selector_reference_count;
 	
-	unsigned short class_count;
-	unsigned short category_count;
+	/* An array of selector references. */
+	struct objc_selector_reference    *selector_references;
 	
-	void *definitions[];
-} objc_symbol_table;
+	/* Number of classes. */
+	unsigned short                    class_count;
+  
+  /* Actual class list. */
+  struct objc_class                 **classes;
+  
+  /* Number of categories. */
+	unsigned short					category_count;
+	
+  /* Actual list of categories. */
+  struct objc_category    **categories;
+};
 
-typedef struct {
-	objc_abi_version version;
-	unsigned long size;
+struct objc_loader_module {
+	/* Name of the module. */
 	const char *name;
-	objc_symbol_table *symbol_table;
-} objc_loader_module;
+	
+	/* Pointer to the symbol table structure. */
+	struct objc_symbol_table *symbol_table;
+	
+	/* Version of the module. */
+	int version;
+};
+
+
+
+PRIVATE void _objc_load_module(struct objc_loader_module *module);
 
 
 #endif

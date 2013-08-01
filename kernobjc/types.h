@@ -4,6 +4,7 @@
 
 /* A boolean type. */
 typedef signed char BOOL;
+
 #define YES ((BOOL)1)
 #define NO ((BOOL)0)
 
@@ -21,7 +22,11 @@ typedef struct objc_class *Class;
 typedef struct objc_ivar *Ivar;
 typedef struct objc_category *Category;
 typedef struct objc_method *Method;
+#ifdef __OBJC__
+@class Protocol;
+#else
 typedef struct objc_protocol Protocol;
+#endif
 typedef struct objc_object *id;
 
 typedef struct objc_property *Property;

@@ -7,14 +7,14 @@
  * This is marked during objc_init() as YES. After that point, no modifications
  * to the setup may be made.
  */
-static BOOL objc_runtime_initialized = NO;
+PRIVATE BOOL objc_runtime_initialized = NO;
 
 PRIVATE unsigned int objc_lock_count = 0;
+PRIVATE unsigned int objc_lock_destroy_count = 0;
 PRIVATE unsigned int objc_lock_locked_count = 0;
 
 /* See header for documentation */
 
-__attribute__((constructor))
 void objc_runtime_init(void){
 	if (objc_runtime_initialized){
 		/* Make sure that we don't initialize twice */
@@ -35,9 +35,7 @@ void objc_runtime_init(void){
 	objc_protocol_init();
 	objc_exceptions_init();
 	
-	objc_install_base_classes();
-	
-	objc_runtime_initialized = NO;
+	objc_runtime_initialized = YES;
 }
 
 

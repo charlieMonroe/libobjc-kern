@@ -1,5 +1,5 @@
 #include "../kernobjc/runtime.h"
-#include "../classes/MRObjects.h"
+#import "../classes/KKObjects.h"
 #include "../selector.h"
 #include "../os.h"
 
@@ -28,7 +28,12 @@ void setIvar(MyClass *self, SEL _cmd, id value){
 }
 
 void handmade_class_test(void){
-	Class cl = objc_allocateClassPair(&MRObject_class, my_class_name, 0);
+  typedef struct {
+    Class isa;
+    int retain_count;
+  } Object;
+  
+	Class cl = objc_allocateClassPair([KKObject class], my_class_name, 0);
 	Class meta_cl = object_getClass((id)cl);
 	
 	SEL getIvarSel = sel_registerName("getIvar", "@10@0:8");
@@ -42,12 +47,11 @@ void handmade_class_test(void){
 	objc_registerClassPair(cl);
 	
 	
-	id instance = objc_msgSend((id)cl, sel_registerName("alloc", "@@:"));
-	instance = objc_msgSend(instance, sel_registerName("init", "@@:"));
+  id instance = [[cl alloc] init];
 	
 	objc_assert(gotInitialized, "The class did not get initialized!\n");
 	
-	objc_assert(instance->isa == cl, "Instance is of the wrong class (%s)\n", object_getClassName(instance));
+	objc_assert(((Object*)instance)->isa == cl, "Instance is of the wrong class (%s)\n", object_getClassName(instance));
 	
 	id var = objc_msgSend(instance, getIvarSel);
 	objc_assert(var == nil, "var != nil (%p)\n", var);
