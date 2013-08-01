@@ -3,8 +3,6 @@
  * values for later processing.  Define BUFFER_TYPE before including this file.
  */
 
-#include <stdlib.h>
-
 MALLOC_DECLARE(M_BUFFER);
 static MALLOC_DEFINE(M_BUFFER, "buffer", "Objective-C Buffer");
 

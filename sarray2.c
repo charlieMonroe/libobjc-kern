@@ -1,7 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
 #include "sarray2.h"
 
 MALLOC_DECLARE(M_SPARSE_ARRAY);

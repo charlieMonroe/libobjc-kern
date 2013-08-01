@@ -2,12 +2,6 @@
 #ifndef LIBKERNOBJC_RUNTIME_H
 #define LIBKERNOBJC_RUNTIME_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stddef.h>
-
 #include "types.h"
 #include "selector.h"
 #include "object.h"
