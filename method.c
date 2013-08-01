@@ -52,7 +52,7 @@ _add_methods(Class cl, Method *m, unsigned int count)
 
 /* Public functions are documented in the header file. */
 
-Method
+static Method
 objc_method_create(SEL selector, IMP implementation)
 {
 	objc_assert(implementation != NULL, "Trying to create a method with "
@@ -128,11 +128,6 @@ class_addMethod(Class cls, SEL selector, IMP imp)
 	return YES;
 }
 
-void
-objc_class_add_methods(Class cl, Method *m, unsigned int count)
-{
-	_add_methods(cl, m, count);
-}
 
 void
 method_exchangeImplementations(Method m1, Method m2)

@@ -118,7 +118,8 @@ typedef struct PREFIX(_table_struct)
 /*
  * Allocating count cells for the table.
  */
-struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
+static struct PREFIX(_table_cell_struct) *
+PREFIX(alloc_cells)(int count)
 {
 	return objc_zero_alloc(count * sizeof(struct PREFIX(_table_cell_struct)), MAP_MALLOC_TYPE);
 }
@@ -127,7 +128,8 @@ struct PREFIX(_table_cell_struct) *PREFIX(alloc_cells)(int count)
  * Allocates the table with initial capacity, initializes
  * the lock.
  */
-PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity
+static PREFIX(_table) *
+PREFIX(_table_create)(uint32_t capacity
 #if !MAP_TABLE_NO_LOCK
 				      , const char *lock_name
 #endif
@@ -145,7 +147,8 @@ PREFIX(_table) *PREFIX(_table_create)(uint32_t capacity
 /*
  * Forward declaration.
  */
-static int PREFIX(_insert)(PREFIX(_table) *table, MAP_TABLE_VALUE_TYPE value);
+static int
+PREFIX(_insert)(PREFIX(_table) *table, MAP_TABLE_VALUE_TYPE value);
 
 
 /*
@@ -153,7 +156,8 @@ static int PREFIX(_insert)(PREFIX(_table) *table, MAP_TABLE_VALUE_TYPE value);
  *
  * Returns 0 on failure, 1 on success.
  */
-static int PREFIX(_table_resize)(PREFIX(_table) *table)
+static int
+PREFIX(_table_resize)(PREFIX(_table) *table)
 {
 	struct PREFIX(_table_cell_struct) *newArray =
 				PREFIX(alloc_cells)(table->table_size * 2);

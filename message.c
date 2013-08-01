@@ -1,6 +1,7 @@
 #include "message.h"
 #include "dtable.h"
 #include "class.h"
+#include "private.h"
 
 /*
  * Static functions and slots for nil receivers.

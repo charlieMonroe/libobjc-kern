@@ -7,6 +7,7 @@
 #include "class.h"
 #include "private.h"
 #include "encoding.h"
+#include "init.h"
 
 /*
  * The initial capacities for the hash tables.

@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "runtime.h"
 #include "kernobjc/arc.h"
+#include "kernobjc/property.h"
 #include "private.h"
 
 PRIVATE int spinlocks[spinlock_count];

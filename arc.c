@@ -230,7 +230,7 @@ _objc_create_pool_if_necessary(struct objc_arc_thread_data *data)
 #pragma mark Autorelease Pool
 
 void *
-objc_autorelease_pool_push(void)
+objc_autoreleasePoolPush(void)
 {
 	struct objc_arc_thread_data *data = _objc_get_arc_thread_data();
 	if (data != NULL){
@@ -247,7 +247,7 @@ objc_autorelease_pool_push(void)
 }
 
 void
-objc_autorelease_pool_pop(void *pool)
+objc_autoreleasePoolPop(void *pool)
 {
 	struct objc_arc_thread_data *data = _objc_get_arc_thread_data();
 	if (data != NULL && data->pool != NULL){

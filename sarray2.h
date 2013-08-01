@@ -85,27 +85,27 @@ static inline void* SparseArrayLookup(SparseArray * sarray, uint16_t index)
 /*
  * Create a new sparse array.
  */
-SparseArray *SparseArrayNew();
+PRIVATE SparseArray *SparseArrayNew(void);
 /*
  * Creates a new sparse array with the specified capacity.  The depth indicates
  * the number of bits to use for the key.  Must be a value between 8 and 32 and
  * should ideally be a multiple of base_shift.
  */
-SparseArray *SparseArrayNewWithDepth(uint16_t depth);
+PRIVATE SparseArray *SparseArrayNewWithDepth(uint16_t depth);
 /*
  * Returns a new sparse array created by adding this one as the first child
  * node in an expanded one.
  */
-SparseArray *SparseArrayExpandingArray(SparseArray *sarray, uint16_t new_depth);
+PRIVATE SparseArray *SparseArrayExpandingArray(SparseArray *sarray, uint16_t new_depth);
 /*
  * Insert a value at the specified index.
  */
-void SparseArrayInsert(SparseArray * sarray, uint16_t index, void * value);
+PRIVATE void SparseArrayInsert(SparseArray * sarray, uint16_t index, void * value);
 /*
  * Destroy the sparse array.  Note that calling this while other threads are
  * performing lookups is guaranteed to break.
  */
-void SparseArrayDestroy(SparseArray * sarray);
+PRIVATE void SparseArrayDestroy(SparseArray * sarray);
 /*
  * Iterate through the array.  Returns the next non-NULL value after index and
  * sets index to the following value.  For example, an array containing values
@@ -113,16 +113,16 @@ void SparseArrayDestroy(SparseArray * sarray);
  * and set index to 1.  A subsequent call with index set to 1 will return the
  * value at 10 and set index to 11.
  */
-void * SparseArrayNext(SparseArray * sarray, uint16_t * index);
+PRIVATE void * SparseArrayNext(SparseArray * sarray, uint16_t * index);
 
 /*
  * Creates a copy of the sparse array.
  */
-SparseArray *SparseArrayCopy(SparseArray * sarray);
+PRIVATE SparseArray *SparseArrayCopy(SparseArray * sarray);
 
 /*
  * Returns the total memory usage of a sparse array.  
  */
-int SparseArraySize(SparseArray *sarray);
+PRIVATE int SparseArraySize(SparseArray *sarray);
 
 #endif //_SARRAY_H_INCLUDED_

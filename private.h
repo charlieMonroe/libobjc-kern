@@ -28,5 +28,28 @@ PRIVATE BOOL			objc_class_resolve(Class cl);
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);
 PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
 PRIVATE void			objc_init_protocols(objc_protocol_list *protocols);
+PRIVATE IMP   slowMsgLookup(id *receiver, SEL cmd);
+
+PRIVATE void
+objc_load_buffered_categories(void);
+
+PRIVATE void
+objc_class_send_load_messages(Class cl);
+
+struct objc_slot *
+objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender);
+PRIVATE struct objc_slot *
+objc_slot_lookup_super(struct objc_super *super, SEL selector);
+
+id
+objc_lookup_class(const char *name);
+
+PRIVATE void
+objc_class_resolve_links(void);
+
+PRIVATE void
+call_cxx_construct(id obj);
+PRIVATE void
+call_cxx_destruct(id obj);
 
 #endif

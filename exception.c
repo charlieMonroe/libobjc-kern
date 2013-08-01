@@ -1,6 +1,7 @@
 
 
 #include "exception.h"
+#include "init.h"
 #include "kernobjc/runtime.h"
 
 objc_tls_key objc_exception_tls_key;

@@ -1,6 +1,7 @@
 #include "types.h"
 #include "selector.h"
 #include "utils.h"
+#include "private.h"
 
 #include "encoding.h"
 

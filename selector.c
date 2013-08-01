@@ -2,6 +2,8 @@
 #include "selector.h"
 #include "utils.h" /* For strcpy */
 #include "sarray2.h"
+#include "kernobjc/runtime.h"
+#include "init.h"
 
 /*
  * Since the SEL is a 16-bit integer, all we need to

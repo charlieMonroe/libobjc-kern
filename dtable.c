@@ -7,6 +7,7 @@
 #include "class_registry.h"
 #include "message.h"
 #include "private.h"
+#include "init.h"
 
 PRIVATE dtable_t uninstalled_dtable;
 

@@ -14,7 +14,8 @@ static SparseArray EmptyArray8 = { 0xff00, 8, 0, (void**)&EmptyArrayData8};
 #define base_shift 8
 #define base_mask ((1<<base_shift) - 1)
 
-void *EmptyChildForShift(uint16_t shift)
+static void *
+EmptyChildForShift(uint16_t shift)
 {
 	switch(shift)
 	{
@@ -26,7 +27,8 @@ void *EmptyChildForShift(uint16_t shift)
 	}
 }
 
-static void init_pointers(SparseArray * sarray)
+static void
+init_pointers(SparseArray * sarray)
 {
 	sarray->data = objc_zero_alloc(DATA_SIZE(sarray) * sizeof(void*),
 				       M_SPARSE_ARRAY_TYPE);
@@ -51,7 +53,7 @@ PRIVATE SparseArray * SparseArrayNewWithDepth(uint16_t depth)
 	return sarray;
 }
 
-PRIVATE SparseArray *SparseArrayNew()
+PRIVATE SparseArray *SparseArrayNew(void)
 {
 	return SparseArrayNewWithDepth(16);
 }

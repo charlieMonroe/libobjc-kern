@@ -4,6 +4,8 @@
 #include "selector.h"
 #include "runtime.h"
 #include "class.h"
+#include "init.h"
+#include "private.h"
 
 static inline BOOL
 _objc_protocols_are_equal(const char *name, Protocol *p)
