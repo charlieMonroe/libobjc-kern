@@ -50,7 +50,7 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
  * Two macros that fake the type declarations.
  */
 #define	MALLOC_DEFINE(type, shortdesc, longdesc) void *type
-#define	MALLOC_DECLARE(type)
+#define	MALLOC_DECLARE(type) extern void *type
 
 static inline void *objc_realloc(void *mem, size_t size, void *type) {
 	return realloc(mem, size);

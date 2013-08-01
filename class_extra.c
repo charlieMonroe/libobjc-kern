@@ -4,10 +4,6 @@
 #define spinlock_do_not_allocate_page 1
 #include "spinlock.h"
 
-MALLOC_DECLARE(M_CLASS_EXTRA);
-static MALLOC_DEFINE(M_CLASS_EXTRA, "class extra", "Objective-C Class Extra");
-
-
 /*
  * It is expected to happen only once per class per class extra (currently
  * only used by associated objects) and in current implementation only when
@@ -76,7 +72,7 @@ _objc_class_extra_create(Class cl, unsigned int identifier)
 	if (extra == NULL){
 		/* Still NULL, need to allocate it */
 		extra = objc_alloc(sizeof(struct objc_class_extra),
-				   M_CLASS_EXTRA);
+				   M_CLASS_EXTRA_TYPE);
 		extra->next = NULL;
 		extra->identifier = identifier;
 		extra->data = NULL;

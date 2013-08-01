@@ -9,10 +9,6 @@
 #include "types.h" /* For BOOL, NULL, ... */
 #include "os.h" /* For objc_alloc */
 
-MALLOC_DECLARE(M_UTILITIES);
-static MALLOC_DEFINE(M_UTILITIES, "objc_utils", "Objective-C run-time utilities");
-
-
 /*
  * Just as the regular strlen function, returns a number of non-zero characters.
  */
@@ -48,7 +44,7 @@ objc_strcpy(const char *str)
 	}
 	
 	len = objc_strlen(str);
-	result = objc_alloc(len + 1, M_UTILITIES); /* +1 for zero-termination */
+	result = objc_alloc(len + 1, M_UTILITIES_TYPE); /* +1 for zero-termination */
 	curr_char = result;
 	
 	while (*str != '\0') {

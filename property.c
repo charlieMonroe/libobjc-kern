@@ -7,11 +7,6 @@
 #include "kernobjc/arc.h"
 #include "private.h"
 
-
-MALLOC_DECLARE(M_PROPERTY);
-static MALLOC_DEFINE(M_PROPERTY, "property", "Objective-C Property");
-
-
 PRIVATE int spinlocks[spinlock_count];
 
 static inline BOOL checkAttribute(char field, int attr)
@@ -276,7 +271,7 @@ static const char *property_getTypeEncoding(Property property)
 		return &name[1];
 	}
 	size_t typeSize = lengthOfTypeEncoding(name);
-	char *buffer = objc_alloc(typeSize + 2, M_PROPERTY);
+	char *buffer = objc_alloc(typeSize + 2, M_PROPERTY_TYPE);
 	buffer[0] = 0;
 	objc_copy_memory(buffer+1, name, typeSize);
 	buffer[typeSize+1] = 0;
@@ -349,7 +344,7 @@ PRIVATE const char *constructPropertyAttributes(Property property,
 	{
 		encodingSize += 2 + iVarNameSize;
 	}
-	unsigned char *encoding = objc_alloc(encodingSize, M_PROPERTY);
+	unsigned char *encoding = objc_alloc(encodingSize, M_PROPERTY_TYPE);
 	// Set the leading 0 and the offset of the name
 	unsigned char *insert = encoding;
 	BOOL needsComma = NO;
@@ -504,7 +499,7 @@ objc_property_attribute_t *property_copyAttributeList(Property property,
 		count++;
 	}
 
-	objc_property_attribute_t *propAttrs = objc_zero_alloc(sizeof(objc_property_attribute_t) * count, M_PROPERTY);
+	objc_property_attribute_t *propAttrs = objc_zero_alloc(sizeof(objc_property_attribute_t) * count, M_PROPERTY_TYPE);
 	memcpy(propAttrs, attrs, count * sizeof(objc_property_attribute_t));
 	if (NULL != outCount)
 	{
@@ -525,7 +520,7 @@ PRIVATE struct objc_property propertyFromAttrs(const objc_property_attribute_t *
 			case 'T':
 			{
 				size_t typeSize = strlen(attributes[i].value);
-				char *buffer = objc_alloc(typeSize + 2, M_PROPERTY);
+				char *buffer = objc_alloc(typeSize + 2, M_PROPERTY_TYPE);
 				buffer[0] = 0;
 				memcpy(buffer+1, attributes[i].value, typeSize);
 				buffer[typeSize+1] = 0;

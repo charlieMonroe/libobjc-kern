@@ -19,15 +19,13 @@
 #define MAP_TABLE_HASH_KEY objc_hash_pointer
 #define MAP_TABLE_HASH_VALUE objc_hash_pointer
 #define MAP_TABLE_VALUE_TYPE IMP
+#define MAP_MALLOC_TYPE M_LOAD_MSG_MAP_TYPE
 #include "hashtable.h"
 
 /*
  * A hash table with the load messages.
  */
 static objc_load_messages_table *objc_load_messages;
-
-MALLOC_DECLARE(M_CLASS);
-static MALLOC_DEFINE(M_CLASS, "class", "Objective-C Class");
 
 
 /*
@@ -76,6 +74,7 @@ static void _objc_class_fixup_instance_size(Class cl);
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
 #define MAP_TABLE_NO_LOCK 1
+#define MAP_MALLOC_TYPE M_CLASS_MAP_TYPE
 #include "hashtable.h"
 
 /*
@@ -380,9 +379,9 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 	}
 	
 	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class)
-						+ extraBytes, M_CLASS);
+						+ extraBytes, M_CLASS_TYPE);
 	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class),
-						    M_CLASS);
+						    M_CLASS_TYPE);
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
@@ -467,8 +466,8 @@ objc_disposeClassPair(Class cls)
 	objc_class_table_set(objc_classes, cls->name, NULL);
 	
 	
-	objc_dealloc(cls, M_CLASS);
-	objc_dealloc(meta, M_CLASS);
+	objc_dealloc(cls, M_CLASS_TYPE);
+	objc_dealloc(meta, M_CLASS_TYPE);
 }
 
 Class *
@@ -476,7 +475,7 @@ objc_copyClassList(unsigned int *out_count)
 {
 	size_t class_count = objc_classes->table_used;
 	
-	Class *classes = objc_alloc(class_count * sizeof(Class), M_CLASS);
+	Class *classes = objc_alloc(class_count * sizeof(Class), M_CLASS_TYPE);
 	
 	int count = 0;
 	struct objc_class_table_enumerator *e = NULL;

@@ -5,9 +5,6 @@
 #include "runtime.h"
 #include "class.h"
 
-MALLOC_DECLARE(M_PROTOCOL);
-static MALLOC_DEFINE(M_PROTOCOL, "protocol", "Objective-C Protocol");
-
 static inline BOOL
 _objc_protocols_are_equal(const char *name, Protocol *p)
 {
@@ -25,6 +22,7 @@ _objc_hash_protocol(Protocol *p)
 #define MAP_TABLE_VALUE_TYPE Protocol *
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_hash_protocol
+#define MAP_MALLOC_TYPE M_PROTOCOL_MAP_TYPE
 #include "hashtable.h"
 
 #define BUFFER_TYPE objc_protocol_list
@@ -317,7 +315,7 @@ protocol_copyMethodDescriptionList(Protocol *p, BOOL isRequiredMethod,
 	
 	struct objc_method_description *descriptions;
 	descriptions = objc_zero_alloc(sizeof(struct objc_method_description)
-				       * list->size, M_PROTOCOL);
+				       * list->size, M_PROTOCOL_TYPE);
 	for (int i = 0; i < list->size; ++i){
 		descriptions[i] = list->list[i];
 	}
@@ -361,7 +359,7 @@ protocol_copyPropertyList(Protocol *protocol, unsigned int *outCount)
 		return NULL;
 	}
 	
-	Property *buffer = objc_zero_alloc(size * sizeof(Property), M_PROTOCOL);
+	Property *buffer = objc_zero_alloc(size * sizeof(Property), M_PROTOCOL_TYPE);
 	if (list != NULL){
 		objc_property_list_get_list(list, buffer, list_size);
 	}
@@ -455,7 +453,7 @@ objc_allocateProtocol(const char *name)
 	if (objc_getProtocol(name) != NULL) {
 		return NULL;
 	}
-	Protocol *p = objc_zero_alloc(sizeof(Protocol), M_PROTOCOL);
+	Protocol *p = objc_zero_alloc(sizeof(Protocol), M_PROTOCOL_TYPE);
 	p->name = objc_strcpy(name);
 	return p;
 }

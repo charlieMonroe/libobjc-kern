@@ -1,5 +1,6 @@
 #define POOL_NAME slot
 #define POOL_TYPE struct objc_slot
+#define POOL_MALLOC_TYPE M_SLOT_POOL_TYPE
 #include "pool.h"
 #include "utils.h"
 

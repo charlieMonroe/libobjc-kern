@@ -2,6 +2,9 @@
 #ifndef LIBKERNOBJC_TYPES_H
 #define LIBKERNOBJC_TYPES_H
 
+// TODO actually import the system headers
+#include "../os.h"
+
 /* A boolean type. */
 typedef signed char BOOL;
 

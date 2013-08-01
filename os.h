@@ -39,6 +39,7 @@ PRIVATE unsigned int objc_lock_locked_count;
 	#include "os/kernel.h"
 #endif /* !_KERNEL */
 
+#include "malloc_types.h"
 
 #define objc_assert(condition, description...)				\
 	if (!(condition)){						\

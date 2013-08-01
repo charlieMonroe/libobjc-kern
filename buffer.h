@@ -3,9 +3,6 @@
  * values for later processing.  Define BUFFER_TYPE before including this file.
  */
 
-MALLOC_DECLARE(M_BUFFER);
-static MALLOC_DEFINE(M_BUFFER, "buffer", "Objective-C Buffer");
-
 
 #define BUFFER_SIZE 128
 static BUFFER_TYPE *buffered_object_buffer[BUFFER_SIZE];
@@ -26,7 +23,7 @@ static void set_buffered_object_at_index(BUFFER_TYPE *cat, unsigned int i)
 		{
 			buffered_object_overflow =
 				objc_zero_alloc(BUFFER_SIZE * sizeof(BUFFER_TYPE*),
-						M_BUFFER);
+						M_BUFFER_TYPE);
 			buffered_object_overflow_space = BUFFER_SIZE;
 		}
 		while (i >= buffered_object_overflow_space)

@@ -10,10 +10,6 @@
  */
 #define AUTORELEASE_POOL_SIZE ((PAGE_SIZE / sizeof(void*)) - 2)
 
-MALLOC_DECLARE(M_AUTORELEASE_POOL);
-static MALLOC_DEFINE(M_AUTORELEASE_POOL, "autorelease pool", "Objective-C "
-		     "Autorelease Pool");
-
 /* Default hook for _objc_weak_load() */
 static id
 __objc_weak_load_default_hook(id object) { return object; }
@@ -178,7 +174,7 @@ _objc_empty_pool_until(struct objc_arc_thread_data *data, id *stop)
 		/* Dispose of the pool itself */
 		struct objc_autorelease_pool *pool = data->pool;
 		data->pool = pool->previous;
-		objc_dealloc(pool, M_AUTORELEASE_POOL);
+		objc_dealloc(pool, M_AUTORELEASE_POOL_TYPE);
 	}
 	
 	/*
@@ -219,7 +215,7 @@ _objc_create_pool_if_necessary(struct objc_arc_thread_data *data)
 		 * Either there is no pool, or we've run out of space in
 		 * the existing one.
 		 */
-		pool = objc_alloc_page(M_AUTORELEASE_POOL);
+		pool = objc_alloc_page(M_AUTORELEASE_POOL_TYPE);
 		pool->previous = data->pool;
 		pool->top = pool->pool;
 		data->pool = pool;

@@ -45,16 +45,9 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 #define MAP_TABLE_HASH_VALUE _objc_selector_hash
 #define MAP_TABLE_VALUE_TYPE struct objc_selector *
 #define MAP_TABLE_NO_LOCK 1
+#define MAP_MALLOC_TYPE M_SELECTOR_MAP_TYPE
 
 #include "hashtable.h"
-
-MALLOC_DECLARE(M_SELECTOR_NAMES);
-static MALLOC_DEFINE(M_SELECTOR_NAMES, "selector_names", "Objective-C "
-		     "Selector Names");
-
-MALLOC_DECLARE(M_SELECTORS);
-static MALLOC_DEFINE(M_SELECTORS, "selectors", "Objective-C selectors");
-
 
 
 /* String allocator stuff.*/
@@ -123,7 +116,7 @@ _objc_selector_allocate_string(size_t size)
 		 * This also covers the string_allocator == NULL case.
 		 */
 		
-		string_allocator = objc_alloc_page(M_SELECTOR_NAMES);
+		string_allocator = objc_alloc_page(M_SELECTOR_NAME_TYPE);
 		string_allocator_bytes_remaining = PAGE_SIZE;
 		
 		if (string_allocator == NULL){
@@ -219,7 +212,7 @@ _sel_register_name_no_lock(const char *name, const char *types)
 		 * in the meanwhile.
 		 */
 		
-		selector = objc_alloc(sizeof(struct objc_selector), M_SELECTORS);
+		selector = objc_alloc(sizeof(struct objc_selector), M_SELECTOR_TYPE);
 		selector->name =
 		_objc_selector_copy_name_and_types(name, types);
 		
