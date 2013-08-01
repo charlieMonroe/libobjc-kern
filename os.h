@@ -17,9 +17,9 @@
 #define PREFIX_SUFFIX(x, y) REALLY_PREFIX_SUFFIX(x, y)
 
 /* For statistics. */
-PRIVATE unsigned int objc_lock_count;
-PRIVATE unsigned int objc_lock_destroy_count;
-PRIVATE unsigned int objc_lock_locked_count;
+PRIVATE extern unsigned int objc_lock_count;
+PRIVATE extern unsigned int objc_lock_destroy_count;
+PRIVATE extern unsigned int objc_lock_locked_count;
 
 #ifndef __has_feature         // Optional of course.
   #define __has_feature(x) 0  // Compatibility with non-clang compilers.
