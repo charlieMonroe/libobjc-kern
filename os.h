@@ -22,6 +22,14 @@ PRIVATE unsigned int objc_lock_count;
 PRIVATE unsigned int objc_lock_destroy_count;
 PRIVATE unsigned int objc_lock_locked_count;
 
+#ifndef __has_feature         // Optional of course.
+  #define __has_feature(x) 0  // Compatibility with non-clang compilers.
+#endif
+
+#if !__has_feature(objc_arc)
+#define __unsafe_unretained
+#endif
+
 #define _KERNEL
 
 /* Include of the relevant header. */
