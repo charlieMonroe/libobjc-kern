@@ -3,7 +3,6 @@
 #define OBJC_OS_H_
 
 /* Constants */
-#define PAGE_SIZE 4096
 #define OBJC_DEBUG_LOG 1
 
 /* Compiler attributes and directives. */

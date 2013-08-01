@@ -50,7 +50,7 @@ static inline void *objc_alloc(size_t size, struct malloc_type *type){
 	return malloc(size, type, 0);
 }
 static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
-	return calloc(1, type, M_ZERO);
+	return malloc(1, type, M_ZERO);
 }
 static inline void *objc_realloc(void *mem, size_t size,
 				 struct malloc_type *type){
@@ -81,6 +81,6 @@ static inline void *objc_get_tls_for_key(objc_tls_key key){
 	return osd_thread_get(curthread, key);
 }
 static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
-	return osd_thread_set(curthread, key, data);
+	osd_thread_set(curthread, key, data);
 }
 

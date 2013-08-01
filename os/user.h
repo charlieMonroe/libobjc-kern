@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <setjmp.h>
 
+#define PAGE_SIZE 4096
+
 /* LOGGING */
 #define objc_log printf
 
