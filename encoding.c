@@ -236,7 +236,7 @@ return type + 1;\
 			return sizeof_type(type+1, &ignored);
 		}
 	}
-	abort();
+  objc_abort("Invalid type encoding.\n");
 	return NULL;
 }
 
@@ -329,7 +329,7 @@ return type + 1;\
 			return alignof_type(type+1, &ignored);
 		}
 	}
-	abort();
+	objc_abort("Invalid type encoding.\n");
 	return NULL;
 }
 

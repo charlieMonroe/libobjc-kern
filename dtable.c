@@ -251,7 +251,7 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 			}
 			else
 			{
-				abort();
+				objc_abort("Creating a dtable for a class that isn't the class\n");
 			}
 		}
 		dtable = SparseArrayCopy(super_dtable);
