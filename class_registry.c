@@ -4,6 +4,7 @@
 #include "runtime.h"
 #include "utils.h"
 #include "selector.h"
+#include "kernobjc/runtime.h"
 #include "sarray2.h"
 #include "dtable.h"
 #include "class_registry.h"

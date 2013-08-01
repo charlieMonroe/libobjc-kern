@@ -2,6 +2,7 @@
 #include "kernobjc/types.h"
 #include "types.h"
 #include "selector.h"
+#include "kernobjc/runtime.h"
 #include "sarray2.h"
 #include "dtable.h"
 #include "class.h"

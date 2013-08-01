@@ -4,6 +4,7 @@
 #include "kernobjc/message.h"
 #include "selector.h"
 #include "message.h"
+#include "kernobjc/runtime.h"
 #include "sarray2.h"
 #include "dtable.h"
 #include "class.h"

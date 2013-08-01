@@ -5,6 +5,7 @@
 #include "os.h"
 #include "kernobjc/types.h"
 #include "kernobjc/class.h"
+#include "kernobjc/runtime.h"
 #include "types.h"
 #include "utils.h"
 #include "selector.h"
