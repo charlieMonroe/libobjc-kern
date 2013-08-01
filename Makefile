@@ -1,3 +1,5 @@
+#CFLAGS  = "-v"
+
 KMOD	= libobjc
 
 SRCS	= kernel_module.c \

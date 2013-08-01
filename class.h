@@ -9,7 +9,7 @@
 #define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
 #define OBJC_SMALL_OBJECT_CLASS_COUNT ((sizeof(void*) == 4) ? 1 : 4)
 
-Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
+extern Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
 
 
 #pragma mark -

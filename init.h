@@ -3,7 +3,7 @@
 #ifndef OBJC_INIT_H_
 #define OBJC_INIT_H_
 
-PRIVATE BOOL  objc_runtime_initialized;
+PRIVATE extern BOOL  objc_runtime_initialized;
 
 PRIVATE void	objc_arc_init(void);
 PRIVATE void	objc_class_init(void);

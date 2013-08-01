@@ -13,7 +13,7 @@
  * All actions performed with this lock locked, should be rarely performed,
  * or at least performed seldomly.
  */
-objc_rw_lock objc_runtime_lock;
+extern objc_rw_lock objc_runtime_lock;
 
 #define OBJC_LOCK_RUNTIME() OBJC_LOCK(&objc_runtime_lock)
 #define OBJC_UNLOCK_RUNTIME() OBJC_UNLOCK(&objc_runtime_lock)
