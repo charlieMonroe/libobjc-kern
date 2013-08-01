@@ -354,7 +354,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 		return PREFIX(_insert)(table, value);
 	}
 	
-	fprintf(stderr, "Insert failed\n");
+	objc_log("Insert failed\n");
 	MAP_TABLE_UNLOCK(&table->lock);
 	return 0;
 }
