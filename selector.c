@@ -1,4 +1,6 @@
-
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "selector.h"
 #include "utils.h" /* For strcpy */
 #include "sarray2.h"

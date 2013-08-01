@@ -1,4 +1,6 @@
-
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "class_extra.h"
 
 #define spinlock_do_not_allocate_page 1

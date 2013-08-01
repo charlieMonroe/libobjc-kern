@@ -2,9 +2,6 @@
 #ifndef OBJC_TYPES_H
 #define OBJC_TYPES_H
 
-#include "os.h"
-#include "kernobjc/types.h"
-
 /*
  * Actual declarations of the structures follow.
  */

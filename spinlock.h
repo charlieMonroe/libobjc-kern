@@ -1,6 +1,4 @@
 
-#include "os.h"
-
 #ifndef spinlock_do_not_allocate_page
 
 /*

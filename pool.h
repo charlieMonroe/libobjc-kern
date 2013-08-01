@@ -1,4 +1,3 @@
-#include "os.h"
 
 #ifndef POOL_TYPE
 #error POOL_TYPE must be defined

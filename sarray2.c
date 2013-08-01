@@ -1,3 +1,6 @@
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "sarray2.h"
 #include "malloc_types.h"
 

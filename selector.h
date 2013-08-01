@@ -2,8 +2,6 @@
 #ifndef OBJC_SELECTOR_H_
 #define OBJC_SELECTOR_H_
 
-#include "types.h"
-
 /*
  * Some basic selectors used throughout the
  * run-time, initialized in objc_selector_init()

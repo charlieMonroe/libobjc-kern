@@ -2,8 +2,6 @@
 #ifndef OBJC_CLASS_EXTRA_H
 #define OBJC_CLASS_EXTRA_H
 
-#include "types.h"
-
 #define OBJC_ASSOCIATED_OBJECTS_IDENTIFIER ((unsigned int)'aobj')
 
 /*

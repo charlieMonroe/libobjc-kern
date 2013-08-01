@@ -1,11 +1,15 @@
+#include "../os.h"
+#include "../kernobjc/types.h"
+#include "../types.h"
 #include "../class_registry.h"
 #include "../class.h"
 #import "../classes/KKObjects.h"
-#include "../message.h"
+#include "../selector.h"
 #include "../kernobjc/runtime.h"
+#include "../message.h"
 #include "../associative.h"
 
-void weak_ref_test_manual(void){
+static void weak_ref_test_manual(void){
   typedef struct {
     id isa;
     int retain_count;
@@ -30,7 +34,7 @@ void weak_ref_test_manual(void){
   
 }
 
-void weak_ref_test_compiler(void){
+static void weak_ref_test_compiler(void){
   // TODO
 }
 

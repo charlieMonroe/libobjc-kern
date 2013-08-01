@@ -3,8 +3,6 @@
 #ifndef OBJC_INIT_H_
 #define OBJC_INIT_H_
 
-#include "types.h" /* For BOOL */
-
 PRIVATE BOOL  objc_runtime_initialized;
 
 PRIVATE void	objc_arc_init(void);

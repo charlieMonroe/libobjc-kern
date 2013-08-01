@@ -2,7 +2,6 @@
 #define POOL_TYPE struct objc_slot
 #define POOL_MALLOC_TYPE M_SLOT_POOL_TYPE
 #include "pool.h"
-#include "utils.h"
 
 /*
  * Allocates a new slot and initialises it for this method.

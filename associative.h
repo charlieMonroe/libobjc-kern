@@ -2,8 +2,6 @@
 #ifndef OBJC_ASSOCIATIVE_H
 #define OBJC_ASSOCIATIVE_H
 
-#include "types.h"
-
 /*
  * Returns an object previously stored by calling objc_set_associated_object()
  * with the same arguments, or nil if none exists.

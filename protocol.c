@@ -1,3 +1,5 @@
+#include "os.h"
+#include "kernobjc/types.h"
 #include "types.h"
 #include "utils.h"
 #include "property.h"
@@ -6,6 +8,7 @@
 #include "class.h"
 #include "init.h"
 #include "private.h"
+#include "kernobjc/runtime.h"
 
 static inline BOOL
 _objc_protocols_are_equal(const char *name, Protocol *p)

@@ -1,8 +1,6 @@
 
 /* No guards as we want this to be reincluded multiple times. */
 
-#include "os.h" /* Needed for some macros */
-
 /*
  * This header defines a template for a list
  * that can be chained using the ->next variable

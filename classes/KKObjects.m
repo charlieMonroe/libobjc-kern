@@ -1,5 +1,8 @@
 
 #import "KKObjects.h"
+
+#include "../kernobjc/types.h"
+#include "../os.h"
 #include "../private.h"
 
 #pragma mark KKObject

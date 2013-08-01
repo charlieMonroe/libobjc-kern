@@ -2,8 +2,6 @@
 #ifndef OBJC_CLASS_REGISTRY_H
 #define OBJC_CLASS_REGISTRY_H
 
-#include "types.h"
-
 /*
  * Registers a class with the runtime.
  *

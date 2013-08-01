@@ -2,8 +2,6 @@
 #ifndef OBJC_PRIVATE_H
 #define OBJC_PRIVATE_H
 
-#include "types.h"
-
 /*
  * These functions are either marked as unavailble with ARC,
  * or indeed private.

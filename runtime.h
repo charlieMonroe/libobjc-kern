@@ -6,8 +6,6 @@
 #ifndef OBJC_RUNTIME_H_
 #define OBJC_RUNTIME_H_
 
-#include "os.h"
-
 /*
  * A lock that is used for manipulating with classes - e.g. adding a class
  * to the run-time, etc.

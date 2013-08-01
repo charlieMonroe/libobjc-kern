@@ -6,9 +6,6 @@
 #ifndef OBJC_UTILITIES_H
 #define OBJC_UTILITIES_H
 
-#include "types.h" /* For BOOL, NULL, ... */
-#include "os.h" /* For objc_alloc */
-
 /*
  * Just as the regular strlen function, returns a number of non-zero characters.
  */

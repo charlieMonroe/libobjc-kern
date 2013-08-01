@@ -1,6 +1,4 @@
 
-#include "../types.h"
-
 @interface KKObject {
   id isa;
   int retain_count;

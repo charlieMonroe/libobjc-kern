@@ -1,5 +1,8 @@
+#include "os.h"
+#include "kernobjc/types.h"
 #include "types.h"
 #include "selector.h"
+#include "sarray2.h"
 #include "dtable.h"
 #include "class.h"
 #include "kernobjc/protocol.h"

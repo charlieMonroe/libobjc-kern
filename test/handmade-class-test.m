@@ -14,16 +14,16 @@ typedef struct{
 
 static BOOL gotInitialized = NO;
 
-void initialize(Class self, SEL _cmd){
+static void initialize(Class self, SEL _cmd){
 	objc_assert(self == (Class)objc_getClass(my_class_name), "Sending initialize to the wrong class");
 	gotInitialized = YES;
 }
 
-id getIvar(MyClass *self, SEL _cmd){
+static id getIvar(MyClass *self, SEL _cmd){
 	return self->my_ivar;
 }
 
-void setIvar(MyClass *self, SEL _cmd, id value){
+static void setIvar(MyClass *self, SEL _cmd, id value){
 	self->my_ivar = value;
 }
 

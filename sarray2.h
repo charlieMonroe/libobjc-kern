@@ -10,8 +10,6 @@
 #ifndef _SARRAY_H_INCLUDED_
 #define _SARRAY_H_INCLUDED_
 
-#include "os.h"
-
 /*
  * Sparse arrays, used to implement dispatch tables.  Current implementation is
  * quite RAM-intensive and could be optimised.  Maps 32-bit integers to pointers.

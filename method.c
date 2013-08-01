@@ -1,5 +1,8 @@
-
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "selector.h" /* For sel_registerName. */
+#include "sarray2.h"
 #include "dtable.h"
 #include "class.h"
 #include "private.h"

@@ -2,8 +2,6 @@
 #ifndef OBJC_EXCEPTION_H_
 #define OBJC_EXCEPTION_H_
 
-#include "types.h"
-
 struct objc_exception_handler {
 	/* Points to the previous structure on stack. */
 	struct objc_exception_handler *previous;

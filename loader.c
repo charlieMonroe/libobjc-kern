@@ -1,5 +1,7 @@
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "loader.h"
-
 #include "selector.h"
 #include "init.h"
 #include "class_registry.h"

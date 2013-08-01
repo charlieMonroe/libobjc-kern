@@ -2,10 +2,6 @@
 #ifndef OBJC_MESSAGE_H
 #define OBJC_MESSAGE_H
 
-#include "types.h"
-#include "selector.h"
-#include "kernobjc/message.h"
-
 /*
  * The run-time in a few cases sends a direct ARR
  * messages to objects that do not support ARC,

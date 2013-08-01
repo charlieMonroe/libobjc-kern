@@ -2,9 +2,6 @@
 #ifndef OBJC_PROTOTYPES_H
 #define OBJC_PROTOTYPES_H
 
-#include "types.h"
-#include "selector.h"
-
 /* Defined ABI versions. */
 enum objc_abi_version {
 	objc_abi_version_kernel_1 = 0x301

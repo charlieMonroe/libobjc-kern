@@ -16,8 +16,6 @@
  *
  */
 
-#include "os.h"
-
 #ifndef MAP_TABLE_NAME
 #	error You must define MAP_TABLE_NAME.
 #endif

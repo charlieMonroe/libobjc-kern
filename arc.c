@@ -1,8 +1,13 @@
-
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
 #include "kernobjc/arc.h"
+#include "kernobjc/message.h"
+#include "selector.h"
 #include "message.h"
 #include "class.h"
 #include "associative.h"
+#include "init.h"
 
 /*
  * Each autorelease pool ~ a page. We need the previous and top
