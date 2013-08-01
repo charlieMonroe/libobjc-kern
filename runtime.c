@@ -50,6 +50,7 @@ void	objc_runtime_destroy(void) {
 	objc_rw_lock_destroy(&objc_runtime_lock);
 	
 	/* Call destroys to all other modules. */
+	objc_selector_destroy();
 }
 
 
