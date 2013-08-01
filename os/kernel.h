@@ -48,7 +48,7 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
 /* MEMORY */
 static inline void *objc_alloc(size_t size, struct malloc_type *type){
 	void *memory = malloc(size, type, M_WAITOK);
-	bzero(memory);
+	bzero(memory, size);
 	return memory;
 }
 static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
