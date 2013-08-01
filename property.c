@@ -530,12 +530,12 @@ PRIVATE struct objc_property propertyFromAttrs(const objc_property_attribute_t *
 			}
 			case 'S':
 			{
-				p.setter_name = strdup(attributes[i].value);
+				p.setter_name = objc_strcpy(attributes[i].value);
 				break;
 			}
 			case 'G':
 			{
-				p.getter_name = strdup(attributes[i].value);
+				p.getter_name = objc_strcpy(attributes[i].value);
 				break;
 			}
 			case 'V':
@@ -628,45 +628,45 @@ char *property_copyAttributeValue(Property property,
 		case 'T':
 		{
 			const char *types = property_getTypeEncoding(property);
-			return (NULL == types) ? NULL : strdup(types);
+			return (NULL == types) ? NULL : objc_strcpy(types);
 		}
 		case 'D':
 		{
 			return checkAttribute(property->attributes2, OBJC_PR_dynamic) &&
-			       !checkAttribute(property->attributes2, OBJC_PR_synthesized) ? strdup("") : 0;
+			       !checkAttribute(property->attributes2, OBJC_PR_synthesized) ? objc_strcpy("") : 0;
 		}
 		case 'V':
 		{
-			return strdup(property_getIVar(property));
+			return objc_strcpy(property_getIVar(property));
 		}
 		case 'S':
 		{
-			return strdup(property->setter_name);
+			return objc_strcpy(property->setter_name);
 		}
 		case 'G':
 		{
-			return strdup(property->getter_name);
+			return objc_strcpy(property->getter_name);
 		}
 		case 'R':
 		{
-			return checkAttribute(property->attributes, OBJC_PR_readonly) ? strdup("") : 0;
+			return checkAttribute(property->attributes, OBJC_PR_readonly) ? objc_strcpy("") : 0;
 		}
 		case 'W':
 		{
-			return checkAttribute(property->attributes2, OBJC_PR_weak) ? strdup("") : 0;
+			return checkAttribute(property->attributes2, OBJC_PR_weak) ? objc_strcpy("") : 0;
 		}
 		case 'C':
 		{
-			return checkAttribute(property->attributes, OBJC_PR_copy) ? strdup("") : 0;
+			return checkAttribute(property->attributes, OBJC_PR_copy) ? objc_strcpy("") : 0;
 		}
 		case '&':
 		{
 			return checkAttribute(property->attributes, OBJC_PR_retain) ||
-			       checkAttribute(property->attributes2, OBJC_PR_strong) ? strdup("") : 0;
+			       checkAttribute(property->attributes2, OBJC_PR_strong) ? objc_strcpy("") : 0;
 		}
 		case 'N':
 		{
-			return checkAttribute(property->attributes, OBJC_PR_nonatomic) ? strdup("") : 0;
+			return checkAttribute(property->attributes, OBJC_PR_nonatomic) ? objc_strcpy("") : 0;
 		}
 	}
 	return 0;
