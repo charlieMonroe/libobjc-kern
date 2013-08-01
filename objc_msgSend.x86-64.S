@@ -55,7 +55,7 @@
 	                                     # callee-save on x86-64, so we can
 	                                     # return 0 in both in the same code:
 	xor   %rax, %rax                     # Return 0 as an integer
-	pxor  %xmm0, %xmm0                   # Return 0 as a floating point value
+#	pxor  %xmm0, %xmm0                   # Return 0 as a floating point value
 	ret
 5:                                       # slowSend:
 	push  %rax                           # We need to preserve all registers that may contain arguments:
@@ -65,14 +65,14 @@
 	push  %r9
 	
 	sub $0x98, %rsp
-	movups	%xmm0, 0x80(%rsp)
-	movups	%xmm1, 0x70(%rsp)
-	movups	%xmm2, 0x60(%rsp)
-	movups	%xmm3, 0x50(%rsp)
-	movups	%xmm4, 0x40(%rsp)
-	movups	%xmm5, 0x30(%rsp)
-	movups	%xmm6, 0x20(%rsp)
-	movups	%xmm7, 0x10(%rsp)
+#	movups	%xmm0, 0x80(%rsp)
+#	movups	%xmm1, 0x70(%rsp)
+#	movups	%xmm2, 0x60(%rsp)
+#	movups	%xmm3, 0x50(%rsp)
+#	movups	%xmm4, 0x40(%rsp)
+#	movups	%xmm5, 0x30(%rsp)
+#	movups	%xmm6, 0x20(%rsp)
+#	movups	%xmm7, 0x10(%rsp)
 
 #rdi rsi rdx
 	# We're (potentially) modifying the self argument with the lookup, so we don't want to be 
@@ -97,15 +97,15 @@
 	pop   %rsi
 	pop   %rdi
 
-	movups	0x80(%rsp), %xmm0
-	movups	0x70(%rsp), %xmm1
-	movups	0x60(%rsp), %xmm2
-	movups	0x50(%rsp), %xmm3
-	movups	0x40(%rsp), %xmm4
-	movups	0x30(%rsp), %xmm5
-	movups	0x20(%rsp), %xmm6
-	movups	0x10(%rsp), %xmm7
-	add   $0x98, %rsp
+#	movups	0x80(%rsp), %xmm0
+#	movups	0x70(%rsp), %xmm1
+#	movups	0x60(%rsp), %xmm2
+#	movups	0x50(%rsp), %xmm3
+#	movups	0x40(%rsp), %xmm4
+#	movups	0x30(%rsp), %xmm5
+#	movups	0x20(%rsp), %xmm6
+#	movups	0x10(%rsp), %xmm7
+#	add   $0x98, %rsp
 
 	pop   %r9
 	pop   %r8
