@@ -6,7 +6,11 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
-extern void objc_runtime_init(void);
+#include "os.h"
+#include "kernobjc/types.h"
+#include "types.h"
+#include "init.h"
+
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -15,6 +19,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 		objc_runtime_init();
 		break;
 	case MOD_UNLOAD:
+		objc_runtime_destroy();
 		uprintf("G'bye\n");
 		break;
 	default:
