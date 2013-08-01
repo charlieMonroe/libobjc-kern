@@ -16,3 +16,8 @@ profile
 *.moved-aside
 DerivedData
 .idea/
+
+# FreeBSD
+*.o
+*.ko
+export_syms
