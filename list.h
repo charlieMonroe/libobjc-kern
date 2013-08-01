@@ -48,8 +48,8 @@
 
 #define M_LIST_TYPE PREFIX_SUFFIX(M_, OBJC_LIST_TYPE_NAME)
 
-static MALLOC_DECLARE(M_LIST_TYPE);
-static MALLOC_DEFINE(M_LIST_TYPE, "list", "Objective-C List");
+MALLOC_DECLARE(M_LIST_TYPE_NAME);
+static MALLOC_DEFINE(M_LIST_TYPE_NAME, "list", "Objective-C List");
 
 
 /*
