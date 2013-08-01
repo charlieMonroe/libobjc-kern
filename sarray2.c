@@ -230,8 +230,8 @@ PRIVATE void SparseArrayDestroy(SparseArray * sarray)
 			SparseArrayDestroy((SparseArray*)sarray->data[i]);
 		}
 	}
-	free(sarray->data);
-	free(sarray);
+	objc_dealloc(sarray->data, M_SPARSE_ARRAY_TYPE);
+	objc_dealloc(sarray, M_SPARSE_ARRAY_TYPE);
 }
 
 PRIVATE int SparseArraySize(SparseArray *sarray)

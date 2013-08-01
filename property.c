@@ -278,7 +278,7 @@ static const char *property_getTypeEncoding(Property property)
 	buffer[typeSize+1] = 0;
 	if (!__sync_bool_compare_and_swap(&(property->getter_types), name, buffer))
 	{
-		free(buffer);
+		objc_dealloc(buffer, M_PROPERTY_TYPE);
 	}
 	return &property->getter_types[1];
 }
@@ -408,7 +408,7 @@ PRIVATE const char *constructPropertyAttributes(Property property,
 	// it, then discard the one that we created and return theirs.
 	if (!__sync_bool_compare_and_swap(&(property->name), name, (char*)encoding))
 	{
-		free(encoding);
+		objc_dealloc(encoding, M_PROPERTY_TYPE);
 		return property->name + 2;
 	}
 	return (const char*)(encoding + 2);

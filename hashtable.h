@@ -194,8 +194,8 @@ PREFIX(_table_resize)(PREFIX(_table) *table)
 	
 	__sync_synchronize();
 	table->old = NULL;
-	free(copy->table);
-	free(copy);
+	objc_dealloc(copy->table, MAP_MALLOC_TYPE);
+  objc_dealloc(copy, MAP_MALLOC_TYPE);
 	
 	return 1;
 }
@@ -474,7 +474,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 		MAP_TABLE_RLOCK(&table->lock);
 		__sync_fetch_and_sub(&table->enumerator_count, 1);
 		MAP_TABLE_UNLOCK(&table->lock);
-		free(*state);
+		objc_dealloc(*state, MAP_MALLOC_TYPE);
 		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
 	while ((++((*state)->index)) < (*state)->table->table_size)
@@ -489,7 +489,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 	MAP_TABLE_RLOCK(&table->lock);
 	__sync_fetch_and_sub(&table->enumerator_count, 1);
 	MAP_TABLE_UNLOCK(&table->lock);
-	free(*state);
+	objc_dealloc(*state, MAP_MALLOC_TYPE);
 	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 
