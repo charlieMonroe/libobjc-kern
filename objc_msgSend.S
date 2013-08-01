@@ -4,6 +4,10 @@
 	#define CDECL(symbol) symbol
 #endif
 
+#ifndef HAS_TYPE_DIRECTIVE
+  #define HAS_TYPE_DIRECTIVE 0
+#endif
+
 #if HAS_TYPE_DIRECTIVE
 	#define TYPE_DIRECTIVE(symbol, symboltype) .type symbol, symboltype
 #else
