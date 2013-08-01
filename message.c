@@ -7,13 +7,13 @@
  * Static functions and slots for nil receivers.
  */
 static long long nil_method(id self, SEL _cmd) { return 0; }
-static long double nil_method_D(id self, SEL _cmd) { return 0; }
-static double nil_method_d(id self, SEL _cmd) { return 0; }
+//static long double nil_method_D(id self, SEL _cmd) { return 0; }
+//static double nil_method_d(id self, SEL _cmd) { return 0; }
 static float nil_method_f(id self, SEL _cmd) { return 0; }
 
 static struct objc_slot nil_slot = { Nil, Nil, (IMP)nil_method, 0, 1, 0 };
-static struct objc_slot nil_slot_D = { Nil, Nil, (IMP)nil_method_D, 0, 1, 0 };
-static struct objc_slot nil_slot_d = { Nil, Nil, (IMP)nil_method_d, 0, 1, 0 };
+//static struct objc_slot nil_slot_D = { Nil, Nil, (IMP)nil_method_D, 0, 1, 0 };
+//static struct objc_slot nil_slot_d = { Nil, Nil, (IMP)nil_method_d, 0, 1, 0 };
 static struct objc_slot nil_slot_f = { Nil, Nil, (IMP)nil_method_f, 0, 1, 0 };
 
 
@@ -143,8 +143,9 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 		}
 		
 		switch (types[0]){
-			case 'D': return &nil_slot_D;
-			case 'd': return &nil_slot_d;
+// TODO runtime error
+//			case 'D': return &nil_slot_D;
+//			case 'd': return &nil_slot_d;
 			case 'f': return &nil_slot_f;
 		}
 		return &nil_slot;
