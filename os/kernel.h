@@ -11,6 +11,8 @@
 /* LOGGING */
 #define objc_log printf
 
+typedef __ptrdiff_t ptrdiff_t;
+
 #define objc_debug_log(...)						\
 		if (OBJC_DEBUG_LOG) {					\
 			objc_log("DEBUG: ");				\

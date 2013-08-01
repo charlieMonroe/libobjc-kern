@@ -1,3 +1,4 @@
+#include "os.h"
 #include "associative.h"
 #include "class_extra.h"
 #include "kernobjc/arc.h"
@@ -49,7 +50,7 @@ struct objc_assoc_fake_class {
 /*
  * Looks for the first fake class in the class hierarchy.
  */
-Class
+static Class
 _objc_find_class_for_object(id object)
 {
 	Class cl = object->isa;
@@ -81,7 +82,7 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
  * Looks for the fake class in the class hierarchy. If not found
  * and create == YES, allocates it and installs the isa pointer.
  */
-Class
+static Class
 _objc_class_for_object(id object, BOOL create)
 {
 	Class superclass = object->isa;
@@ -126,7 +127,7 @@ _objc_class_for_object(id object, BOOL create)
  * Returns a reference to the objc_object_ref_list struct for
  * that particular object, or NULL if none exists and create == NULL.
  */
-struct reference_list *
+static struct reference_list *
 _objc_ref_list_for_object(id object, BOOL create)
 {
 	if (object->isa->flags.meta){
