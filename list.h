@@ -48,8 +48,6 @@
 
 #define M_LIST_TYPE PREFIX_SUFFIX(M_, OBJC_LIST_TYPE_NAME)
 
-MALLOC_DECLARE(M_LIST_TYPE_NAME);
-static MALLOC_DEFINE(M_LIST_TYPE_NAME, "list", "Objective-C List");
 
 
 /*
@@ -107,13 +105,13 @@ struct OBJC_LIST_STRUCTURE_NAME {
  * Creates a new structure (the above one).
  */
 static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _create)(unsigned int count){
-	OBJC_LIST_STRUCTURE_TYPE_NAME *result = objc_zero_alloc(sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + count * sizeof(OBJC_LIST_TYPE), M_LIST_TYPE);
+	OBJC_LIST_STRUCTURE_TYPE_NAME *result = objc_zero_alloc(sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + count * sizeof(OBJC_LIST_TYPE), OBJC_LIST_MALLOC_TYPE);
 	result->size = count;
 	return result;
 }
 
 static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _expand_by)(OBJC_LIST_STRUCTURE_TYPE_NAME *list, unsigned int count){
-	list = objc_realloc(list, sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + (list->size + count) * sizeof(OBJC_LIST_TYPE), M_LIST_TYPE);
+	list = objc_realloc(list, sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + (list->size + count) * sizeof(OBJC_LIST_TYPE), OBJC_LIST_MALLOC_TYPE);
 	list->size += count;
 	return list;
 }
@@ -158,7 +156,7 @@ static inline OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *PREFIX_SUFFIX(OBJC_LIST_
 		list = list->next;
 	}
 	
-	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *objs = objc_alloc(size * sizeof(OBJC_LIST_TYPE*), M_LIST_TYPE);
+	OBJC_LIST_TYPE OBJC_LIST_RETURN_TYPE_REF *objs = objc_alloc(size * sizeof(OBJC_LIST_TYPE*), OBJC_LIST_MALLOC_TYPE);
 	unsigned int counter = 0;
 	list = head;
 	while (list != NULL && counter < size){
@@ -228,7 +226,7 @@ __attribute__((unused)) static void PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME,
 		OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK((OBJC_LIST_TYPE_REF head->list[i]));
 	}
 #endif
-	objc_dealloc(head, M_LIST_TYPE);
+	objc_dealloc(head, OBJC_LIST_MALLOC_TYPE);
 }
 
 #undef OBJC_LIST_TYPE_NAME
@@ -239,3 +237,4 @@ __attribute__((unused)) static void PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME,
 #undef OBJC_LIST_TYPE_REF
 #undef OBJC_LIST_STRUCTURE_CUSTOM_FREE_BLOCK
 #undef M_LIST_TYPE
+#undef OBJC_LIST_MALLOC_TYPE
