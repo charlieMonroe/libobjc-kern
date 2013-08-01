@@ -29,8 +29,8 @@ static void set_buffered_object_at_index(BUFFER_TYPE *cat, unsigned int i)
 		while (i >= buffered_object_overflow_space)
 		{
 			buffered_object_overflow_space <<= 1;
-			buffered_object_overflow = realloc(buffered_object_overflow,
-					buffered_object_overflow_space * sizeof(BUFFER_TYPE*));
+			buffered_object_overflow = objc_realloc(buffered_object_overflow,
+					buffered_object_overflow_space * sizeof(BUFFER_TYPE*), M_BUFFER_TYPE);
 		}
 		buffered_object_overflow[i] = cat;
 	}

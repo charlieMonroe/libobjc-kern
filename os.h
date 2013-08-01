@@ -29,8 +29,6 @@ PRIVATE unsigned int objc_lock_locked_count;
 #define __unsafe_unretained
 #endif
 
-#define _KERNEL
-
 /* Include of the relevant header. */
 #ifndef _KERNEL
 	#include "os/user.h"
