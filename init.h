@@ -10,7 +10,7 @@ PRIVATE void	objc_class_init(void);
 PRIVATE void	objc_dispatch_tables_init(void);
 PRIVATE void	objc_protocol_init(void);
 PRIVATE void	objc_selector_init(void);
-PRIVATE void	objc_exceptions_init(void);
+//PRIVATE void	objc_exceptions_init(void);
 
 
 PRIVATE void	objc_runtime_init(void);

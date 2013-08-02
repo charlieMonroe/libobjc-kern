@@ -3,6 +3,7 @@
 KMOD	= libobjc
 
 SRCS	= kernel_module.c \
+		arc.c \
 		associative.c \
 		category.c \
 		class.c \
@@ -10,6 +11,7 @@ SRCS	= kernel_module.c \
 		class_registry.c \
 		dtable.c \
 		encoding.c \
+		malloc_types.c \
 		message.c \
 		method.c \
 		loader.c \

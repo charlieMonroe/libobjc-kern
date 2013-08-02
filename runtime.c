@@ -34,7 +34,7 @@ void objc_runtime_init(void){
 	objc_class_init();
 	objc_arc_init();
 	objc_protocol_init();
-	objc_exceptions_init();
+//	objc_exceptions_init();
 	
 	objc_runtime_initialized = YES;
 }
