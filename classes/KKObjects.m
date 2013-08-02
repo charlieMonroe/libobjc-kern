@@ -85,7 +85,10 @@
 -(void)dealloc
 {
   // No-op
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-root-class"
 }
+#pragma clang diagnostic pop
 
 -(unsigned int)length
 {
