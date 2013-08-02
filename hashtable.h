@@ -134,12 +134,10 @@ PREFIX(_table_create)(uint32_t capacity
 				      )
 {
 	PREFIX(_table) *table = objc_zero_alloc(sizeof(struct PREFIX(_table_struct)), MAP_MALLOC_TYPE);
-	objc_debug_log("Creating table %p (table_size = %u table_used = %u enum_cnt = %u old = %p table = %p).\n", table, table->table_size, table->table_used, table->enumerator_count, table->old, table->table);
 #if !MAP_TABLE_NO_LOCK
 	MAP_TABLE_LOCK_INIT(&table->lock, lock_name);
 #endif
 	table->table = PREFIX(alloc_cells)(capacity);
-	objc_debug_log("Allocated cells %p.\n", table->table);
 	table->table_size = capacity;
 	return table;
 }
@@ -219,7 +217,6 @@ static inline PREFIX(_table_cell) PREFIX(_table_lookup)(PREFIX(_table) *table,
                                                         uint32_t hash)
 {
 	hash = hash % table->table_size;
-	objc_debug_log("Getting cell at index %u (table size %u)\n", hash, table->table_size);
 	return &table->table[hash];
 }
 
@@ -362,24 +359,17 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 
 static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 {
-	objc_debug_log("Getting cell  from table %p\n", table);
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
-	
-	objc_debug_log("Key %p hashed to %u\n", key, hash);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
-	objc_debug_log("Looked up a cell %p\n", cell);
-	
+
 	// Value does not exist.
 	if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
-		objc_debug_log("Not null cell %p\n", cell);
 		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
-			objc_debug_log("That's the cell! %p\n", cell);
 			return cell;
 		}
 		
-		objc_debug_log("Will be jumping %p\n", cell);
 		uint32_t jump = cell->secondMaps;
 		// Look at each offset defined by the jump table to find the displaced location.
 		for (int hop = __builtin_ffs(jump) ; hop > 0 ; hop = __builtin_ffs(jump))
@@ -397,11 +387,9 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	
 	if (table->old)
 	{
-		objc_debug_log("Old table exists %p\n", table->old);
 		return PREFIX(_table_get_cell)(table->old, key);
 	}
 	
-	objc_debug_log("Return NULL %p\n", cell);
 	return NULL;
 }
 
@@ -450,13 +438,10 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_table_get)(PREFIX(_table)
 		   const void *key)
 {
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
-	objc_debug_log("Got cell %p\n", cell);
 	if (NULL == cell)
 	{
-		objc_debug_log("Cell is null, returning placeholder\n");
 		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
-	objc_debug_log("Cell is not null, returning value %p\n", (void*)cell->value);
 	return MAP_TABLE_REF cell->value;
 }
 __attribute__((unused))
