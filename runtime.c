@@ -16,7 +16,7 @@ PRIVATE unsigned int objc_lock_locked_count = 0;
 
 /* See header for documentation */
 
-void objc_runtime_init(void){
+void objc_runtime_init(void) {
 	if (objc_runtime_initialized){
 		/* Make sure that we don't initialize twice */
 		objc_debug_log("Trying to initialize runtime for the second "
@@ -37,6 +37,17 @@ void objc_runtime_init(void){
 //	objc_exceptions_init();
 	
 	objc_runtime_initialized = YES;
+}
+
+void	objc_runtime_destroy(void) {
+	if (!objc_runtime_initialized) {
+		objc_log("Cannot destroy runtime that hasn't been initialized!\n");
+		return;
+	}
+	
+	objc_rw_lock_destroy(&objc_runtime_lock);
+	
+	/* Call destroys to all other modules. */
 }
 
 

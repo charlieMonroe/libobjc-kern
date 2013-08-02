@@ -42,7 +42,7 @@ static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	return pthread_rwlock_unlock(&lock->lock);
 }
 static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
-  ++objc_lock_destroy_count;
+	++objc_lock_destroy_count;
 	pthread_rwlock_destroy(&lock->lock);
 }
 
