@@ -34,7 +34,7 @@ MALLOC_DEFINE(M_CATEGORY_LIST_TYPE, "category list",
 MALLOC_DEFINE(M_METHOD_DESC_LIST_TYPE, "method description list",
               "Objective-C Method Description List");
 
-MALLOC_DEFINE(M_LOAD_MSG_MAP_TYPE, "void_msg_map",
+MALLOC_DEFINE(M_LOAD_MSG_MAP_TYPE, "load_msg_map",
               "Objective-C +load message table");
 
 MALLOC_DEFINE(M_PROTOCOL_LIST_TYPE, "protocol list",

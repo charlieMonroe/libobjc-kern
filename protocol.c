@@ -560,5 +560,31 @@ protocol_addProperty(Protocol *protocol, const char *name,
 PRIVATE void
 objc_protocol_init(void)
 {
+	objc_debug_log("Initializing protocols.\n");
 	objc_protocols = objc_protocol_table_create(64, "objc_protocol_table");
+}
+
+
+static void
+__objc_protocol_dealloc(Protocol *protocol)
+{
+	objc_debug_log("Deallocating protocol %s\n", protocol->name);
+	
+	// TODO Allocated vs. supplied by loader
+	objc_method_description_list_free(protocol->class_methods);
+	objc_method_description_list_free(protocol->instance_methods);
+	objc_method_description_list_free(protocol->optional_class_methods);
+	objc_method_description_list_free(protocol->optional_instance_methods);
+	objc_property_list_free(protocol->optional_properties);
+	objc_property_list_free(protocol->properties);
+	objc_protocol_list_free(protocol->protocols);
+	
+	objc_dealloc(protocol, M_PROTOCOL_TYPE);
+}
+
+PRIVATE void
+objc_protocol_destroy(void)
+{
+	objc_debug_log("Destroying protocols.\n");
+	objc_protocol_table_destroy(objc_protocols, __objc_protocol_dealloc);
 }
