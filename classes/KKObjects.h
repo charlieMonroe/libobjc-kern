@@ -1,5 +1,7 @@
-
+#pragma clang diagnostic push
+#pragma clang ignored "-Wobjc-root-class"
 @interface KKObject {
+#pragma clang diagnostic pop
   id isa;
   int retain_count;
 }
