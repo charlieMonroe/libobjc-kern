@@ -64,7 +64,7 @@
 	push  %r8
 	push  %r9
 	
-	sub $0x98, %rsp
+#	sub $0x98, %rsp
 #	movups	%xmm0, 0x80(%rsp)
 #	movups	%xmm1, 0x70(%rsp)
 #	movups	%xmm2, 0x60(%rsp)
@@ -89,7 +89,8 @@
 	mov   %rdx, %rsi                     # move _cmd to where the callee expects it to be
 .endif
 
-	.cfi_adjust_cfa_offset 0xD8
+#TODO adjuct the 0xD8 - should be 0x40 (0xd8 - 0x98 == 0x40)
+	.cfi_adjust_cfa_offset 0x40
 	call  CDECL(slowMsgLookup)           # Call the slow lookup function
 	mov   %rax, %r10                     # Load the returned IMP
 
