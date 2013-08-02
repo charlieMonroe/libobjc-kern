@@ -219,7 +219,7 @@ static inline PREFIX(_table_cell) PREFIX(_table_lookup)(PREFIX(_table) *table,
                                                         uint32_t hash)
 {
 	hash = hash % table->table_size;
-	objc_debug_log("Getting cell at index %i\n", hash);
+	objc_debug_log("Getting cell at index %u (table size %u)\n", hash, table->table_size);
 	return &table->table[hash];
 }
 
@@ -365,7 +365,7 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	objc_debug_log("Getting cell  from table %p\n", table);
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
 	
-	objc_debug_log("Key %p hashed to %i\n", key, hash);
+	objc_debug_log("Key %p hashed to %u\n", key, hash);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
 	objc_debug_log("Looked up a cell %p\n", cell);
 	
