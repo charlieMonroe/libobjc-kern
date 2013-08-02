@@ -496,7 +496,9 @@ PREFIX(_next)(PREFIX(_table) *table,
 	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 
-static void PREFIX(_table_destroy)(PREFIX(_table) *table,
+__attribute__((unused))
+static void
+PREFIX(_table_destroy)(PREFIX(_table) *table,
 				   void(*custom_deallocator)(MAP_TABLE_VALUE_TYPE obj))
 {
 	MAP_TABLE_VALUE_TYPE next;
