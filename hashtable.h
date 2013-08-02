@@ -435,10 +435,13 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_table_get)(PREFIX(_table)
 		   const void *key)
 {
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
+	objc_debug_log("Got cell %p\n", cell);
 	if (NULL == cell)
 	{
+		objc_debug_log("Cell is null, returning placeholder\n");
 		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
+	objc_debug_log("Cell is not null, returning value %p\n", (void*)cell->value);
 	return MAP_TABLE_REF cell->value;
 }
 __attribute__((unused))
