@@ -219,6 +219,7 @@ static inline PREFIX(_table_cell) PREFIX(_table_lookup)(PREFIX(_table) *table,
                                                         uint32_t hash)
 {
 	hash = hash % table->table_size;
+	objc_debug_log("Getting cell at index %i\n", hash);
 	return &table->table[hash];
 }
 
@@ -361,15 +362,24 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 
 static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 {
+	objc_debug_log("Getting cell  from table %p\n", table);
 	uint32_t hash = MAP_TABLE_HASH_KEY(key);
+	
+	objc_debug_log("Key %p hashed to %i\n", key, hash);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
+	objc_debug_log("Looked up a cell %p\n", cell);
+	
 	// Value does not exist.
 	if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
+		objc_debug_log("Not null cell %p\n", cell);
 		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
+			objc_debug_log("That's the cell! %p\n", cell);
 			return cell;
 		}
+		
+		objc_debug_log("Will be jumping %p\n", cell);
 		uint32_t jump = cell->secondMaps;
 		// Look at each offset defined by the jump table to find the displaced location.
 		for (int hop = __builtin_ffs(jump) ; hop > 0 ; hop = __builtin_ffs(jump))
@@ -383,10 +393,15 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 			jump &= ~(1 << (hop-1));
 		}
 	}
+	
+	
 	if (table->old)
 	{
+		objc_debug_log("Old table exists %p\n", table->old);
 		return PREFIX(_table_get_cell)(table->old, key);
 	}
+	
+	objc_debug_log("Return NULL %p\n", cell);
 	return NULL;
 }
 
