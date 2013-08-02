@@ -502,6 +502,7 @@ objc_selector_init(void)
 PRIVATE void
 objc_selector_destroy(void)
 {
+	objc_debug_log("Destroying selectors.\n");
 	objc_rw_lock_destroy(&objc_selector_lock);
 	SparseArrayDestroy(objc_selector_sparse);
 	
@@ -516,6 +517,7 @@ objc_selector_destroy(void)
 		}
 		
 		// TODO figure out if it's from loading a module or allocated
+		objc_debug_log("\t\tDestroying selector %s.\n", next->name);
 		objc_dealloc(next, M_SELECTOR_TYPE);
 	}
 	
@@ -525,5 +527,8 @@ objc_selector_destroy(void)
 		objc_dealloc(objc_selector_hashtable->old, M_SELECTOR_MAP_TYPE);
 	}
 	objc_dealloc(objc_selector_hashtable, M_SELECTOR_MAP_TYPE);
+	
+	// TODO there may be more pages allocated
+	objc_dealloc(string_allocator, M_SELECTOR_NAME_TYPE);
 }
 

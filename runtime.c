@@ -45,6 +45,8 @@ void	objc_runtime_destroy(void) {
 		return;
 	}
 	
+	objc_debug_log("Destroying runtime.\n");
+	
 	objc_rw_lock_destroy(&objc_runtime_lock);
 	
 	/* Call destroys to all other modules. */
