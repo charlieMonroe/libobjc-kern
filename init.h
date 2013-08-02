@@ -6,7 +6,10 @@
 PRIVATE extern BOOL  objc_runtime_initialized;
 
 PRIVATE void	objc_arc_init(void);
+
+PRIVATE void	objc_class_destroy(void);
 PRIVATE void	objc_class_init(void);
+
 PRIVATE void	objc_dispatch_tables_init(void);
 PRIVATE void	objc_protocol_init(void);
 

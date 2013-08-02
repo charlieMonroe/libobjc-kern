@@ -496,6 +496,35 @@ PREFIX(_next)(PREFIX(_table) *table,
 	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 
+static void PREFIX(_table_destroy)(PREFIX(_table) *table,
+				   void(*custom_deallocator)(MAP_TABLE_VALUE_TYPE obj))
+{
+	MAP_TABLE_VALUE_TYPE next;
+	void *state = NULL;
+	for (;;) {
+		next = PREFIX(_next)(table,
+				     (struct PREFIX(_table_enumerator)**)&state);
+		if (next == NULL){
+			break;
+		}
+		
+		if (custom_deallocator != NULL) {
+			custom_deallocator(next);
+		}
+	}
+	
+#if !MAP_TABLE_NO_LOCK
+	objc_rw_lock_destroy(table->lock);
+#endif
+	
+	objc_dealloc(table->table, MAP_MALLOC_TYPE);
+	if (table->old != NULL){
+		objc_dealloc(table->old->table, MAP_MALLOC_TYPE);
+		objc_dealloc(table->old, MAP_MALLOC_TYPE);
+	}
+	objc_dealloc(table, MAP_MALLOC_TYPE);
+}
+
 /*
  * Returns the current value for an enumerator.  This is used when you remove
  * objects during enumeration.  It may cause others to be shuffled up the

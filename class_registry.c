@@ -648,3 +648,31 @@ objc_class_init(void)
 		objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY,
 						"objc_load_messages");
 }
+
+static void
+__objc_class_deallocate(Class cl)
+{
+	objc_debug_log("Deallocating class %s.\n", cl->name);
+	
+	SparseArrayDestroy(cl->dtable);
+	SparseArrayDestroy(cl->isa->dtable);
+	
+	if (cl->flags.user_created) {
+		if (cl->flags.fake) {
+			objc_dealloc(cl, M_FAKE_CLASS_TYPE);
+		}else{
+			// TODO the rest of the stuff
+			objc_disposeClassPair(cl);
+		}
+	}
+}
+
+void
+objc_class_destroy(void)
+{
+	objc_debug_log("Destroying classes.\n");
+	
+	objc_class_table_destroy(objc_classes, __objc_class_deallocate);
+	objc_load_messages_table_destroy(objc_load_messages, NULL);
+}
+

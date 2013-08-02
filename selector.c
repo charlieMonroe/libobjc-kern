@@ -525,6 +525,14 @@ objc_selector_init(void)
 								     void_return_types);
 }
 
+static void
+__objc_selector_deallocate(struct objc_selector *selector)
+{
+	// TODO figure out if it's from loading a module or allocated
+	objc_debug_log("\tDestroying selector %s.\n", selector->name);
+	objc_dealloc(selector, M_SELECTOR_TYPE);
+}
+
 PRIVATE void
 objc_selector_destroy(void)
 {
@@ -533,26 +541,8 @@ objc_selector_destroy(void)
 	SparseArrayDestroy(objc_selector_sparse);
 	
 	/* Free all the selectors and the table. */
-	struct objc_selector *next;
-	void *state = NULL;
-	for (;;) {
-		next = objc_selector_next(objc_selector_hashtable,
-					    (struct objc_selector_table_enumerator**)&state);
-		if (next == NULL){
-			break;
-		}
-		
-		// TODO figure out if it's from loading a module or allocated
-		objc_debug_log("\t\tDestroying selector %s.\n", next->name);
-		objc_dealloc(next, M_SELECTOR_TYPE);
-	}
-	
-	objc_dealloc(objc_selector_hashtable->table, M_SELECTOR_MAP_TYPE);
-	if (objc_selector_hashtable->old != NULL){
-		objc_dealloc(objc_selector_hashtable->old->table, M_SELECTOR_MAP_TYPE);
-		objc_dealloc(objc_selector_hashtable->old, M_SELECTOR_MAP_TYPE);
-	}
-	objc_dealloc(objc_selector_hashtable, M_SELECTOR_MAP_TYPE);
+	objc_selector_table_destroy(objc_selector_hashtable,
+				    __objc_selector_deallocate);
 	
 	for (int i = 0; i < string_allocator_next_page_index; ++i) {
 		objc_dealloc(string_allocator_pages[i], M_SELECTOR_NAME_TYPE);

@@ -51,6 +51,7 @@ void	objc_runtime_destroy(void) {
 	
 	/* Call destroys to all other modules. */
 	objc_selector_destroy();
+	objc_class_destroy();
 }
 
 
