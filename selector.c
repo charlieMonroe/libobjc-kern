@@ -54,8 +54,26 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 #include "hashtable.h"
 
 
-/* String allocator stuff.*/
+/* 
+ * String allocator stuff.
+ *
+ * We allocate a page from which we bite a selector name at a time. We assume
+ * 16 pages (~64kB) is enough for all selectors since most of them that get 
+ * loaded from binaries are not allocated at all. This is simply for selectors
+ * created at runtime.
+ */
+#define STRING_ALLOCATOR_MAX_PAGES 16
+
+/* Points to the next index in string_allocator_pages. */
+static unsigned short string_allocator_next_page_index = 0;
+
+/* Pointers to the pages allocated. */
+static void *string_allocator_pages[SELECTOR_MAX_PAGES];
+
+/* Points to the address currently used for the next string. */
 static char *string_allocator = NULL;
+
+/* Bytes remaining on current page. */
 static size_t string_allocator_bytes_remaining = 0;
 
 static objc_rw_lock objc_selector_lock;
@@ -120,8 +138,16 @@ _objc_selector_allocate_string(size_t size)
 		 * This also covers the string_allocator == NULL case.
 		 */
 		
+		objc_assert(string_allocator_next_page_index
+			    <= STRING_ALLOCATOR_MAX_PAGES,
+			    "Too many custom selectors allocated. Increase the "
+			    "STRING_ALLOCATOR_MAX_PAGES number in selector.c.\n");
+		
 		string_allocator = objc_alloc_page(M_SELECTOR_NAME_TYPE);
 		string_allocator_bytes_remaining = PAGE_SIZE;
+		string_allocator_pages[string_allocator_next_page_index] =
+														string_allocator;
+		++string_allocator_next_page_index;
 		
 		if (string_allocator == NULL){
 			return NULL;
@@ -528,7 +554,8 @@ objc_selector_destroy(void)
 	}
 	objc_dealloc(objc_selector_hashtable, M_SELECTOR_MAP_TYPE);
 	
-	// TODO there may be more pages allocated
-	objc_dealloc(string_allocator, M_SELECTOR_NAME_TYPE);
+	for (int i = 0; i < string_allocator_next_page_index; ++i) {
+		objc_dealloc(string_allocator_pages[i], M_SELECTOR_NAME_TYPE);
+	}
 }
 
