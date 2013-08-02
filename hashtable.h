@@ -134,10 +134,12 @@ PREFIX(_table_create)(uint32_t capacity
 				      )
 {
 	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)), MAP_MALLOC_TYPE);
+	objc_debug_log("Creating table %p.\n", table);
 #if !MAP_TABLE_NO_LOCK
 	MAP_TABLE_LOCK_INIT(&table->lock, lock_name);
 #endif
 	table->table = PREFIX(alloc_cells)(capacity);
+	objc_debug_log("Allocated cells %p.\n", table->table);
 	table->table_size = capacity;
 	return table;
 }
