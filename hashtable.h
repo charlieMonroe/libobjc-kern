@@ -514,7 +514,7 @@ static void PREFIX(_table_destroy)(PREFIX(_table) *table,
 	}
 	
 #if !MAP_TABLE_NO_LOCK
-	objc_rw_lock_destroy(table->lock);
+	objc_rw_lock_destroy(&table->lock);
 #endif
 	
 	objc_dealloc(table->table, MAP_MALLOC_TYPE);
