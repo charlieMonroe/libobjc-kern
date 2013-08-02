@@ -446,3 +446,11 @@ objc_arc_init(void)
 	objc_register_tls(&objc_autorelease_pool_tls_key,
 			  (objc_tls_descructor)_objc_cleanup_pools);
 }
+
+void
+objc_arc_destroy(void)
+{
+	objc_rw_lock_destroy(&objc_weak_refs_lock);
+	objc_deregister_tls(objc_autorelease_pool_tls_key);
+}
+

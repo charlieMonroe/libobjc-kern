@@ -73,9 +73,12 @@ static inline void objc_yield(void){
 typedef int objc_tls_key;
 typedef void(*objc_tls_descructor)(void*);
 
-static inline void objc_register_tls(objc_tls_key *key __unused,
+static inline void objc_register_tls(objc_tls_key *key,
 				     objc_tls_descructor destructor){
 	*key = osd_thread_register(destructor);
+}
+static inline void objc_deregister_tls(objc_tls_key key) {
+	osd_thread_deregister(key);
 }
 static inline void *objc_get_tls_for_key(objc_tls_key key){
 	return osd_thread_get(curthread, key);

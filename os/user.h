@@ -89,6 +89,9 @@ static inline void objc_register_tls(objc_tls_key *key,
 				     objc_tls_descructor destructor){
 	pthread_key_create(key, destructor);
 }
+static inline void objc_deregister_tls(objc_tls_key key){
+	pthread_key_delete(key);
+}
 static inline void *objc_get_tls_for_key(objc_tls_key key){
 	return pthread_getspecific(key);
 }

@@ -94,6 +94,15 @@ objc_dispatch_tables_init(void)
 	uninstalled_dtable = SparseArrayNew();
 }
 
+PRIVATE void
+objc_dispatch_tables_destroy(void)
+{
+	objc_debug_log("Destroying dispatch tables.\n");
+	
+	objc_rw_lock_destroy(&initialize_lock);
+	SparseArrayDestroy(uninstalled_dtable);
+}
+
 static BOOL installMethodInDtable(Class class,
                                   Class owner,
                                   SparseArray *dtable,

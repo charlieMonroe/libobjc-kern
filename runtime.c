@@ -53,6 +53,8 @@ void	objc_runtime_destroy(void) {
 	objc_selector_destroy();
 	objc_class_destroy();
 	objc_protocol_destroy();
+	objc_dispatch_tables_destroy();
+	objc_arc_destroy();
 }
 
 
