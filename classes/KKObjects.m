@@ -86,7 +86,7 @@
 {
   // No-op
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wobjc-root-class"
+#pragma clang diagnostic ignored "-Wobjc-missing-super-calls"
 }
 #pragma clang diagnostic pop
 
