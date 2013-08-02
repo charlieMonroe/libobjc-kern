@@ -207,7 +207,6 @@ sel_registerName_direct(struct objc_selector *selector)
 static inline SEL
 _sel_register_name_no_lock(const char *name, const char *types)
 {
-	objc_debug_log("trying to get a selector %s from hashtable %p\n", name, objc_selector_hashtable);;
 	struct objc_selector *selector;
 	selector = objc_selector_table_get(objc_selector_hashtable,
 					   name);
