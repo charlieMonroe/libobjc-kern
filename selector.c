@@ -68,7 +68,7 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 static unsigned short string_allocator_next_page_index = 0;
 
 /* Pointers to the pages allocated. */
-static void *string_allocator_pages[SELECTOR_MAX_PAGES];
+static void *string_allocator_pages[STRING_ALLOCATOR_MAX_PAGES];
 
 /* Points to the address currently used for the next string. */
 static char *string_allocator = NULL;
