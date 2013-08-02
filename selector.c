@@ -23,7 +23,7 @@
 /*
  * The initial capacity for the hash table.
  */
-#define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY 1024
+#define OBJC_SELECTOR_TABLE_INITIAL_CAPACITY ((uint32_t)1024)
 
 /* Initialized in the objc_selector_init(); */
 PRIVATE SEL objc_retain_selector = null_selector;

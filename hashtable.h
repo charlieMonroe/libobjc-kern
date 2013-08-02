@@ -134,7 +134,7 @@ PREFIX(_table_create)(uint32_t capacity
 				      )
 {
 	PREFIX(_table) *table = objc_zero_alloc(sizeof(PREFIX(_table)), MAP_MALLOC_TYPE);
-	objc_debug_log("Creating table %p.\n", table);
+	objc_debug_log("Creating table %p (table_size = %u table_used = %u enum_cnt = %u old = %p table = %p).\n", table, table->table_size, table->table_used, table->enumerator_count, table->old, table->table);
 #if !MAP_TABLE_NO_LOCK
 	MAP_TABLE_LOCK_INIT(&table->lock, lock_name);
 #endif
