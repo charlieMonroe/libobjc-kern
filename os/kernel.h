@@ -50,7 +50,7 @@ static inline void *objc_alloc(size_t size, struct malloc_type *type){
 	return malloc(size, type, M_WAITOK | M_FIRSTFIT);
 }
 static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
-	return malloc(1, type, M_WAITOK | M_ZERO | M_FIRSTFIT);
+	return malloc(1, type, M_ZERO);
 }
 static inline void *objc_realloc(void *mem, size_t size,
 				 struct malloc_type *type){
