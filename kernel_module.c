@@ -5,6 +5,7 @@
 #include <sys/module.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
+#include <sys/linker.h>
 
 #include "os.h"
 #include "kernobjc/types.h"
