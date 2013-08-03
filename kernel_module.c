@@ -17,6 +17,15 @@ static int event_handler(struct module *module, int event, void *arg) {
 	switch (event) {
 	case MOD_LOAD:
 		objc_runtime_init();
+		
+		/* Attempt to load the runtime's basic classes. */
+		struct linker_file *file = module_file(module);
+		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
+			
+		caddr_t objc_module = linker_file_lookup_symbol(file,
+								".objc_module",
+								TRUE);
+		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
 		break;
 	case MOD_UNLOAD:
 		objc_runtime_destroy();
