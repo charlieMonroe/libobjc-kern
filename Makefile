@@ -3,8 +3,6 @@ CC=~/build/Debug+Asserts/bin/clang
 CFLAGS  += -fobjc-runtime=kernel-runtime
 CFLAGS	+=  -wobjc-root-class
 
-MAKEOBJDIR = ~/objc-build/
-
 KMOD	= libobjc
 
 SRCS	= kernel_module.c \
@@ -26,7 +24,7 @@ SRCS	= kernel_module.c \
 		runtime.c \
 		selector.c \
 		sarray2.c \
-		classes/KKObjects.m
+		KKObjects.m
 		
 .include <bsd.kmod.mk>
 
