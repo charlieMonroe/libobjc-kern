@@ -4090,6 +4090,8 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
 	  std::string Name = iter->first.getAsString();
 		std::string Types = i->first;
 		
+		printf("Creating a selector reference [%s; %s]\n", Name.c_str(), Types.c_str());
+		
       Elements.push_back(MakeConstantString(Name));
 		Elements.push_back(MakeConstantString(Types));
 
