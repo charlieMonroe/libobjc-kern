@@ -4049,6 +4049,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   llvm::PointerType *PtrToSymbolTableStructTy;
   
   SelRefStructTy = llvm::StructType::get(PtrToInt8Ty, // Selector name
+										 PtrToInt8Ty, // Selector types
                                          PtrToSelectorTy, // Pointer to static SEL
                                          NULL);
   SymbolTableStructTy = llvm::StructType::get(IntTy, // Number of selector refs
@@ -4086,15 +4087,11 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
         llvm_unreachable("Selector has no type!");
       
       
-      StringRef Name = StringRef(iter->first.getAsString());
-      StringRef Types = StringRef(i->first);
-      Twine NameTypesTwine = Name + StringRef("\0", 1) + Types + StringRef("\0", 1);
-      SmallVector<char, 32> Output;
-      StringRef NameTypes = NameTypesTwine.toStringRef(Output);
-      
-      llvm::Constant *SelName = CGM.GetAddrOfConstantString(NameTypes, ".objc_sel_name");
-      SelName = llvm::ConstantExpr::getGetElementPtr(SelName, Zeros);
-      Elements.push_back(SelName);
+	  std::string Name = iter->first.getAsString();
+		std::string Types = i->first;
+		
+      Elements.push_back(MakeConstantString(Name));
+		Elements.push_back(MakeConstantString(Types));
 
       // Second is the global variable - we supply a pointer to it to the
       // runtime which then fixes it

@@ -262,82 +262,6 @@ _sel_register_name_no_lock(const char *name, const char *types)
 	return selector->sel_uid;
 }
 
-/*
- * Assumes the lock is locked.
- *
- * Here is the issue: we have a objc_selector_reference structure pointer,
- * where the name is concatenated with types just as we need, however, the
- * actual sel_uid is there a pointer to the actual 16-bit int.
- *
- * The pointer points to a static variable which is then used in the module
- * for message sends, etc. This means that it is necessary to perform the
- * following steps:
- *
- * 1) See if a selector with this name already is registered. If yes, check
- *    if the types match. If not -> abort(), if yes, just update *sel_uid.
- * 2) If the selector is not registered, register it directly - add it to
- *    the hash table and get the UID, however, no copying should be
- *    performed. Also the *sel_uid must be updated.
- */
-static inline void
-_sel_register_selector_reference(struct objc_selector_reference * ref)
-{
-	struct objc_selector *selector;
-	selector = objc_selector_table_get(objc_selector_hashtable,
-					   ref->selector_name);
-	if (selector != NULL)
-	{
-		/* There already is a selector with this name! */
-		const char *existing_sel_types = _objc_selector_get_types(selector);
-		const char *new_sel_types;
-		new_sel_types = _objc_selector_get_types((struct objc_selector*)ref);
-		BOOL typesEqual = objc_strings_equal(existing_sel_types, new_sel_types);
-		objc_assert(typesEqual,
-					"Registering selector %s with types %s failed as "
-					"the same selector already exists with types %s!\n",
-					ref->selector_name, new_sel_types, existing_sel_types);
-		
-		/* Update the UID. */
-		*(ref->sel_uid) = selector->sel_uid;
-	}
-	else
-	{
-		/* Not found, register directly. */
-		
-		/* First, allocate the UID and assign it, clear the pointer. */
-		SEL sel_uid = _sel_allocate_sel_uid();
-		*(ref->sel_uid) = sel_uid;
-		ref->sel_uid = NULL;
-		
-		/* Cast to selector struct. */
-		selector = (struct objc_selector*)objc_alloc(
-								sizeof(struct objc_selector),
-							     M_SELECTOR_TYPE);
-		selector->sel_uid = sel_uid;
-		size_t len = objc_strlen(ref->selector_name) + 1;
-		len += objc_strlen(ref->selector_name + len) + 1;
-		
-		char *name = _objc_selector_allocate_string(len);
-		objc_copy_memory(name, ref->selector_name, len);
-		selector->name = name;
-		
-		/* Insert into hash table. */
-		if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
-			/*
-			 * In this case, unlike user-inserted selectors we actually abort
-			 * since this may have fatal consequences (the same selector in
-			 * multiple modules could have different sel_uids).
-			 */
-			objc_abort("Failed to insert selector %s!\n", selector->name);
-		}
-		
-		objc_debug_log("Registering selector %s to sel_uid %d.\n",
-			       selector->name, selector->sel_uid);
-		
-		SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
-	}
-}
-
 static inline void
 _sel_register_from_method_list_no_lock(objc_method_list *list)
 {
@@ -466,18 +390,20 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
   objc_debug_log("Registering selectors from array[%i]: %p\n", count, selectors);
   
 	for (int i = 0; i < count; ++i){
-    struct objc_selector_reference *selector = &selectors[i];
-    
-    _sel_register_selector_reference(selector);
-    
-    const char *name = selector->selector_name;
-    const char *types = _objc_selector_get_types((struct objc_selector*)selector);
-    
-    objc_debug_log("Registering selector[%i]: %p\n", i, selector);
-    objc_debug_log("\tName: %p (%s)\n", name, name);
-    objc_debug_log("\tTypes: %p (%s)\n", types, types);
+		struct objc_selector_reference *selector = &selectors[i];
+		
+		SEL sel = _sel_register_name_no_lock(selector->selector_name,
+											 selector->selector_types);
+		*(selector->sel_uid) = sel;
+		
+		const char *name = selector->selector_name;
+		const char *types = selector->selector_types;
+		
+		objc_debug_log("Registering selector[%i]: %p\n", i, selector);
+		objc_debug_log("\tName: %p (%s)\n", name, name);
+		objc_debug_log("\tTypes: %p (%s)\n", types, types);
  		objc_debug_log("Registered as (SEL)%i\n",
-                   (int)(((struct objc_selector*)selector)->sel_uid));
+					   (int)(((struct objc_selector*)selector)->sel_uid));
 	}
 }
 

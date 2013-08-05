@@ -29,9 +29,10 @@ objc_selectors_equal(SEL selector1, SEL selector2)
 }
 
 struct objc_selector_reference {
-	/* Selector name + '\0' + types. */
+	/* Selector name and types. */
 	const char *selector_name;
-		
+	const char *selector_types;
+	
 	/*
 	 * Pointer to the variable with the actual SEL, which gets populated by the
 	 * runtme.
