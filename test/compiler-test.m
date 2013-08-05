@@ -5,10 +5,10 @@
 
 
 typedef struct {
-  double x, y, width, height;
+  long x, y, width, height;
 } KKRect;
 
-static inline KKRect KKRectMake(double x, double y, double width, double height) {
+static inline KKRect KKRectMake(long x, long y, long width, long height) {
   KKRect rect;
   rect.x = x;
   rect.y = y;
@@ -30,7 +30,7 @@ static inline BOOL KKRectsEqual(KKRect rect1, KKRect rect2){
 
 
 @property (readwrite, assign) int integer;
-@property (readwrite, assign) double noninteger;
+// @property (readwrite, assign) double noninteger;
 @property (readwrite, assign) KKRect structure;
 
 @end
@@ -56,10 +56,10 @@ void compiler_test(void) {
   [test setInteger:5];
   objc_assert([test integer] == 5, "Failed integer assignment\n");
   
-  [test setNoninteger:4.32];
-  objc_assert([test noninteger] == 4.32, "Failed non-integer assignment\n");
+//  [test setNoninteger:4.32];
+//  objc_assert([test noninteger] == 4.32, "Failed non-integer assignment\n");
   
-  KKRect rect = KKRectMake(1.0, 2.0, 3.0, 4.0);
+  KKRect rect = KKRectMake(1, 2, 3, 4);
   [test setStructure:rect];
   objc_assert(KKRectsEqual(rect, [test structure]), "Failed structure assignment\n");
   
