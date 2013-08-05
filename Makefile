@@ -29,7 +29,6 @@ SRCS	= kernel_module.c \
 		KKObjects.m \
 		test/test.c \
 		test/ao-test.m \
-		test/category-test.m \
 		test/compiler-test.m \
 		test/handmade-class-test.m \
 		test/ivar-test.m \
