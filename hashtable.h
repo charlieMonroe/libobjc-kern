@@ -501,17 +501,11 @@ static void
 PREFIX(_table_destroy)(PREFIX(_table) *table,
 				   void(*custom_deallocator)(MAP_TABLE_VALUE_TYPE obj))
 {
-	MAP_TABLE_VALUE_TYPE next;
-	void *state = NULL;
-	for (;;) {
-		next = PREFIX(_next)(table,
-				     (struct PREFIX(_table_enumerator)**)&state);
-		if (next == NULL){
-			break;
-		}
-		
-		if (custom_deallocator != NULL) {
-			custom_deallocator(next);
+	if (custom_deallocator != NULL) {
+		for (int i = 0; i < table->table_size; ++i){
+			if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(table->table[i].value)){
+				custom_deallocator(table->table[i].value);
+			}
 		}
 	}
 	
