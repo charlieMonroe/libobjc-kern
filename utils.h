@@ -127,7 +127,7 @@ objc_hash_pointer(const void *ptr)
 /*
  * Copies memory from source to destination.
  */
-#define objc_copy_memory memcpy
+#define objc_copy_memory(dest, src, len) memcpy(dest, src, len)
 
 /*
  * Clears memory by writing zeroes everywhere.

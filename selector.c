@@ -62,6 +62,7 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
  * loaded from binaries are not allocated at all. This is simply for selectors
  * created at runtime.
  */
+// TODO more pages necessary. We're actually now copying the memory
 #define STRING_ALLOCATOR_MAX_PAGES 16
 
 /* Points to the next index in string_allocator_pages. */
@@ -281,50 +282,60 @@ _sel_register_name_no_lock(const char *name, const char *types)
 static inline void
 _sel_register_selector_reference(struct objc_selector_reference * ref)
 {
-  struct objc_selector *selector;
+	struct objc_selector *selector;
 	selector = objc_selector_table_get(objc_selector_hashtable,
-                                     ref->selector_name);
-  if (selector != NULL)
-  {
-    /* There already is a selector with this name! */
-    const char *existing_sel_types = _objc_selector_get_types(selector);
-    const char *new_sel_types = _objc_selector_get_types((struct objc_selector*)ref);
-    BOOL typesEqual = objc_strings_equal(existing_sel_types, new_sel_types);
-    objc_assert(typesEqual, "Registering selector %s with types %s failed as "
-                "the same selector already exists with types %s!\n",
-                ref->selector_name, new_sel_types, existing_sel_types);
-    
-    /* Update the UID. */
-    *(ref->sel_uid) = selector->sel_uid;
-  }
-  else
-  {
-    /* Not found, register directly. */
-    
-    /* First, allocate the UID and assign it, clear the pointer. */
-    SEL sel_uid = _sel_allocate_sel_uid();
-    *(ref->sel_uid) = sel_uid;
-    ref->sel_uid = NULL;
-    
-    /* Cast to selector struct. */
-    selector = (struct objc_selector*)ref;
-    selector->sel_uid = sel_uid;
-    
-    /* Insert into hash table. */
-    if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
-      /* 
-       * In this case, unlike user-inserted selectors we actually abort since
-       * this may have fatal consequences (the same selector in multiple
-       * modules could have different sel_uids).
-       */
-      objc_abort("Failed to insert selector %s!\n", selector->name);
-    }
-    
-    objc_debug_log("Registering selector %s to sel_uid %d.\n",
-                   selector->name, selector->sel_uid);
-    
-    SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
-  }
+					   ref->selector_name);
+	if (selector != NULL)
+	{
+		/* There already is a selector with this name! */
+		const char *existing_sel_types = _objc_selector_get_types(selector);
+		const char *new_sel_types;
+		new_sel_types = _objc_selector_get_types((struct objc_selector*)ref);
+		BOOL typesEqual = objc_strings_equal(existing_sel_types, new_sel_types);
+		objc_assert(typesEqual,
+					"Registering selector %s with types %s failed as "
+					"the same selector already exists with types %s!\n",
+					ref->selector_name, new_sel_types, existing_sel_types);
+		
+		/* Update the UID. */
+		*(ref->sel_uid) = selector->sel_uid;
+	}
+	else
+	{
+		/* Not found, register directly. */
+		
+		/* First, allocate the UID and assign it, clear the pointer. */
+		SEL sel_uid = _sel_allocate_sel_uid();
+		*(ref->sel_uid) = sel_uid;
+		ref->sel_uid = NULL;
+		
+		/* Cast to selector struct. */
+		selector = (struct objc_selector*)objc_alloc(
+								sizeof(struct objc_selector),
+							     M_SELECTOR_TYPE);
+		selector->sel_uid = sel_uid;
+		size_t len = objc_strlen(ref->selector_name) + 1;
+		len += objc_strlen(ref->selector_name + len) + 1;
+		
+		char *name = _objc_selector_allocate_string(len);
+		objc_copy_memory(name, ref->selector_name, len);
+		selector->name = name;
+		
+		/* Insert into hash table. */
+		if (objc_selector_insert(objc_selector_hashtable, selector) == 0){
+			/*
+			 * In this case, unlike user-inserted selectors we actually abort
+			 * since this may have fatal consequences (the same selector in
+			 * multiple modules could have different sel_uids).
+			 */
+			objc_abort("Failed to insert selector %s!\n", selector->name);
+		}
+		
+		objc_debug_log("Registering selector %s to sel_uid %d.\n",
+			       selector->name, selector->sel_uid);
+		
+		SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
+	}
 }
 
 static inline void
