@@ -100,7 +100,7 @@ objc_dispatch_tables_destroy(void)
 	objc_debug_log("Destroying dispatch tables.\n");
 	
 	objc_rw_lock_destroy(&initialize_lock);
-	SparseArrayDestroy(uninstalled_dtable);
+	SparseArrayDestroy(&uninstalled_dtable);
 }
 
 static BOOL installMethodInDtable(Class class,
@@ -194,7 +194,7 @@ static void mergeMethodsFromSuperclass(Class super, Class cls, SparseArray *meth
 		installMethodsInClass(subclass, super, newMethods, YES);
 		// Recursively add the methods to the subclass's subclasses.
 		mergeMethodsFromSuperclass(super, subclass, newMethods);
-		SparseArrayDestroy(newMethods);
+		SparseArrayDestroy(&newMethods);
 	}
 }
 
@@ -206,7 +206,7 @@ static inline void _add_method_list_to_class(Class cls, objc_method_list *list,
 	installMethodsInClass(cls, cls, methods, YES);
 	// Methods now contains only the new methods for this class.
 	mergeMethodsFromSuperclass(cls, cls, methods);
-	SparseArrayDestroy(methods);
+	SparseArrayDestroy(&methods);
 	checkARCAccessors(cls);
 }
 
@@ -295,9 +295,9 @@ PRIVATE dtable_t objc_copy_dtable_for_class(dtable_t old, Class cls)
 	return SparseArrayCopy(old);
 }
 
-PRIVATE void free_dtable(dtable_t dtable)
+PRIVATE void free_dtable(dtable_t *dtable)
 {
-	if (dtable != uninstalled_dtable){
+	if (*dtable != uninstalled_dtable){
 		SparseArrayDestroy(dtable);
 	}
 }

@@ -549,7 +549,7 @@ objc_selector_destroy(void)
 {
 	objc_debug_log("Destroying selectors.\n");
 	objc_rw_lock_destroy(&objc_selector_lock);
-	SparseArrayDestroy(objc_selector_sparse);
+	SparseArrayDestroy(&objc_selector_sparse);
 	
 	/* Free all the selectors and the table. */
 	objc_selector_table_destroy(objc_selector_hashtable,

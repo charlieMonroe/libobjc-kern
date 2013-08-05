@@ -465,8 +465,8 @@ objc_disposeClassPair(Class cls)
 	
 	objc_property_list_free(cls->properties);
 	
-	free_dtable(cls->dtable);
-	free_dtable(meta->dtable);
+	free_dtable((dtable_t*)&cls->dtable);
+	free_dtable((dtable_t*)&meta->dtable);
 	
 	objc_class_table_set(objc_classes, cls->name, NULL);
 	
@@ -654,11 +654,9 @@ __objc_class_deallocate(Class cl)
 {
 	objc_debug_log("Deallocating class %s.\n", cl->name);
 	
-	SparseArrayDestroy(cl->dtable);
-	SparseArrayDestroy(cl->isa->dtable);
-	
 	if (cl->flags.user_created) {
 		if (cl->flags.fake) {
+			SparseArrayDestroy((dtable_t*)&cl->dtable);
 			objc_dealloc(cl, M_FAKE_CLASS_TYPE);
 		}else{
 			// TODO the rest of the stuff

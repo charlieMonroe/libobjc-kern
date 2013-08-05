@@ -68,7 +68,7 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	
 	objc_remove_associated_objects(self);
 	objc_rw_lock_destroy(&list->lock);
-	free_dtable(cl->dtable);
+	free_dtable(&cl->dtable);
 	
 	objc_dealloc(cl, M_FAKE_CLASS_TYPE);
 }

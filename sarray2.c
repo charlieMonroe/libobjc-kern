@@ -180,7 +180,7 @@ PRIVATE void SparseArrayInsert(SparseArray * sarray, uint16_t index, void *value
 		{
 			// Copy the copy-on-write part of the tree
 			sarray->data[i] = SparseArrayCopy(child);
-			SparseArrayDestroy(child);
+			SparseArrayDestroy(&child);
 			child = sarray->data[i];
 		}
 		SparseArrayInsert(child, index, value);
@@ -215,26 +215,28 @@ PRIVATE SparseArray *SparseArrayCopy(SparseArray * sarray)
 	return copy;
 }
 
-PRIVATE void SparseArrayDestroy(SparseArray * sarray)
+PRIVATE void SparseArrayDestroy(SparseArray **sarray)
 {
 	// Don't really delete this sarray if its ref count is > 0
-	if (sarray == &EmptyArray || 
-	    sarray == &EmptyArray8 || 
-		(__sync_sub_and_fetch(&sarray->refCount, 1) > 0))
+	if (*sarray == &EmptyArray ||
+	    *sarray == &EmptyArray8 ||
+		(__sync_sub_and_fetch(&(*sarray)->refCount, 1) > 0))
  	{
 		return;
 	}
 
-	if(sarray->shift > 0)
+	if((*sarray)->shift > 0)
 	{
-		uint16_t max = (sarray->mask >> sarray->shift) + 1;
+		uint16_t max = ((*sarray)->mask >> (*sarray)->shift) + 1;
 		for(uint16_t i=0 ; i<max ; i++)
 		{
-			SparseArrayDestroy((SparseArray*)sarray->data[i]);
+			SparseArrayDestroy((SparseArray**)&((*sarray)->data[i]));
 		}
 	}
-	objc_dealloc(sarray->data, M_SPARSE_ARRAY_TYPE);
-	objc_dealloc(sarray, M_SPARSE_ARRAY_TYPE);
+	
+	objc_dealloc((*sarray)->data, M_SPARSE_ARRAY_TYPE);
+	objc_dealloc((*sarray), M_SPARSE_ARRAY_TYPE);
+	*sarray = NULL;
 }
 
 PRIVATE int SparseArraySize(SparseArray *sarray)

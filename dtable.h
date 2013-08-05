@@ -127,6 +127,6 @@ void dtable_add_method_list_to_class(Class cls,
 /*
  * Destroys a dtable.
  */
-void free_dtable(dtable_t dtable);
+void free_dtable(dtable_t *dtable);
 
 PRIVATE dtable_t objc_copy_dtable_for_class(dtable_t old, Class cls);

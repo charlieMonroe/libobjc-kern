@@ -103,7 +103,7 @@ PRIVATE void SparseArrayInsert(SparseArray * sarray, uint16_t index, void * valu
  * Destroy the sparse array.  Note that calling this while other threads are
  * performing lookups is guaranteed to break.
  */
-PRIVATE void SparseArrayDestroy(SparseArray * sarray);
+PRIVATE void SparseArrayDestroy(SparseArray **sarray);
 /*
  * Iterate through the array.  Returns the next non-NULL value after index and
  * sets index to the following value.  For example, an array containing values
