@@ -402,8 +402,8 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
 		objc_debug_log("Registering selector[%i]: %p\n", i, selector);
 		objc_debug_log("\tName: %p (%s)\n", name, name);
 		objc_debug_log("\tTypes: %p (%s)\n", types, types);
- 		objc_debug_log("Registered as (SEL)%i\n",
-					   (int)(((struct objc_selector*)selector)->sel_uid));
+ 		objc_debug_log("Registered as (SEL)%i, updating value at %p\n",
+					   (int)(sel), selector->sel_uid);
 	}
 }
 

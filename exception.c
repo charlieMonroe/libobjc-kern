@@ -25,6 +25,10 @@ void objc_throw_exception(id exception){
 		return;
 	}
 	
+	objc_debug_log("Throwing exception %p [%s]\n",
+				   exception,
+				   object_getClassName(exception));
+	
 	struct objc_exception_handler *handler;
 	handler = objc_installed_exception_handler();
 	if (handler == NULL){

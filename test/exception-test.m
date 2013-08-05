@@ -13,18 +13,21 @@ static void run_exception_test_for_class(Class cl){
 	Class exceptionClass = Nil;
 	
 	TRY_CATCH_FINALLY({
+		objc_debug_log("\t\tTry block [%s]\n", class_getName(cl));
 		wasInTry = YES;
 		id exception = class_createInstance(cl, 0);
 		objc_throw_exception(exception);
 	},
 	/* CATCH */
-	if (object_getClass(exception) == ExceptionClass) {
+	objc_debug_log("\t\tCatch block [%s]\n", class_getName(cl));
+    if (object_getClass(exception) == ExceptionClass) {
 		exceptionClass = ExceptionClass;
 	}else if (object_getClass(exception) == OtherExceptionClass){
 		exceptionClass = OtherExceptionClass;
 	},
 	/* FINALLY */
 	{
+		objc_debug_log("\t\tFinally block [%s]\n", class_getName(cl));
 		wasInFinally = YES;
 	});
 	
@@ -34,6 +37,7 @@ static void run_exception_test_for_class(Class cl){
 }
 
 
+void exception_test(void);
 void exception_test(void){
 	ExceptionClass = objc_allocateClassPair(Nil, "Exception", 0);
 	objc_registerClassPair(ExceptionClass);
