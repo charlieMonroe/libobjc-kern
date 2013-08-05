@@ -1,4 +1,4 @@
-#import "../classes/KKObjects.h"
+#import "../KKObjects.h"
 
 #include "../kernobjc/runtime.h"
 #include "../types.h"

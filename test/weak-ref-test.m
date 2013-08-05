@@ -3,7 +3,7 @@
 #include "../types.h"
 #include "../class_registry.h"
 #include "../class.h"
-#import "../classes/KKObjects.h"
+#import "../KKObjects.h"
 #include "../selector.h"
 #include "../kernobjc/runtime.h"
 #include "../message.h"

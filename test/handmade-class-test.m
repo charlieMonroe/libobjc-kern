@@ -1,5 +1,5 @@
 #include "../kernobjc/runtime.h"
-#import "../classes/KKObjects.h"
+#import "../KKObjects.h"
 #include "../selector.h"
 #include "../os.h"
 
