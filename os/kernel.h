@@ -76,7 +76,9 @@ static inline void *objc_malloc(size_t size,
 	void *memory = NULL;
 	do {
 		memory = malloc(size, type, M_NOWAIT | other_flags);
-		objc_yield();
+		if (memory == NULL) {
+			objc_yield();
+		}
 	} while (memory == NULL);
 	return memory;
 }
