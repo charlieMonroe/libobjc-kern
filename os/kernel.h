@@ -44,25 +44,6 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
 	rw_destroy(lock);
 }
 
-
-/* MEMORY */
-static inline void *objc_alloc(size_t size, struct malloc_type *type){
-	return malloc(size, type, M_WAITOK);
-}
-static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
-	return malloc(size, type, M_WAITOK | M_ZERO);
-}
-static inline void *objc_realloc(void *mem, size_t size,
-				 struct malloc_type *type){
-	return realloc(mem, size, type, 0);
-}
-static inline void *objc_alloc_page(struct malloc_type *type){
-	return objc_alloc(PAGE_SIZE, type);
-}
-static inline void objc_dealloc(void *mem, struct malloc_type *type){
-	free(mem, type);
-}
-
 /* THREAD */
 static inline void objc_yield(void){
 	pause("objc_yield", 0);
@@ -86,4 +67,35 @@ static inline void *objc_get_tls_for_key(objc_tls_key key){
 static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
 	osd_thread_set(curthread, key, data);
 }
+
+/* MEMORY */
+static inline void *objc_malloc(size_t size,
+				struct malloc_type *type,
+				int other_flags)
+{
+	void *memory = NULL;
+	do {
+		memory = malloc(size, type, M_NOWAIT | other_flags);
+		objc_yield();
+	} while (memory == NULL);
+	return memory;
+}
+static inline void *objc_alloc(size_t size, struct malloc_type *type){
+	return objc_malloc(size, type, 0);
+}
+static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
+	return objc_malloc(size, type, M_ZERO);
+}
+static inline void *objc_realloc(void *mem, size_t size,
+				 struct malloc_type *type){
+	return realloc(mem, size, type, 0);
+}
+static inline void *objc_alloc_page(struct malloc_type *type){
+	return objc_alloc(PAGE_SIZE, type);
+}
+static inline void objc_dealloc(void *mem, struct malloc_type *type){
+	free(mem, type);
+}
+
+
 
