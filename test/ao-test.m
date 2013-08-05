@@ -8,6 +8,7 @@
 #include "../kernobjc/object.h"
 
 
+void associated_objects_test(void);
 void associated_objects_test(void){
   typedef struct {
     Class isa;

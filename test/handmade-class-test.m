@@ -27,6 +27,7 @@ static void setIvar(MyClass *self, SEL _cmd, id value){
 	self->my_ivar = value;
 }
 
+void handmade_class_test(void);
 void handmade_class_test(void){
   typedef struct {
     Class isa;

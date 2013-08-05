@@ -49,6 +49,7 @@ static inline BOOL KKRectsEqual(KKRect rect1, KKRect rect2){
 @end
 
 
+void compiler_test(void);
 void compiler_test(void) {
   KKTest *test = [[KKTest alloc] init];
   

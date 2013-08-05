@@ -39,6 +39,7 @@ static void weak_ref_test_compiler(void){
 }
 
 
+void weak_ref_test(void);
 void weak_ref_test(void){
   weak_ref_test_manual();
   weak_ref_test_compiler();

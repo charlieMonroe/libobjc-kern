@@ -12,8 +12,5 @@
 
 id		objc_msgSend(id receiver, SEL selector, ...);
 
-void		objc_msgSend_stret(void *ptr, id receiver, SEL selector, ...);
-
-
 
 #endif /* !LIBKERNOBJC_MESSAGE_H */

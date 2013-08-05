@@ -2,6 +2,7 @@
 #include "../kernobjc/runtime.h"
 #include "../os.h"
 
+void ivar_test(void);
 void ivar_test(void){
   typedef struct {
     id isa;

@@ -13,7 +13,10 @@ static void print_method_list(struct objc_method_list_struct *methods){
 	for (int i = 0; i < methods->size; ++i){
 		printf("\t%s(%d) - %p\n",
 		       sel_getName(methods->list[i].selector),
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wobjc-root-class"
 		       (int)methods->list[i].selector,
+#pragma clang diagnostic pop
 		       methods->list[i].implementation);
 	}
 }
@@ -64,7 +67,8 @@ void handmade_class_test(void);
 void exception_test(void);
 void compiler_test(void);
 
-int main(int argc, const char * argv[])
+void run_tests(void);
+void run_tests(void)
 {
 	list_classes();
 	
@@ -78,7 +82,5 @@ int main(int argc, const char * argv[])
 	printf("Total number of locks created:              %d\n", objc_lock_count);
   printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
-	
-	return 0;
 }
 
