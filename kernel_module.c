@@ -13,7 +13,7 @@
 #include "init.h"
 #include "loader.h"
 
-extern void run_tests(void);
+extern void associated_objects_test(void);
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -30,7 +30,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 								TRUE);
 		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
 		_objc_load_module((struct objc_loader_module*)objc_module);
-		run_tests();
+		associated_objects_test();
 		break;
 	case MOD_UNLOAD:
 		objc_runtime_destroy();

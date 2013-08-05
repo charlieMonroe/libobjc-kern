@@ -26,7 +26,7 @@ static inline const char *objc_rw_lock_get_name(objc_rw_lock *lock){
 	return lock->lock_object.lo_name;
 }
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
-	sx_init(lock, name);
+	sx_init_flags(lock, name, SX_RECURSE);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
 	sx_slock(lock);

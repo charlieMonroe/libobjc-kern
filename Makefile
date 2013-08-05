@@ -29,12 +29,12 @@ SRCS	= kernel_module.c \
 		selector.c \
 		sarray2.c \
 		KKObjects.m \
-		test/test.c \
-		test/ao-test.m \
-		test/compiler-test.m \
-		test/handmade-class-test.m \
-		test/ivar-test.m \
-		test/weak-ref-test.m
+		test/ao-test.m 
+#		test/test.c \
+#		test/compiler-test.m \
+#		test/handmade-class-test.m \
+#		test/ivar-test.m \
+#		test/weak-ref-test.m
 		
 .include <bsd.kmod.mk>
 
