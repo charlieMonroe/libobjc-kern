@@ -4,6 +4,8 @@ CC=~/build/Debug+Asserts/bin/clang
 CFLAGS  += -fobjc-runtime=kernel-runtime
 CFLAGS	+= -wobjc-root-class
 CFLAGS	+= -O0
+CFLAGS	+= -msoft-float
+CFLAGS += -lsoft-fp
 
 KMOD	= libobjc
 
