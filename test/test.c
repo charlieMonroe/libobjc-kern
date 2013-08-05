@@ -1,5 +1,3 @@
-#import "../KKObjects.h"
-
 #include "../kernobjc/runtime.h"
 #include "../types.h"
 
@@ -13,10 +11,7 @@ static void print_method_list(struct objc_method_list_struct *methods){
 	for (int i = 0; i < methods->size; ++i){
 		printf("\t%s(%d) - %p\n",
 		       sel_getName(methods->list[i].selector),
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wobjc-root-class"
 		       (int)methods->list[i].selector,
-#pragma clang diagnostic pop
 		       methods->list[i].implementation);
 	}
 }

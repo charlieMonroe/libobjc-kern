@@ -1,13 +1,5 @@
-#include "../os.h"
-#include "../kernobjc/types.h"
-#include "../types.h"
-#include "../class_registry.h"
-#include "../class.h"
 #import "../KKObjects.h"
-#include "../selector.h"
 #include "../kernobjc/runtime.h"
-#include "../message.h"
-#include "../associative.h"
 
 static void weak_ref_test_manual(void){
   typedef struct {
