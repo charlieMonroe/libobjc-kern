@@ -3,7 +3,7 @@
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/lock.h>
-#include <sys/rwlock.h>
+#include <sys/sx.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/osd.h>
@@ -20,28 +20,28 @@ typedef __ptrdiff_t ptrdiff_t;
 		}
 
 /* LOCKING */
-typedef struct rwlock objc_rw_lock;
+typedef struct sx objc_rw_lock;
 
 static inline const char *objc_rw_lock_get_name(objc_rw_lock *lock){
 	return lock->lock_object.lo_name;
 }
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
-	rw_init(lock, name);
+	sx_init(lock, name);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
-	rw_rlock(lock);
+	sx_slock(lock);
 	return 0;
 }
 static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
-	rw_wlock(lock);
+	sx_xlock(lock);
 	return 0;
 }
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
-	rw_unlock(lock);
+	sx_unlock(lock);
 	return 0;
 }
 static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
-	rw_destroy(lock);
+	sx_destroy(lock);
 }
 
 /* THREAD */
@@ -75,7 +75,7 @@ static inline void *objc_malloc(size_t size,
 {
 	void *memory = NULL;
 	do {
-		memory = malloc(size, type, M_NOWAIT | other_flags);
+		memory = malloc(size, type, M_WAITOK | other_flags);
 		if (memory == NULL) {
 			objc_yield();
 		}
