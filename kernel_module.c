@@ -6,6 +6,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/linker.h>
+#include <sys/elf.h>
 
 #include "os.h"
 #include "kernobjc/types.h"
@@ -13,13 +14,30 @@
 #include "init.h"
 #include "loader.h"
 
+
 struct mod {
 	const char *name;
 	void *symtab;
 	int version;
 };
 
-SET_DECLARE(objc_module_list, struct mod);
+
+struct dl_phdr_info {
+	void *dlpi_addr;
+	const char *dlpi_name;
+	void *smth;
+	Elf_Half dlpi_phnum;
+};
+
+typedef int (*__dl_iterate_hdr_callback)(struct dl_phdr_info *, size_t, void*);
+extern int dl_iterate_phdr(__dl_iterate_hdr_callback, void*);
+
+
+static int callback(struct dl_phdr_info *info, size_t size, void *ctx){
+	objc_debug_log("%p --> %d, %s\n", (void*)info->dlpi_addr, (unsigned)info->dlpi_phnum, info->dlpi_name);
+	return 0;
+}
+
 
 
 extern void associated_objects_test(void);
@@ -34,14 +52,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
-		printf("1..%td\n", SET_COUNT(objc_module_list));
-		struct mod **modp;
-		int index = 0;
-		SET_FOREACH(modp, objc_module_list) {
-			objc_debug_log("\t[%i] -> %p\n", index, *modp);
-			++index;
-		}
-
+		dl_iterate_phdr(callback, NULL);
 /*		caddr_t objc_module = linker_file_lookup_symbol(file,
 								".objc_module"
 								TRUE);
