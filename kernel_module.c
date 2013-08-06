@@ -22,7 +22,7 @@ struct mod {
 	int version;
 };
 
-
+SET_DECLARE(objc_module_list_set, struct mod);
 
 
 extern void associated_objects_test(void);
@@ -43,17 +43,13 @@ static int event_handler(struct module *module, int event, void *arg) {
 		objc_debug_log("Gotten address of the module list - %p\n", objc_module);
 
 
-		extern void *__start_objc_module_list;
-		extern void *__end_objc_module_list;
+		objc_debug_log("Module count: %td\n", SET_COUNT(objc_module_list_set));
 		
-		objc_debug_log("Gotten address of the module list start - %p\n", __start_objc_module_list);
-		objc_debug_log("Gotten address of the module list end - %p\n", __end_objc_module_list);
-		
-		struct mod *m;
-		for (m = __start_objc_module_list; (void*)m < __end_objc_module_list; ++m){
-			objc_debug_log("Gotten address of the module %p\n", m);
-
-		}
+//		struct mod *modules = __start_objc_module_list;
+//		for (int i = 0; i < 3; ++i){
+//			struct mod *m = &modules[i];
+//			objc_debug_log("Gotten address of the module %p -> %s\n", m, m->name);
+//		}
 
 
 /*		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
