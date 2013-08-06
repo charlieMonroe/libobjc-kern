@@ -22,22 +22,6 @@ struct mod {
 };
 
 
-struct dl_phdr_info {
-	void *dlpi_addr;
-	const char *dlpi_name;
-	void *smth;
-	Elf_Half dlpi_phnum;
-};
-
-typedef int (*__dl_iterate_hdr_callback)(struct dl_phdr_info *, size_t, void*);
-extern int dl_iterate_phdr(__dl_iterate_hdr_callback, void*);
-
-
-static int callback(struct dl_phdr_info *info, size_t size, void *ctx){
-	objc_debug_log("%p --> %d, %s\n", (void*)info->dlpi_addr, (unsigned)info->dlpi_phnum, info->dlpi_name);
-	return 0;
-}
-
 
 
 extern void associated_objects_test(void);
@@ -52,7 +36,12 @@ static int event_handler(struct module *module, int event, void *arg) {
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
-		dl_iterate_phdr(callback, NULL);
+		struct common_symbol *symbol = file->common.stqh_first;
+		while (STAILQ_NEXT(symbol, link) != NULL){
+			objc_debug_log("\t%p  ->  %s\n", symbol->address, symbol->name);
+			symbol = STAILQ_NEXT(symbol, link);
+		}
+
 /*		caddr_t objc_module = linker_file_lookup_symbol(file,
 								".objc_module"
 								TRUE);
