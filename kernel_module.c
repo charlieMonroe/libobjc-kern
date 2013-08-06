@@ -23,6 +23,11 @@ struct mod {
 };
 
 
+static int predicate(linker_file_t file, void *ctx){
+	objc_debug_log("%p --> %s\n", file, file->filename);
+	return 0;
+}
+
 
 
 extern void associated_objects_test(void);
@@ -37,18 +42,8 @@ static int event_handler(struct module *module, int event, void *arg) {
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
-		struct common_symbol *symbol = file->common.stqh_first;
-		while (symbol != NULL && STAILQ_NEXT(symbol, link) != NULL){
-			objc_debug_log("\t%p  ->  %s\n", symbol->address, symbol->name);
-			symbol = STAILQ_NEXT(symbol, link);
-		}
-
-		struct module *m = file->modules.tqh_first;
-		while (m != NULL && module_getfnext(m) != NULL){
-			objc_debug_log("\t%p -> %s\n", m, module_getname(m));
-			m = module_getfnext(m);
-		}
-
+		linker_file_foreach(predicate, NULL);
+		
 /*		caddr_t objc_module = linker_file_lookup_symbol(file,
 								".objc_module"
 								TRUE);
