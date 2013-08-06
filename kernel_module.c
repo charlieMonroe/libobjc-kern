@@ -6,6 +6,7 @@
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/linker.h>
+
 #include <sys/elf.h>
 
 #include "os.h"
@@ -37,9 +38,15 @@ static int event_handler(struct module *module, int event, void *arg) {
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
 		struct common_symbol *symbol = file->common.stqh_first;
-		while (STAILQ_NEXT(symbol, link) != NULL){
+		while (symbol != NULL && STAILQ_NEXT(symbol, link) != NULL){
 			objc_debug_log("\t%p  ->  %s\n", symbol->address, symbol->name);
 			symbol = STAILQ_NEXT(symbol, link);
+		}
+
+		struct module *m = file->modules.tqh_first;
+		while (m != NULL && module_getfnext(m) != NULL){
+			objc_debug_log("\t%p -> %s\n", m, module_getname(m));
+			m = module_getfnext(m);
 		}
 
 /*		caddr_t objc_module = linker_file_lookup_symbol(file,
