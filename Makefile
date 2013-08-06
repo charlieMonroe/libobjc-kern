@@ -7,6 +7,9 @@ CFLAGS	+= -O0
 CFLAGS	+= -msoft-float
 CFLAGS += -lsoft-fp
 
+LDFLAGS += -T
+LDFLAGS += objc.lds
+
 KMOD	= libobjc
 
 SRCS	= kernel_module.c \

@@ -41,10 +41,18 @@ static int event_handler(struct module *module, int event, void *arg) {
 								".objc_module_list",
 								FALSE);
 		objc_debug_log("Gotten address of the module list - %p\n", objc_module);
-		struct mod *module = (struct mod*)objc_module;
-		for (int i = 0; i < 2; ++i){
-			objc_debug_log("Module %p", module);
-			objc_debug_log(" --> %s\n", module->name);
+
+
+		extern void *__start_objc_module_list;
+		extern void *__end_objc_module_list;
+		
+		objc_debug_log("Gotten address of the module list start - %p\n", __start_objc_module_list);
+		objc_debug_log("Gotten address of the module list end - %p\n", __end_objc_module_list);
+		
+		struct mod *m;
+		for (m = __start_objc_module_list; m < __end_objc_module_list; ++m){
+			objc_debug_log("Gotten address of the module %p : %s\n", m, m->name);
+
 		}
 
 
