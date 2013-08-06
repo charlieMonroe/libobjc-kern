@@ -23,16 +23,6 @@ struct mod {
 };
 
 
-static int predicate(linker_file_t file, void *ctx){
-	objc_debug_log("%p --> %s\n", file, file->filename);
-	return 0;
-}
-
-static int nameval(linker_file_t file, int smth, linker_symval_t *symval, void *ctx){
-	if (objc_strings_equal(symval->name, "_objc_load_module"))
-	objc_debug_log("%p --> %s\n", symval->value, symval->name);
-	return 0;
-}
 
 
 extern void associated_objects_test(void);
@@ -46,16 +36,19 @@ static int event_handler(struct module *module, int event, void *arg) {
 		/* Attempt to load the runtime's basic classes. */
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
-			
-		linker_file_foreach(predicate, NULL);
+					
+		caddr_t objc_module = linker_file_lookup_symbol(file,
+								".objc_module_list",
+								FALSE);
+		objc_debug_log("Gotten address of the module list - %p\n", objc_module);
+		struct mod *module = (struct mod*)objc_module;
+		for (int i = 0; i < 2; ++i){
+			objc_debug_log("Module %p", module);
+			objc_debug_log(" --> %s\n", module->name);
+		}
 
-		objc_debug_log("==== FUNCTIONS ====\n");
-		linker_file_function_listall(file, nameval, NULL);
-		
-/*		caddr_t objc_module = linker_file_lookup_symbol(file,
-								".objc_module"
-								TRUE);
-		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
+
+/*		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
 		_objc_load_module((struct objc_loader_module*)objc_module);
 		associated_objects_test();*/
 		break;
