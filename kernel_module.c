@@ -20,7 +20,6 @@ struct mod {
 	const char *name;
 	void *symtab;
 	int version;
-	int padding;
 };
 
 // SET_DECLARE(objc_module_list_set, struct mod);
@@ -46,7 +45,14 @@ static int event_handler(struct module *module, int event, void *arg) {
 
 		struct mod *start = &__start_set_objc_module_list_set;
 		struct mod *end = &__stop_set_objc_module_list_set;
-		unsigned int count = ((((size_t)end) - ((size_t)start)) / sizeof(void*));
+
+		unsigned int struct_size = sizeof(struct mod);
+		
+		// The struct size must be sizeof(void*)-aligned
+		if ((struct_size % sizeof(void*)) != 0){
+			struct_size += sizeof(void*) - (struct_size % sizeof(void*));
+		}
+		unsigned int count = ((((size_t)end) - ((size_t)start)) / struct_size);
 		
 		objc_debug_log("Start %p, end %p, sizeof(mod) = %d\n", start, end, (unsigned)sizeof(struct mod));
 		objc_debug_log("Module count: %d\n", count);
@@ -56,7 +62,12 @@ static int event_handler(struct module *module, int event, void *arg) {
 			objc_debug_log("Module %p\n", m);
 			objc_debug_log("\t\t->name %p\n", m->name);
 			objc_debug_log("\t\t->symtab %p\n", m->symtab);
-			objc_debug_log("\t\t->version %i\n", m->version);
+			objc_debug_log("\t\t->version %x\n", m->version);
+
+			if (((size_t)m->name) > 5){
+				objc_debug_log("Trying to resolve name: %s\n", m->name);
+			}
+
 		}		
 //		struct mod *modules = __start_objc_module_list;
 //		for (int i = 0; i < 3; ++i){
