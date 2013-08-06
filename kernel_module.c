@@ -13,6 +13,15 @@
 #include "init.h"
 #include "loader.h"
 
+struct mod {
+	const char *name;
+	void *symtab;
+	int version;
+};
+
+SET_DECLARE(objc_module_list, struct mod);
+
+
 extern void associated_objects_test(void);
 
 static int event_handler(struct module *module, int event, void *arg) {
@@ -25,12 +34,20 @@ static int event_handler(struct module *module, int event, void *arg) {
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
-		caddr_t objc_module = linker_file_lookup_symbol(file,
-								".objc_module",
+		printf("1..%td\n", SET_COUNT(objc_module_list));
+		struct mod **modp;
+		int index = 0;
+		SET_FOREACH(modp, objc_module_list) {
+			objc_debug_log("\t[%i] -> %p\n", index, *modp);
+			++index;
+		}
+
+/*		caddr_t objc_module = linker_file_lookup_symbol(file,
+								".objc_module"
 								TRUE);
 		objc_debug_log("Gotten address of the objc_module %p\n", objc_module);
 		_objc_load_module((struct objc_loader_module*)objc_module);
-		associated_objects_test();
+		associated_objects_test();*/
 		break;
 	case MOD_UNLOAD:
 		objc_runtime_destroy();
