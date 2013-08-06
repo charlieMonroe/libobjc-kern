@@ -29,7 +29,7 @@ static int predicate(linker_file_t file, void *ctx){
 }
 
 static int nameval(linker_file_t file, int smth, linker_symval_t *symval, void *ctx){
-	objc_debug_log("%p --> %s\n", file, file->filename);
+	objc_debug_log("%p --> %s\n", symval->value, symval->name);
 	return 0;
 }
 
