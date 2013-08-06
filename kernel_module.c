@@ -28,6 +28,10 @@ static int predicate(linker_file_t file, void *ctx){
 	return 0;
 }
 
+static int nameval(linker_file_t file, int smth, linker_symval_t *symval, void *ctx){
+	objc_debug_log("%p --> %s\n", file, file->filename);
+	return 0;
+}
 
 
 extern void associated_objects_test(void);
@@ -43,6 +47,9 @@ static int event_handler(struct module *module, int event, void *arg) {
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 			
 		linker_file_foreach(predicate, NULL);
+
+		objc_debug_log("==== FUNCTIONS ====\n");
+		linker_file_function_listall(file, nameval, NULL);
 		
 /*		caddr_t objc_module = linker_file_lookup_symbol(file,
 								".objc_module"
