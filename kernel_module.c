@@ -14,7 +14,7 @@
 #include "types.h"
 #include "init.h"
 #include "loader.h"
-
+#include "utils.h"
 
 struct mod {
 	const char *name;
@@ -29,6 +29,7 @@ static int predicate(linker_file_t file, void *ctx){
 }
 
 static int nameval(linker_file_t file, int smth, linker_symval_t *symval, void *ctx){
+	if (objc_strings_equal(symval->name, "_objc_load_module"))
 	objc_debug_log("%p --> %s\n", symval->value, symval->name);
 	return 0;
 }
