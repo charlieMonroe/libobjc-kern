@@ -23,8 +23,9 @@ struct mod {
 	int padding;
 };
 
-SET_DECLARE(objc_module_list_set, struct mod);
-
+// SET_DECLARE(objc_module_list_set, struct mod);
+extern struct mod __start_set_objc_module_list_set;
+extern struct mod __stop_set_objc_module_list_set;
 
 extern void associated_objects_test(void);
 
@@ -43,11 +44,15 @@ static int event_handler(struct module *module, int event, void *arg) {
 								FALSE);
 		objc_debug_log("Gotten address of the module list - %p\n", objc_module);
 
-
-		objc_debug_log("Module count: %td\n", SET_COUNT(objc_module_list_set));
-		struct mod *modules = (struct mod*)SET_BEGIN(objc_module_list_set);
-		for (int i = 0; i < SET_COUNT(objc_module_list_set); ++i) {
-			struct mod *m = &modules[i];
+		struct mod *start = &__start_set_objc_module_list_set;
+		struct mod *end = &__stop_set_objc_module_list_set;
+		unsigned int count = ((((size_t)end) - ((size_t)start)) / sizeof(void*));
+		
+		objc_debug_log("Start %p, end %p, sizeof(mod) = %d\n", start, end, (unsigned)sizeof(struct mod));
+		objc_debug_log("Module count: %d\n", count);
+		
+		for (int i = 0; i < count; ++i){
+			struct mod *m = &start[i];
 			objc_debug_log("Module %p\n", m);
 			objc_debug_log("\t\t->name %p\n", m->name);
 			objc_debug_log("\t\t->symtab %p\n", m->symtab);
