@@ -20,6 +20,7 @@ struct mod {
 	const char *name;
 	void *symtab;
 	int version;
+	int padding;
 };
 
 SET_DECLARE(objc_module_list_set, struct mod);
@@ -44,7 +45,14 @@ static int event_handler(struct module *module, int event, void *arg) {
 
 
 		objc_debug_log("Module count: %td\n", SET_COUNT(objc_module_list_set));
-		
+		struct mod *modules = (struct mod*)SET_BEGIN(objc_module_list_set);
+		for (int i = 0; i < SET_COUNT(objc_module_list_set); ++i) {
+			struct mod *m = &modules[i];
+			objc_debug_log("Module %p\n", m);
+			objc_debug_log("\t\t->name %p\n", m->name);
+			objc_debug_log("\t\t->symtab %p\n", m->symtab);
+			objc_debug_log("\t\t->version %i\n", m->version);
+		}		
 //		struct mod *modules = __start_objc_module_list;
 //		for (int i = 0; i < 3; ++i){
 //			struct mod *m = &modules[i];
