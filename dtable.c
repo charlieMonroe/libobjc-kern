@@ -276,15 +276,17 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	// encounter is always the one that we want to keep, so we instruct
 	// installMethodInDtable() not to replace methods that are already
 	// associated with this class.
-	objc_method_list *list = (void*)class->methods;
+	if (!class->flags.fake) {
+		objc_method_list *list = class->methods;
 
-	while (NULL != list)
-	{
-		for (unsigned i=0 ; i<list->size ; i++)
+		while (NULL != list)
 		{
-			installMethodInDtable(class, class, dtable, &list->list[i], NO);
+			for (unsigned i=0 ; i<list->size ; i++)
+			{
+				installMethodInDtable(class, class, dtable, &list->list[i], NO);
+			}
+			list = list->next;
 		}
-		list = list->next;
 	}
 
 	return dtable;
