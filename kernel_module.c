@@ -22,9 +22,7 @@ struct mod {
 	int version;
 };
 
-// SET_DECLARE(objc_module_list_set, struct mod);
-extern struct mod __start_set_objc_module_list_set;
-extern struct mod __stop_set_objc_module_list_set;
+SET_DECLARE(objc_module_list_set, struct mod);
 
 extern void associated_objects_test(void);
 
@@ -38,12 +36,15 @@ static int event_handler(struct module *module, int event, void *arg) {
 		struct linker_file *file = module_file(module);
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 					
-		caddr_t objc_module = linker_file_lookup_symbol(file,
-								".objc_module_list",
-								FALSE);
-		objc_debug_log("Gotten address of the module list - %p\n", objc_module);
+		objc_debug_log("List size: %td\n", SET_COUNT(objc_module_list_set));
+		struct mod **m;
+		int counter = 0;
+		SET_FOREACH(m, objc_module_list_set) {
+			objc_debug_log("[%i]: %p --> %p\n", counter, m, *m);
+			++counter;
+		}
 
-		struct mod *start = &__start_set_objc_module_list_set;
+		/*struct mod *start = &__start_set_objc_module_list_set;
 		struct mod *end = &__stop_set_objc_module_list_set;
 
 		unsigned int struct_size = sizeof(struct mod);
@@ -68,7 +69,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 				objc_debug_log("Trying to resolve name: %s\n", m->name);
 			}
 
-		}		
+		}		*/
 //		struct mod *modules = __start_objc_module_list;
 //		for (int i = 0; i < 3; ++i){
 //			struct mod *m = &modules[i];
