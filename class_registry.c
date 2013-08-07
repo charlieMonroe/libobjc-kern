@@ -12,6 +12,7 @@
 #include "private.h"
 #include "encoding.h"
 #include "init.h"
+#include "class_extra.h"
 
 /*
  * The initial capacities for the hash tables.
@@ -468,8 +469,15 @@ objc_disposeClassPair(Class cls)
 	free_dtable((dtable_t*)&cls->dtable);
 	free_dtable((dtable_t*)&meta->dtable);
 	
-	objc_class_table_set(objc_classes, cls->name, NULL);
+	objc_class_remove(objc_classes, (void*)cls->name);
 	
+	if (cls->extra_space != NULL) {
+		objc_class_extra_destroy_for_class(cls);
+	}
+	
+	if (meta->extra_space != NULL) {
+		objc_class_extra_destroy_for_class(meta);
+	}
 	
 	objc_dealloc(cls, M_CLASS_TYPE);
 	objc_dealloc(meta, M_CLASS_TYPE);

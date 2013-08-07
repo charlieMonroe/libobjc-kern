@@ -2,6 +2,7 @@
 #include "kernobjc/types.h"
 #include "types.h"
 #include "class_extra.h"
+#include "associative.h"
 
 #define spinlock_do_not_allocate_page 1
 #include "spinlock.h"
@@ -108,5 +109,29 @@ objc_class_extra_with_identifier(Class cl, unsigned int identifier)
 		extra = _objc_class_extra_create(cl, identifier);
 	}
 	return &extra->data;
+}
+
+PRIVATE void
+objc_class_extra_destroy_for_class(Class cl)
+{
+	/* 
+	 * We don't hold any locks since it is assumed that the class is already
+	 * taken out of the class hierarchy.
+	 */
+	struct objc_class_extra *extra = NULL;
+	if (cl->extra_space != NULL){
+		extra = (struct objc_class_extra*)cl->extra_space;
+		
+		while (extra != NULL) {
+			if (extra->identifier == OBJC_ASSOCIATED_OBJECTS_IDENTIFIER){
+				objc_remove_associated_objects((id)cl);
+			}else{
+				objc_abort("Unknown extra identifier %d!\n", extra->identifier);
+				/** Not reached. */
+			}
+			extra = extra->next;
+			objc_dealloc(extra, M_CLASS_EXTRA_TYPE);
+		}
+	}
 }
 
