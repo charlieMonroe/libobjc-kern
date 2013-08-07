@@ -79,11 +79,10 @@ void run_tests(void)
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 }
 
-
+#ifndef _KERNEL
 int main(int argc, const char *argv[]) {
 	run_tests();
 	return 0;
 }
-
-
+#endif
 
