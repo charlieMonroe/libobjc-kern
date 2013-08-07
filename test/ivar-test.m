@@ -13,6 +13,7 @@ void ivar_test(void){
 	
 	Ivar isa_ivar = class_getInstanceVariable([KKObject class], "isa");
 	id isa_ivar_value = object_getIvar((id)obj, isa_ivar);
+	id original_isa_ivar_value = isa_ivar_value;
 	
 	objc_assert((void*)isa_ivar_value == (void*)[KKObject class], "Getting wrong isa value!\n");
 	
@@ -31,7 +32,7 @@ void ivar_test(void){
 	objc_assert(((Object*)obj)->isa == target_isa_value, "Getting wrong isa value!\n");
 	
 	/* Set back the correct isa pointer so that the object can be released. */
-	object_setIvar((id)obj, isa_ivar, isa_ivar_value);
+	object_setIvar((id)obj, isa_ivar, original_isa_ivar_value);
 	
 	[obj release];
 

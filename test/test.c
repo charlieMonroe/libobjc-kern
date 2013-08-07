@@ -81,7 +81,7 @@ void run_tests(void)
 
 #ifndef _KERNEL
 int main(int argc, const char *argv[]) {
-	associated_objects_test();
+	ivar_test();
 	return 0;
 }
 #endif
