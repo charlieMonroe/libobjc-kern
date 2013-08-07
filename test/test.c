@@ -82,7 +82,7 @@ void run_tests(void)
 #ifndef _KERNEL
 #include "../init.h"
 int main(int argc, const char *argv[]) {
-	handmade_class_test();
+	weak_ref_test();
 	
 	objc_runtime_destroy();
 	return 0;
