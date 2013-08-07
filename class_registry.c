@@ -441,6 +441,22 @@ objc_registerClassPair(Class cl)
 	objc_class_resolve(cl);
 }
 
+static inline void
+_objc_deallocate_class_fields(Class cls)
+{
+	Class meta = cls->isa;
+	free_dtable((dtable_t*)&cls->dtable);
+	free_dtable((dtable_t*)&meta->dtable);
+	
+	if (cls->extra_space != NULL) {
+		objc_class_extra_destroy_for_class(cls);
+	}
+	
+	if (meta->extra_space != NULL) {
+		objc_class_extra_destroy_for_class(meta);
+	}
+}
+
 void
 objc_disposeClassPair(Class cls)
 {
@@ -454,6 +470,7 @@ objc_disposeClassPair(Class cls)
 		OBJC_LOCK_RUNTIME_FOR_SCOPE();
 		_objc_class_remove_from_class_tree(cls);
 		_objc_class_remove_from_class_tree(meta);
+		objc_class_remove(objc_classes, (void*)cls->name);
 	}
 	
 	objc_method_list_free(cls->methods);
@@ -466,18 +483,7 @@ objc_disposeClassPair(Class cls)
 	
 	objc_property_list_free(cls->properties);
 	
-	free_dtable((dtable_t*)&cls->dtable);
-	free_dtable((dtable_t*)&meta->dtable);
-	
-	objc_class_remove(objc_classes, (void*)cls->name);
-	
-	if (cls->extra_space != NULL) {
-		objc_class_extra_destroy_for_class(cls);
-	}
-	
-	if (meta->extra_space != NULL) {
-		objc_class_extra_destroy_for_class(meta);
-	}
+	_objc_deallocate_class_fields(cls);
 	
 	objc_dealloc(cls, M_CLASS_TYPE);
 	objc_dealloc(meta, M_CLASS_TYPE);
@@ -661,7 +667,6 @@ static void
 __objc_class_deallocate(Class cl)
 {
 	objc_debug_log("Deallocating class %s.\n", cl->name);
-	
 	if (cl->flags.user_created) {
 		if (cl->flags.fake) {
 			SparseArrayDestroy((dtable_t*)&cl->dtable);
@@ -670,6 +675,8 @@ __objc_class_deallocate(Class cl)
 			// TODO the rest of the stuff
 			objc_disposeClassPair(cl);
 		}
+	}else{
+		_objc_deallocate_class_fields(cl);
 	}
 }
 

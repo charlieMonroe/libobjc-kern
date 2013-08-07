@@ -1,5 +1,6 @@
 #include "os.h"
 #include "kernobjc/types.h"
+#include "kernobjc/class.h"
 #include "types.h"
 #include "class_extra.h"
 #include "associative.h"
@@ -67,6 +68,9 @@ _objc_class_extra_find(Class cl, unsigned int identifier)
 static inline struct objc_class_extra *
 _objc_class_extra_create(Class cl, unsigned int identifier)
 {
+	objc_debug_log("Creating class extra for class %p[%s]\n", cl,
+				   class_getName(cl));
+	
 	lock_spinlock(&class_extra_spinlock);
 	
 	/* See if anyone hasn't added the extra in the meanwhile */
