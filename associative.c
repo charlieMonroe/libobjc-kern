@@ -70,9 +70,9 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	objc_remove_associated_objects(self);
 	
 	/* 
-	 * The lock names need to be unique, so we're actually allocating the name.
+	 * The lock names need to be unique, so we've actually allocated the name.
 	 */
-	objc_dealloc((void*)list->lock.name, M_FAKE_CLASS_TYPE);
+	objc_dealloc((void*)objc_rw_lock_get_name(&list->lock), M_FAKE_CLASS_TYPE);
 	objc_rw_lock_destroy(&list->lock);
 	free_dtable((dtable_t*)&cl->dtable);
 	

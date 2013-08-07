@@ -45,6 +45,9 @@ static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
 	++objc_lock_destroy_count;
 	pthread_rwlock_destroy(&lock->lock);
 }
+static inline const char *objc_rw_lock_get_name(objc_rw_lock *lock){
+	return lock->name;
+}
 
 /* MEMORY */
 
