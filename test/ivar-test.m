@@ -4,12 +4,12 @@
 
 void ivar_test(void);
 void ivar_test(void){
-  typedef struct {
-    id isa;
-    int retain_count;
-  } Object;
+	typedef struct {
+		id isa;
+		int retain_count;
+	} Object;
   
-  KKObject *obj = [KKObject new];
+	KKObject *obj = [KKObject new];
 	
 	Ivar isa_ivar = class_getInstanceVariable([KKObject class], "isa");
 	id isa_ivar_value = object_getIvar((id)obj, isa_ivar);
@@ -30,7 +30,8 @@ void ivar_test(void){
 	objc_assert(isa_ivar_value == target_isa_value, "Getting wrong isa value!\n");
 	objc_assert(((Object*)obj)->isa == target_isa_value, "Getting wrong isa value!\n");
 	
+	[obj release];
+
 	objc_log("===================\n");
 	objc_log("Passed ivar tests.\n\n");
-
 }

@@ -52,7 +52,7 @@
 
 -(void)release
 {
-  objc_debug_log("Releasing object %p[%i]\n", self, self->retain_count);
+	objc_debug_log("Releasing object %p[%i]\n", self, self->retain_count);
 	int retain_cnt = __sync_fetch_and_sub(&self->retain_count, 1);
 	if (retain_cnt == 0){
 		/* Dealloc */
@@ -64,9 +64,9 @@
 
 -(id)retain
 {
-  objc_debug_log("Retaining an object %p\n", self);
-  __sync_add_and_fetch(&self->retain_count, 1);
-  return self;
+	objc_debug_log("Retaining an object %p\n", self);
+	__sync_add_and_fetch(&self->retain_count, 1);
+	return self;
 }
 
 
