@@ -70,11 +70,6 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	
 	objc_remove_associated_objects(self);
 	
-	/* 
-	 * The lock names need to be unique, so we've actually allocated the name.
-	 */
-	objc_dealloc((void*)objc_rw_lock_get_name(&list->lock), M_FAKE_CLASS_TYPE);
-	objc_rw_lock_destroy(&list->lock);
 	free_dtable((dtable_t*)&cl->dtable);
 	
 	objc_dealloc(cl, M_FAKE_CLASS_TYPE);
@@ -342,8 +337,16 @@ _objc_remove_associative_lists_for_object(id object)
 			_objc_remove_associative_list(&cl->list, cl->list.next,
 						      spin_lock, YES);
 		}
-		objc_rw_lock_destroy(&cl->list.lock);
-		_objc_remove_associative_list(NULL, &cl->list,
+    
+		/*
+     * The lock names need to be unique, so we've actually allocated the name.
+     */
+    objc_dealloc((void*)objc_rw_lock_get_name(&cl->list.lock),
+                 M_FAKE_CLASS_TYPE);
+    objc_rw_lock_destroy(&cl->list.lock);
+		
+    
+    _objc_remove_associative_list(NULL, &cl->list,
 					      spin_lock, NO);
 	}
 }
@@ -438,9 +441,11 @@ objc_set_associated_object(id object, void *key, id value,
 	 * lock. Otherwise, keep it locked and unlock it after all the 
 	 * modification of ref.
 	 */
+  BOOL unlocked = NO;
 	BOOL either_policy_atomic = _objc_is_policy_atomic(policy)
 				    || _objc_is_policy_atomic(ref->policy);
 	if (!either_policy_atomic){
+    unlocked = YES;
 		objc_rw_lock_unlock(&list->lock);
 	}
 	
@@ -473,8 +478,12 @@ objc_set_associated_object(id object, void *key, id value,
 	 * to unlock it.
 	 */
 	if (either_policy_atomic){
+    unlocked = YES;
 		objc_rw_lock_unlock(&list->lock);
 	}
+  
+  objc_assert(unlocked,
+              "The lock associated with object %p wasn't unloacked!\n", object);
 	
 }
 

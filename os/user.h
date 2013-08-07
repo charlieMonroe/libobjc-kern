@@ -22,7 +22,10 @@
 typedef struct {
 	pthread_rwlock_t	lock;
 	const char		*name;
+  
+  /* For debugging purposes. */
 	int inited;
+  int locked;
 } objc_rw_lock;
 
 
@@ -35,17 +38,23 @@ static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
 	pthread_rwlock_init(&lock->lock, NULL);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
+  ++lock->locked;
 	++objc_lock_locked_count;
 	return pthread_rwlock_rdlock(&lock->lock);
 }
 static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
+  ++lock->locked;
 	++objc_lock_locked_count;
 	return pthread_rwlock_wrlock(&lock->lock);
 }
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
+  --lock->locked;
 	return pthread_rwlock_unlock(&lock->lock);
 }
 static inline void objc_rw_lock_destroy(objc_rw_lock *lock){
+  if (lock->locked != 0){
+     objc_log("Destroying locked lock (%p)!\n", lock);
+  }
 	++objc_lock_destroy_count;
 	pthread_rwlock_destroy(&lock->lock);
 }
