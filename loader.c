@@ -57,3 +57,19 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module){
 	
 }
 
+
+PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
+                                struct objc_loader_module **end)
+{
+	objc_debug_log("Should be loading modules from array bounded by [%p, %p)\n",
+				   begin, end);
+	objc_debug_log("Module count: %i\n", (int)(end - begin));
+	
+	struct objc_loader_module **module_ptr;
+	int counter = 0;
+	for (module_ptr = begin; module_ptr < end; module_ptr++) {
+		objc_debug_log("\t[%i] %p -> %p\n", counter, module_ptr, *module_ptr);
+		_objc_load_module(*module_ptr);
+	}
+}
+

@@ -41,6 +41,8 @@ struct objc_loader_module {
 
 
 PRIVATE void _objc_load_module(struct objc_loader_module *module);
+PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
+                                struct objc_loader_module **end);
 
 
 #endif
