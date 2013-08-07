@@ -30,6 +30,9 @@ void ivar_test(void){
 	objc_assert(isa_ivar_value == target_isa_value, "Getting wrong isa value!\n");
 	objc_assert(((Object*)obj)->isa == target_isa_value, "Getting wrong isa value!\n");
 	
+	/* Set back the correct isa pointer so that the object can be released. */
+	object_setIvar((id)obj, isa_ivar, [KKObject class]);
+	
 	[obj release];
 
 	objc_log("===================\n");
