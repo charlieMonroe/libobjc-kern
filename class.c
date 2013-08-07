@@ -282,8 +282,8 @@ call_cxx_destruct(id obj)
 	Class cls = objc_object_get_class_inline(obj);
 	
 	while (cls) {
-		objc_debug_log("Calling cxx_destruct on obj %p for class %s\n", obj,
-					   class_getName(cls));
+		objc_debug_log("Calling cxx_destruct on obj %p for class %s[%p]\n", obj,
+					   class_getName(cls), cls);
 		
 		struct objc_slot *slot;
 		slot = objc_get_slot(cls, objc_cxx_destruct_selector);

@@ -1595,9 +1595,10 @@ namespace {
                                       IdTy,        // super_class
                                       PtrTy,              // dtable
                                       FlagsStructTy,              // flags
+                                      PtrToInt8Ty, // methods
+                                      
                                       PtrToInt8Ty,        // name
                                       PtrToInt8Ty, // ivar_offsets
-                                      PtrToInt8Ty, // methods
                                       PtrToInt8Ty,   // ivars
                                       PtrTy,              // protocols
                                       PtrToInt8Ty,  // properties
@@ -3684,14 +3685,14 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   llvm::Constant *Flags = llvm::ConstantStruct::get(FlagsStructTy, FlagElements);
   Elements.push_back(Flags);
   
+  // .methods
+  Elements.push_back(llvm::ConstantExpr::getBitCast(Methods, PtrToInt8Ty));
+  
   // .name
   Elements.push_back(MakeConstantString(Name, ".class_name"));
   
   // .ivar_offsets
   Elements.push_back(llvm::ConstantExpr::getBitCast(IvarOffsets, PtrToInt8Ty));
-  
-  // .methods
-  Elements.push_back(llvm::ConstantExpr::getBitCast(Methods, PtrToInt8Ty));
   
   // .ivars
   Elements.push_back(llvm::ConstantExpr::getBitCast(IVars, PtrToInt8Ty));
@@ -4089,8 +4090,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
       
 	  std::string Name = iter->first.getAsString();
 		std::string Types = i->first;
-		
-		printf("Creating a selector reference [%s; %s]\n", Name.c_str(), Types.c_str());
+		printf("Creating a selector reference [%s; %s]\n", Name.c_str(), i->first.c_str());
 		
       Elements.push_back(MakeConstantString(Name));
 		Elements.push_back(MakeConstantString(Types));
@@ -4134,11 +4134,22 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   Elements.push_back(SymbolTable);
   Elements.push_back(llvm::ConstantInt::get(IntTy, (int)0x301));
 
-  llvm::Constant *ModuleStruct = MakeGlobal(ModuleStructTy,
+  llvm::GlobalVariable *ModuleStruct = MakeGlobal(ModuleStructTy,
                                             Elements,
                                             ".objc_module");
-  
-  
+  llvm::GlobalVariable *ModuleList = new llvm::GlobalVariable(TheModule,
+                                                              PtrTy,
+                                                              false,
+                                                              llvm::GlobalValue::InternalLinkage,
+                                                              llvm::ConstantExpr::getBitCast(ModuleStruct, PtrTy),
+                                                              "objc_module_list");
+  // FreeBSD / ELF
+  ModuleList->setSection("__DATA, set_objc_module_list_set");
+  // Mach-O
+  // ModuleList->setSection("__DATA, objc_module_list");
+
+  printf("============================creating module structure for %s\n", TheModule.getModuleIdentifier().c_str());
+
 	// TODO - actually return NULL and let the loader handle this.
   // Create the load function calling the runtime entry point with the module
   // structure

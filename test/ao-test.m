@@ -32,9 +32,10 @@ void associated_objects_test(void){
 	objc_set_associated_object((id)obj, key, (id)obj_to_associate, OBJC_ASSOCIATION_RETAIN);
 	objc_set_associated_object((id)obj, key, nil, OBJC_ASSOCIATION_ASSIGN);
 	
-	objc_assert(((Object*)obj_to_associate)->retain_count == 0, "The associated object should have been released!\n");
+	objc_assert(((Object*)obj_to_associate)->retain_count == 0, "The associated have retain count 0!\n");
 	
 	[obj release];
+	[obj_to_associate release];
 	
 	objc_log("===================\n");
 	objc_log("Passed associated object tests.\n\n");

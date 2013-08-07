@@ -85,11 +85,13 @@ typedef struct {
 	BOOL		fake : 1;
 } objc_class_flags;
 
-#define OBJC_CLASS_COMMON_FIELDS                                              \
-	Class			isa; /* Points to meta class. */                                  \
-	Class			super_class;                                                      \
-	void			*dtable; /* Disptach table. */                                    \
-	objc_class_flags	flags; /* Flags. */			
+#define OBJC_CLASS_COMMON_FIELDS											\
+	Class				isa; /* Points to meta class. */					\
+	Class				super_class;										\
+	void				*dtable; /* Disptach table. */						\
+	objc_class_flags	flags; /* Flags. */									\
+	objc_method_list    *methods; /* Method list */
+
 
 /* Actual structure of Class. */
 struct objc_class {
@@ -107,7 +109,6 @@ struct objc_class {
 	/*
 	 * WARNING: All of the lists are lazily created -> may be NULL!
 	 */
-	objc_method_list    *methods;
 	objc_ivar_list      *ivars;
 	objc_protocol_list	*protocols;
 	objc_property_list	*properties;

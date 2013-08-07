@@ -226,7 +226,7 @@ PRIVATE void objc_update_dtable_for_class(Class cls)
 {
 	
 	// Only update real dtables and real classes
-	if (!classHasDtable(cls) || cls->flags.fake) { return; }
+	if (!classHasDtable(cls)) { return; }
 	
 	objc_debug_log("updating dtable for class %s\n", class_getName(cls));
 	
@@ -276,17 +276,15 @@ static dtable_t create_dtable_for_class(Class class, dtable_t root_dtable)
 	// encounter is always the one that we want to keep, so we instruct
 	// installMethodInDtable() not to replace methods that are already
 	// associated with this class.
-	if (!class->flags.fake) {
-		objc_method_list *list = class->methods;
+	objc_method_list *list = class->methods;
 
-		while (NULL != list)
+	while (NULL != list)
+	{
+		for (unsigned i=0 ; i<list->size ; i++)
 		{
-			for (unsigned i=0 ; i<list->size ; i++)
-			{
-				installMethodInDtable(class, class, dtable, &list->list[i], NO);
-			}
-			list = list->next;
+			installMethodInDtable(class, class, dtable, &list->list[i], NO);
 		}
+		list = list->next;
 	}
 
 	return dtable;

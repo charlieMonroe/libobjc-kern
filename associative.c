@@ -116,12 +116,6 @@ _objc_unique_lock_name_for_object(id object, Class cl)
 }
 
 /*
- * A static method structure that is used for adding to the dtable of a fake
- * class.
- */
-static struct objc_method objc_fake_class_destructor_method;
-
-/*
  * Looks for the fake class in the class hierarchy. If not found
  * and create == YES, allocates it and installs the isa pointer.
  */
@@ -149,12 +143,6 @@ _objc_class_for_object(id object, BOOL create)
 		cl->flags.fake = YES;
 		cl->flags.resolved = YES;
 		
-		objc_method_list *list = objc_method_list_create(1);
-		list->list[0] = objc_fake_class_destructor_method;
-		
-		dtable_add_method_list_to_class((Class)cl, list);
-		objc_method_list_free(list);
-		
 		char *lock_name = _objc_unique_lock_name_for_object(object, superclass);
 		objc_debug_log("Created lock name: %s\n", lock_name);
 		
@@ -164,10 +152,14 @@ _objc_class_for_object(id object, BOOL create)
 		object->isa = (Class)cl;
 		unlock_spinlock(spin_lock);
 		
-		objc_debug_log("Created fake class (%s) for object %p\n",
+		objc_debug_log("Created fake class (%s[%p]) for object %p\n",
 			       class_getName(superclass),
+				   cl,
 			       object);
 		
+		class_addMethod((Class)cl,
+						objc_cxx_destruct_selector,
+						(IMP)_objc_associated_object_cxx_destruct);
 	}
 	return (Class)cl;
 }
@@ -574,21 +566,14 @@ PRIVATE void
 objc_associated_objects_init(void)
 {
 	/* 
-	 * We only need to initialize the fake class destructor method object that
-	 * is common to all fake classes.
+	 * No-op at this moment.
 	 */
-	objc_fake_class_destructor_method.implementation =
-						(IMP)_objc_associated_object_cxx_destruct;
-	objc_fake_class_destructor_method.selector = objc_cxx_destruct_selector;
-	objc_fake_class_destructor_method.selector_name =
-						sel_getName(objc_cxx_destruct_selector);
-	objc_fake_class_destructor_method.selector_types =
-						sel_getTypes(objc_cxx_destruct_selector);
-	objc_fake_class_destructor_method.version = 1;
 }
 
 PRIVATE void
 objc_associated_objects_destroy(void)
 {
-	// No-op
+	/*
+	 * No-op at this moment.
+	 */
 }
