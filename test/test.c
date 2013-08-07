@@ -79,3 +79,11 @@ void run_tests(void)
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 }
 
+
+int main(int argc, const char *argv[]) {
+	run_tests();
+	return 0;
+}
+
+
+
