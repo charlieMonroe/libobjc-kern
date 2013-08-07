@@ -25,6 +25,11 @@ static int event_handler(struct module *module, int event, void *arg) {
 	switch (event) {
 	case MOD_LOAD:
 		/* Attempt to load the runtime's basic classes. */
+		if (SET_COUNT(objc_module_list_set) == 0) {
+			objc_log("Error loading libobj - cannot load"
+				" basic required classes.");
+			break;
+		}
 		_objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
