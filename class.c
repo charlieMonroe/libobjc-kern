@@ -282,13 +282,18 @@ call_cxx_destruct(id obj)
 	Class cls = objc_object_get_class_inline(obj);
 	
 	while (cls) {
+		objc_debug_log("Calling cxx_destruct on obj %p for class %s\n", obj,
+					   class_getName(cls));
+		
 		struct objc_slot *slot;
 		slot = objc_get_slot(cls, objc_cxx_destruct_selector);
 		
 		if (NULL != slot) {
+			objc_debug_log("\tSlot found.\n");
 			cls = slot->owner->super_class;
 			slot->implementation(obj, objc_cxx_destruct_selector);
 		}else{
+			objc_debug_log("\tSlot not found.\n");
 			cls = Nil;
 		}
 	}
