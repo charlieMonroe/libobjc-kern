@@ -66,8 +66,6 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	struct objc_assoc_fake_class *cl;
 	cl = (struct objc_assoc_fake_class *)_objc_find_class_for_object(self);
 	
-	struct reference_list *list = &cl->list;
-	
 	objc_remove_associated_objects(self);
 	
 	free_dtable((dtable_t*)&cl->dtable);
