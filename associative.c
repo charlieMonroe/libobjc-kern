@@ -11,6 +11,7 @@
 #include "dtable.h"
 #include "spinlock.h"
 #include "selector.h"
+#include "utils.h"
 
 #define REF_CNT 10
 
@@ -67,6 +68,11 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	struct reference_list *list = &cl->list;
 	
 	objc_remove_associated_objects(self);
+	
+	/* 
+	 * The lock names need to be unique, so we're actually allocating the name.
+	 */
+	objc_dealloc((void*)list->lock.name, M_FAKE_CLASS_TYPE);
 	objc_rw_lock_destroy(&list->lock);
 	free_dtable((dtable_t*)&cl->dtable);
 	
@@ -104,9 +110,36 @@ _objc_class_for_object(id object, BOOL create)
 				objc_cxx_destruct_selector,
 				(IMP)_objc_associated_object_cxx_destruct);
 
-		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)
-					->list.lock,
-				  "objc_assoc_fake_class_lock");
+		/*
+		 * The lock names need to be unique, so we're actually allocating the 
+		 * name. We have a common prefix, that is suffixed by the object's 
+		 * class' name and a hex of the obj pointer.
+		 */
+		const char *name_prefix = "objc_assoc_fake_class_lock_";
+		const char *class_name = object_getClassName(object);
+		
+		/* We need a format 0x1234 - 0x == 2 + sizeof(void*)*2 */
+		unsigned int pointer_str_len = (sizeof(void*) * 2) + 2;
+		char pointer_str[pointer_str_len + 1];
+		objc_format_string(pointer_str, "%p", object);
+		pointer_str[pointer_str_len] = '\0'; /* NULL termination */
+		
+		/* Now concat it */
+		unsigned int name_prefix_len = objc_strlen(name_prefix);
+		unsigned int class_name_len = objc_strlen(class_name);
+		unsigned int lock_name_len = name_prefix_len + class_name_len
+															+ pointer_str_len;
+		char *lock_name = objc_alloc(lock_name_len, M_FAKE_CLASS_TYPE);
+		objc_copy_memory(lock_name, name_prefix, name_prefix_len);
+		objc_copy_memory(lock_name + name_prefix_len, class_name,
+						 class_name_len);
+		objc_copy_memory(lock_name + name_prefix_len + class_name_len,
+						 pointer_str, pointer_str_len + 1); /* +1 for NULL-term */
+		
+		objc_debug_log("Created lock name: %s\n", lock_name);
+		
+		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)->list.lock,
+						  lock_name);
 		
 		object->isa = cl;
 		unlock_spinlock(spin_lock);
