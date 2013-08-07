@@ -48,8 +48,6 @@ void	objc_runtime_destroy(void) {
 	
 	objc_debug_log("Destroying runtime.\n");
 	
-	objc_rw_lock_destroy(&objc_runtime_lock);
-	
 	/* Call destroys to all other modules. */
 	objc_selector_destroy();
 	objc_class_destroy();
@@ -57,6 +55,10 @@ void	objc_runtime_destroy(void) {
 	objc_dispatch_tables_destroy();
 	objc_arc_destroy();
 	objc_associated_objects_destroy();
+
+  /* The lock must be destroyed at the end since some destructors may used it */
+  objc_rw_lock_destroy(&objc_runtime_lock);
+	
 }
 
 
