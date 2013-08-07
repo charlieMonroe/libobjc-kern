@@ -323,6 +323,7 @@ _objc_remove_associative_lists_for_object(id object)
 					      list,
 					      spin_lock,
 					      YES);
+    *extra_space = NULL;
 	}else{
 		struct objc_assoc_fake_class *cl;
 		cl = (struct objc_assoc_fake_class*)
