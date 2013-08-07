@@ -37,10 +37,12 @@ static int event_handler(struct module *module, int event, void *arg) {
 		objc_debug_log("Gotten module file %p (%s)\n", file, file->filename);
 					
 		objc_debug_log("List size: %td\n", SET_COUNT(objc_module_list_set));
-		struct mod **m;
+		struct mod **m_ptr;
 		int counter = 0;
-		SET_FOREACH(m, objc_module_list_set) {
-			objc_debug_log("[%i]: %p --> %p\n", counter, m, *m);
+		SET_FOREACH(m_ptr, objc_module_list_set) {
+			objc_debug_log("[%i]: %p --> %p\n", counter, m_ptr, *m_ptr);
+			struct mod *m = *m_ptr;
+			objc_debug_log("\t\tname: %s\n\t\tsymtab: %p\n\t\tversion: %i\n", m->name, m->symtab, m->version);
 			++counter;
 		}
 
