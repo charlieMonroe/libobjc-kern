@@ -18,7 +18,7 @@
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
-extern void ivar_test(void);
+extern void associated_objects_test(void);
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -28,7 +28,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 		_objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
-		ivar_test();
+		associated_objects_test();
 		
 		break;
 	case MOD_UNLOAD:
