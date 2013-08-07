@@ -12,6 +12,7 @@
 #include "spinlock.h"
 #include "selector.h"
 #include "utils.h"
+#include "init.h"
 
 #define REF_CNT 10
 
@@ -79,6 +80,47 @@ _objc_associated_object_cxx_destruct(id self, SEL _cmd)
 	objc_dealloc(cl, M_FAKE_CLASS_TYPE);
 }
 
+
+/*
+ * Returns a unique name for a lock based on the class name and object pointer.
+ */
+static inline char *
+_objc_unique_lock_name_for_object(id object, Class cl)
+{
+	/*
+	 * The lock names need to be unique, so we're actually allocating the
+	 * name. We have a common prefix, that is suffixed by the object's
+	 * class' name and a hex of the obj pointer.
+	 */
+	const char *name_prefix = "objc_assoc_fake_class_lock_";
+	const char *class_name = object_getClassName(object);
+	
+	/* We need a format 0x1234 - 0x == 2 + sizeof(void*)*2 */
+	unsigned int pointer_str_len = (sizeof(void*) * 2) + 2;
+	char pointer_str[pointer_str_len + 1];
+	objc_format_string(pointer_str, "%p", object);
+	pointer_str[pointer_str_len] = '\0'; /* NULL termination */
+	
+	/* Now concat it */
+	unsigned int name_prefix_len = objc_strlen(name_prefix);
+	unsigned int class_name_len = objc_strlen(class_name);
+	unsigned int lock_name_len = name_prefix_len + class_name_len
+	+ pointer_str_len;
+	char *lock_name = objc_alloc(lock_name_len, M_FAKE_CLASS_TYPE);
+	objc_copy_memory(lock_name, name_prefix, name_prefix_len);
+	objc_copy_memory(lock_name + name_prefix_len, class_name,
+					 class_name_len);
+	objc_copy_memory(lock_name + name_prefix_len + class_name_len,
+					 pointer_str, pointer_str_len + 1); /* +1 for NULL-term */
+	return lock_name;
+}
+
+/*
+ * A static method structure that is used for adding to the dtable of a fake
+ * class.
+ */
+static struct objc_method objc_fake_class_destructor_method;
+
 /*
  * Looks for the fake class in the class hierarchy. If not found
  * and create == YES, allocates it and installs the isa pointer.
@@ -87,68 +129,47 @@ static Class
 _objc_class_for_object(id object, BOOL create)
 {
 	Class superclass = object->isa;
-	Class cl = _objc_find_class_for_object(object);
-	if (cl == Nil && create){
+	struct objc_assoc_fake_class *cl;
+	cl = (struct objc_assoc_fake_class *)_objc_find_class_for_object(object);
+	if (cl == NULL && create){
 		volatile int *spin_lock = lock_for_pointer(object);
 		lock_spinlock(spin_lock);
 		
-		cl = _objc_find_class_for_object(object);
-		if (cl != Nil){
+		cl = (struct objc_assoc_fake_class*)_objc_find_class_for_object(object);
+		if (cl != NULL){
 			/* Someone was faster. */
-			return cl;
+			return (Class)cl;
 		}
 		
 		cl = objc_zero_alloc(sizeof(struct objc_assoc_fake_class),
-				     M_FAKE_CLASS_TYPE);
+								  M_FAKE_CLASS_TYPE);
 		cl->isa = superclass->isa;
 		cl->super_class = superclass;
 		cl->dtable = uninstalled_dtable;
 		cl->flags.fake = YES;
 		cl->flags.resolved = YES;
 		
-		class_addMethod(cl,
-				objc_cxx_destruct_selector,
-				(IMP)_objc_associated_object_cxx_destruct);
-
-		/*
-		 * The lock names need to be unique, so we're actually allocating the 
-		 * name. We have a common prefix, that is suffixed by the object's 
-		 * class' name and a hex of the obj pointer.
-		 */
-		const char *name_prefix = "objc_assoc_fake_class_lock_";
-		const char *class_name = object_getClassName(object);
+		objc_method_list *list = objc_method_list_create(1);
+		list->list[0] = objc_fake_class_destructor_method;
 		
-		/* We need a format 0x1234 - 0x == 2 + sizeof(void*)*2 */
-		unsigned int pointer_str_len = (sizeof(void*) * 2) + 2;
-		char pointer_str[pointer_str_len + 1];
-		objc_format_string(pointer_str, "%p", object);
-		pointer_str[pointer_str_len] = '\0'; /* NULL termination */
+		dtable_add_method_list_to_class((Class)cl, list);
+		objc_method_list_free(list);
 		
-		/* Now concat it */
-		unsigned int name_prefix_len = objc_strlen(name_prefix);
-		unsigned int class_name_len = objc_strlen(class_name);
-		unsigned int lock_name_len = name_prefix_len + class_name_len
-															+ pointer_str_len;
-		char *lock_name = objc_alloc(lock_name_len, M_FAKE_CLASS_TYPE);
-		objc_copy_memory(lock_name, name_prefix, name_prefix_len);
-		objc_copy_memory(lock_name + name_prefix_len, class_name,
-						 class_name_len);
-		objc_copy_memory(lock_name + name_prefix_len + class_name_len,
-						 pointer_str, pointer_str_len + 1); /* +1 for NULL-term */
-		
+		char *lock_name = _objc_unique_lock_name_for_object(object, superclass);
 		objc_debug_log("Created lock name: %s\n", lock_name);
 		
-		objc_rw_lock_init(&((struct objc_assoc_fake_class*)cl)->list.lock,
+		objc_rw_lock_init(&cl->list.lock,
 						  lock_name);
 		
-		object->isa = cl;
+		object->isa = (Class)cl;
 		unlock_spinlock(spin_lock);
 		
 		objc_debug_log("Created fake class (%s) for object %p\n",
-			       class_getName(cl),
+			       class_getName(superclass),
 			       object);
+		
 	}
-	return cl;
+	return (Class)cl;
 }
 
 /*
@@ -549,3 +570,25 @@ objc_remove_associated_weak_refs(id object)
 	objc_rw_lock_unlock(lock);
 }
 
+PRIVATE void
+objc_associated_objects_init(void)
+{
+	/* 
+	 * We only need to initialize the fake class destructor method object that
+	 * is common to all fake classes.
+	 */
+	objc_fake_class_destructor_method.implementation =
+						(IMP)_objc_associated_object_cxx_destruct;
+	objc_fake_class_destructor_method.selector = objc_cxx_destruct_selector;
+	objc_fake_class_destructor_method.selector_name =
+						sel_getName(objc_cxx_destruct_selector);
+	objc_fake_class_destructor_method.selector_types =
+						sel_getTypes(objc_cxx_destruct_selector);
+	objc_fake_class_destructor_method.version = 1;
+}
+
+PRIVATE void
+objc_associated_objects_destroy(void)
+{
+	// No-op
+}

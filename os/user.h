@@ -22,10 +22,14 @@
 typedef struct {
 	pthread_rwlock_t	lock;
 	const char		*name;
+	int inited;
 } objc_rw_lock;
 
 
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
+	if (lock->inited != 0){
+		objc_debug_log("Trying to init lock %s for the second time!\n", name);
+	}
 	lock->name = name;
 	++objc_lock_count;
 	pthread_rwlock_init(&lock->lock, NULL);

@@ -15,6 +15,7 @@ void associated_objects_test(void){
 		int retain_count;
 	} Object;
 	
+	objc_log("===STARTING AO TEST===\n");
 	KKObject *obj = [[KKObject alloc] init];
 	
 	void *key = (void*)0x123456;
