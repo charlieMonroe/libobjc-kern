@@ -4144,7 +4144,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                                               llvm::ConstantExpr::getBitCast(ModuleStruct, PtrTy),
                                                               "objc_module_list");
   // FreeBSD / ELF
-  ModuleList->setSection("__DATA, set_objc_module_list_set");
+  ModuleList->setSection("set_objc_module_list_set");
   // Mach-O
   // ModuleList->setSection("__DATA, objc_module_list");
 
