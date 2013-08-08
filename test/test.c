@@ -79,13 +79,4 @@ void run_tests(void)
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 }
 
-#ifndef _KERNEL
-#include "../init.h"
-int main(int argc, const char *argv[]) {
-	compiler_test();
-	
-	objc_runtime_destroy();
-	return 0;
-}
-#endif
 
