@@ -36,8 +36,8 @@ SRCS	= kernel_module.c \
 		test/handmade-class-test.m \
 		test/ivar-test.m \
 		test/test.c \
-		test/weak-ref-test.m
-#		test/compiler-test.m 
+		test/weak-ref-test.m \
+		test/compiler-test.m 
 		
 .include <bsd.kmod.mk>
 
