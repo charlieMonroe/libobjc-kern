@@ -1123,7 +1123,7 @@ namespace {
         for (std::vector<ClassAliasPair>::iterator iter = ClassAliases.begin();
              iter != ClassAliases.end(); ++iter) {
           llvm::Constant *TheClass =
-          TheModule.getGlobalVariable(("_OBJC_CLASS_" + iter->first).c_str(),
+          TheModule.getGlobalVariable((GetClassSymbolName(iter->first, false)).c_str(),
                                       true);
           if (0 != TheClass) {
             TheClass = llvm::ConstantExpr::getBitCast(TheClass, PtrTy);
@@ -1444,7 +1444,7 @@ namespace {
       
       EmitClassRef(Name);
       
-      std::string SymbolName = "_OBJC_CLASS_" + Name;
+      std::string SymbolName = GetClassSymbolName(Name, false);
       
       llvm::GlobalVariable *ClassSymbol = TheModule.getGlobalVariable(SymbolName);
       
@@ -1976,8 +1976,7 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateConstantString(const Str
   
   if (StringClass.empty()) StringClass = "NXConstantString";
   
-  std::string Sym = "_OBJC_CLASS_";
-  Sym += StringClass;
+  std::string Sym = GetClassSymbolName(StringClass, false);
   
   llvm::Constant *isa = TheModule.getNamedGlobal(Sym);
   
@@ -3801,7 +3800,7 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
         Superclass = new llvm::GlobalVariable(TheModule,
                                               PtrTy,
                                               false,
-                                              llvm::GlobalValue::ExternalWeakLinkage,
+                                              llvm::GlobalValue::ExternalLinkage,
                                               0,
                                               SuperclassSymbolName);
       }
@@ -3809,7 +3808,7 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
         SuperclassMeta = new llvm::GlobalVariable(TheModule,
                                                   PtrTy,
                                                   false,
-                                                  llvm::GlobalValue::ExternalWeakLinkage,
+                                                  llvm::GlobalValue::ExternalLinkage,
                                                   0,
                                                   SuperclassMetaSymbolName);
       }
@@ -4148,10 +4147,11 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   // FreeBSD / ELF
   ModuleList->setSection("set_objc_module_list_set");
   // Mach-O
-  // ModuleList->setSection("__DATA, objc_module_list");
+  //ModuleList->setSection("__DATA, objc_module_list");
 
   printf("============================creating module structure for %s\n", TheModule.getModuleIdentifier().c_str());
 
+  return NULL;
 	// TODO - actually return NULL and let the loader handle this.
   // Create the load function calling the runtime entry point with the module
   // structure

@@ -33,6 +33,10 @@ def NoArgumentUnused : OptionFlag;
 // lines that use it.
 def Unsupported : OptionFlag;
 
+// CoreOption - This is considered a "core" Clang option, available in both
+// clang and clang-cl modes.
+def CoreOption : OptionFlag;
+
 // CLOption - This is a cl.exe compatibility option. Options with this flag
 // are made available when the driver is running in CL compatibility mode.
 def CLOption : OptionFlag;
@@ -98,6 +102,7 @@ def clang_ignored_m_Group : OptionGroup<"<clang ignored m group>">,
 // substitutions:
 //   _ => __
 //   - => _
+//   / => _SLASH
 //   # => _HASH
 //   ? => _QUESTION
 //   , => _COMMA
@@ -116,7 +121,8 @@ def internal_debug_Group :
 
 class InternalDriverOpt : Group<internal_driver_Group>,
   Flags<[DriverOption, HelpHidden]>;
-def driver_mode : Joined<["--"], "driver-mode=">, InternalDriverOpt,
+def driver_mode : Joined<["--"], "driver-mode=">, Group<internal_driver_Group>,
+  Flags<[CoreOption, DriverOption, HelpHidden]>,
   HelpText<"Set the driver mode to either 'gcc', 'g++', 'cpp', or 'cl'">;
 def ccc_gcc_name : Separate<["-"], "ccc-gcc-name">, InternalDriverOpt,
   HelpText<"Name for native GCC compiler">,
@@ -171,11 +177,8 @@ def ccc_ : Joined<["-"], "ccc-">, Group<internal_Group>, Flags<[Unsupported]>;
 
 // Standard Options
 
-def _HASH_HASH_HASH : Flag<["-"], "###">, Flags<[DriverOption]>,
+def _HASH_HASH_HASH : Flag<["-"], "###">, Flags<[DriverOption, CoreOption]>,
     HelpText<"Print the commands to run for this compilation">;
-// The '--' option is here for the sake of compatibility with gcc, but is 
-// being ignored by the driver.
-def _DASH_DASH : Flag<["--"], "">, Flags<[DriverOption]>;
 def A : JoinedOrSeparate<["-"], "A">;
 def B : JoinedOrSeparate<["-"], "B">;
 def CC : Flag<["-"], "CC">, Flags<[CC1Option]>;
@@ -207,13 +210,14 @@ def MT : JoinedOrSeparate<["-"], "MT">, Group<M_Group>, Flags<[CC1Option]>,
     HelpText<"Specify target for dependency">;
 def Mach : Flag<["-"], "Mach">;
 def M : Flag<["-"], "M">, Group<M_Group>;
-def O0 : Joined<["-"], "O0">, Group<O_Group>, Flags<[CC1Option]>;
-def O4 : Joined<["-"], "O4">, Group<O_Group>, Flags<[CC1Option]>;
+def O0 : Flag<["-"], "O0">, Group<O_Group>, Flags<[CC1Option]>;
+def O4 : Flag<["-"], "O4">, Group<O_Group>, Flags<[CC1Option]>;
 def ObjCXX : Flag<["-"], "ObjC++">, Flags<[DriverOption]>,
   HelpText<"Treat source input files as Objective-C++ inputs">;
 def ObjC : Flag<["-"], "ObjC">, Flags<[DriverOption]>,
   HelpText<"Treat source input files as Objective-C inputs">;
 def O : Joined<["-"], "O">, Group<O_Group>, Flags<[CC1Option]>;
+def O_flag : Flag<["-"], "O">, Flags<[CC1Option]>, Alias<O>, AliasArgs<["2"]>;
 def Ofast : Joined<["-"], "Ofast">, Group<O_Group>, Flags<[CC1Option]>;
 def P : Flag<["-"], "P">, Flags<[CC1Option]>,
   HelpText<"Disable linemarker output in -E mode">;
@@ -555,6 +559,9 @@ def fmodules_prune_after : Joined<["-"], "fmodules-prune-after=">, Group<i_Group
 def fmodules : Flag <["-"], "fmodules">, Group<f_Group>,
   Flags<[DriverOption, CC1Option]>,
   HelpText<"Enable the 'modules' language feature">;
+def fmodule_maps : Flag <["-"], "fmodule-maps">, Group<f_Group>,
+  Flags<[DriverOption,CC1Option]>,
+  HelpText<"Read module maps to understand the structure of library headers">;
 def fmodules_ignore_macro : Joined<["-"], "fmodules-ignore-macro=">, Group<f_Group>, Flags<[CC1Option]>,
   HelpText<"Ignore the definition of the given macro when building and loading modules">;
 def fretain_comments_from_system_headers : Flag<["-"], "fretain-comments-from-system-headers">, Group<f_Group>, Flags<[CC1Option]>;
@@ -614,6 +621,8 @@ def fno_limit_debug_info : Flag<["-"], "fno-limit-debug-info">, Group<f_Group>, 
 def fno_merge_all_constants : Flag<["-"], "fno-merge-all-constants">, Group<f_Group>,
     Flags<[CC1Option]>, HelpText<"Disallow merging of constants">;
 def fno_modules : Flag <["-"], "fno-modules">, Group<f_Group>,
+  Flags<[DriverOption]>;
+def fno_module_maps : Flag <["-"], "fno-module-maps">, Group<f_Group>,
   Flags<[DriverOption]>;
 def fno_ms_extensions : Flag<["-"], "fno-ms-extensions">, Group<f_Group>;
 def fno_ms_compatibility : Flag<["-"], "fno-ms-compatibility">, Group<f_Group>;
@@ -784,6 +793,8 @@ def ftrap_function_EQ : Joined<["-"], "ftrap-function=">, Group<f_Group>, Flags<
 def funit_at_a_time : Flag<["-"], "funit-at-a-time">, Group<f_Group>;
 def funroll_loops : Flag<["-"], "funroll-loops">, Group<f_Group>,
   HelpText<"Turn on loop unroller">, Flags<[CC1Option]>;
+def fno_unroll_loops : Flag<["-"], "fno-unroll-loops">, Group<f_Group>,
+  HelpText<"Turn off loop unroller">, Flags<[CC1Option]>;
 def funsigned_bitfields : Flag<["-"], "funsigned-bitfields">, Group<f_Group>;
 def funsigned_char : Flag<["-"], "funsigned-char">, Group<f_Group>;
 def funwind_tables : Flag<["-"], "funwind-tables">, Group<f_Group>;
@@ -939,7 +950,8 @@ def mno_constant_cfstrings : Flag<["-"], "mno-constant-cfstrings">, Group<m_Grou
 def mno_global_merge : Flag<["-"], "mno-global-merge">, Group<m_Group>, Flags<[CC1Option]>,
   HelpText<"Disable merging of globals">;
 def mno_mmx : Flag<["-"], "mno-mmx">, Group<m_x86_Features_Group>;
-def mno_pascal_strings : Flag<["-"], "mno-pascal-strings">, Group<m_Group>;
+def mno_pascal_strings : Flag<["-"], "mno-pascal-strings">,
+  Alias<fno_pascal_strings>;
 def mno_red_zone : Flag<["-"], "mno-red-zone">, Group<m_Group>;
 def mno_relax_all : Flag<["-"], "mno-relax-all">, Group<m_Group>;
 def mno_rtd: Flag<["-"], "mno-rtd">, Group<m_Group>;
@@ -978,7 +990,7 @@ def mno_omit_leaf_frame_pointer : Flag<["-"], "mno-omit-leaf-frame-pointer">, Gr
 def momit_leaf_frame_pointer : Flag<["-"], "momit-leaf-frame-pointer">, Group<m_Group>,
   HelpText<"Omit frame pointer setup for leaf functions">, Flags<[CC1Option]>;
 def moslib_EQ : Joined<["-"], "moslib=">, Group<m_Group>;
-def mpascal_strings : Flag<["-"], "mpascal-strings">, Group<m_Group>;
+def mpascal_strings : Flag<["-"], "mpascal-strings">, Alias<fpascal_strings>;
 def mred_zone : Flag<["-"], "mred-zone">, Group<m_Group>;
 def mregparm_EQ : Joined<["-"], "mregparm=">, Group<m_Group>;
 def mrelax_all : Flag<["-"], "mrelax-all">, Group<m_Group>, Flags<[CC1Option]>,
