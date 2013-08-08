@@ -3723,7 +3723,9 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   // this, so check and fix them properly.
   std::string ClassSym = GetClassSymbolName(Name, isMeta);
   llvm::GlobalVariable *ClassRef = TheModule.getNamedGlobal(ClassSym);
-  llvm::Constant *Class = MakeGlobal(ClassTy, Elements, ClassSym,
+  llvm::Constant *Class = MakeGlobal(ClassTy,
+                                     Elements,
+                                     ClassSym,
                                      llvm::GlobalValue::ExternalLinkage);
   if (ClassRef) {
     ClassRef->replaceAllUsesWith(llvm::ConstantExpr::getBitCast(Class,
@@ -3797,17 +3799,17 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
       
       if (Superclass == NULL){
         Superclass = new llvm::GlobalVariable(TheModule,
-                                              ClassTy,
+                                              PtrTy,
                                               false,
-                                              llvm::GlobalValue::ExternalLinkage,
+                                              llvm::GlobalValue::ExternalWeakLinkage,
                                               0,
                                               SuperclassSymbolName);
       }
       if (SuperclassMeta == NULL){
         SuperclassMeta = new llvm::GlobalVariable(TheModule,
-                                                  ClassTy,
+                                                  PtrTy,
                                                   false,
-                                                  llvm::GlobalValue::ExternalLinkage,
+                                                  llvm::GlobalValue::ExternalWeakLinkage,
                                                   0,
                                                   SuperclassMetaSymbolName);
       }
