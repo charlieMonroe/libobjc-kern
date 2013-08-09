@@ -3790,12 +3790,15 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
       SuperclassMeta = pair.second;
     }else{
       
-      StringRef SuperclassSymbolName(GetClassSymbolName(SuperClassName, false));
-      StringRef SuperclassMetaSymbolName(GetClassSymbolName(SuperClassName, true));
+      std::string SuperclassSymbolName = GetClassSymbolName(SuperClassName, false);
+      std::string SuperclassMetaSymbolName = GetClassSymbolName(SuperClassName, true);
       
       Superclass = TheModule.getGlobalVariable(SuperclassSymbolName);
       SuperclassMeta = TheModule.getGlobalVariable(SuperclassMetaSymbolName);
       
+      printf("Superclass symbol: %s\nSuperclass meta symbol: %s\n", SuperclassSymbolName.c_str(),
+			SuperclassMetaSymbolName.c_str());
+
       if (Superclass == NULL){
         Superclass = new llvm::GlobalVariable(TheModule,
                                               PtrTy,
