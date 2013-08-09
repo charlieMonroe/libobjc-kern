@@ -1,5 +1,6 @@
 #include "../kernobjc/runtime.h"
 #include "../types.h"
+#include "../malloc_types.h"
 
 
 static void print_method_list(struct objc_method_list_struct *methods){
@@ -51,7 +52,7 @@ static void list_classes(void){
 		print_class(classes[i]);
 		print_class(classes[i]->isa);
 	}
-	objc_dealloc(classes, NULL);
+	objc_dealloc(classes, M_CLASS_TYPE);
 }
 
 
