@@ -18,7 +18,7 @@
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
-extern void weak_ref_test(void);
+extern void run_tests(void);
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -33,7 +33,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 		_objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
-		weak_ref_test();
+		run_tests();
 		
 		break;
 	case MOD_UNLOAD:
