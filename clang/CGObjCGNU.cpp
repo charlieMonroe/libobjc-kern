@@ -4147,14 +4147,23 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                                               llvm::GlobalValue::InternalLinkage,
                                                               llvm::ConstantExpr::getBitCast(ModuleStruct, PtrTy),
                                                               "objc_module_list");
+  
+  
+#ifndef __APPLE__
+  #define __APPLE__ 0
+#endif
+#if __APPLE__
+  // Mach-O
+  ModuleList->setSection("__DATA, objc_module_list");
+#else
   // FreeBSD / ELF
   ModuleList->setSection("set_objc_module_list_set");
-  // Mach-O
-  //ModuleList->setSection("__DATA, objc_module_list");
+#endif
+  
 
   printf("============================creating module structure for %s\n", TheModule.getModuleIdentifier().c_str());
 
-  return NULL;
+#if __APPLE__
 	// TODO - actually return NULL and let the loader handle this.
   // Create the load function calling the runtime entry point with the module
   // structure
@@ -4174,6 +4183,9 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   Builder.CreateRetVoid();
   
   return LoadFunction;
+#else
+  return NULL;
+#endif
 }
 
 
