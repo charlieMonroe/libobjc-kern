@@ -13,6 +13,7 @@
 
 -(id)init;
 
+-(void)dealloc;
 -(id)retain;
 -(void)release;
 
