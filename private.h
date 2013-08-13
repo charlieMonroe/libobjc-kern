@@ -28,6 +28,14 @@ PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
 PRIVATE void			objc_init_protocols(objc_protocol_list *protocols);
 PRIVATE IMP   slowMsgLookup(id *receiver, SEL cmd);
 
+
+/*
+ * The compiler adds abort calls to the exception handling code. While we could
+ * theoretically use a more sophisticated name, it would still be a void-void
+ * function.
+ */
+PRIVATE void abort(void);
+
 PRIVATE void
 objc_load_buffered_categories(void);
 

@@ -604,11 +604,7 @@ objc_exception_rethrow(struct _Unwind_Exception *e)
 	objc_abort("");
 }
 
-/*
- * The compiler adds abort calls to the exception handling code. While we could
- * theoretically use a more sophisticated name, it would still be a void-void
- * function.
- */
+/* See private.h */
 PRIVATE void
 abort(void)
 {
