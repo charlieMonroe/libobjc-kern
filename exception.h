@@ -2,7 +2,7 @@
 #ifndef OBJC_EXCEPTION_H_
 #define OBJC_EXCEPTION_H_
 
-#include "unwind/libunwind.h"
+#include "unwind/unwind.h"
 
 void objc_exception_rethrow(struct _Unwind_Exception *e);
 
