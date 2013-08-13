@@ -282,8 +282,6 @@ internal_objc_personality(int version,
 	// have to box it.  If it's something else, like a LanguageKit exception
 	// then we ignore it (for now)
 	BOOL foreignException = exceptionClass != objc_exception_class;
-	// Is this a C++ exception containing an Objective-C++ object?
-	BOOL objcxxException = NO;
 	// The object to return
 	void *object = NULL;
 		
@@ -395,7 +393,11 @@ internal_objc_personality(int version,
 }
 
 
-BEGIN_PERSONALITY_FUNCTION(__kern_objc_personality_v0)
+_Unwind_Reason_Code __kern_objc_personality_v0(int version,
+                         _Unwind_Action actions,
+                         uint64_t exceptionClass,
+                         struct _Unwind_Exception *exceptionObject,
+											   struct _Unwind_Context *context){
 	return internal_objc_personality(version, actions, exceptionClass,
 								 exceptionObject, context);
 }
