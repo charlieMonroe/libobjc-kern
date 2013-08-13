@@ -144,6 +144,45 @@ isKindOfClass(Class thrown, Class type)
 	return NO;
 }
 
+/**
+ * Saves the result of the landing pad that we have found.  For ARM, this is
+ * stored in the generic unwind structure, while on other platforms it is
+ * stored in the Objective-C exception.
+ */
+static void
+save_landing_pad(struct _Unwind_Context *context, struct _Unwind_Exception *ucb,
+							  struct objc_exception *ex, int selector,
+						    dw_eh_ptr_t landingPad)
+{
+	// Cache the results for the phase 2 unwind, if we found a handler
+	// and this is not a foreign exception.  We can't cache foreign exceptions
+	// because we don't know their structure (although we could cache C++
+	// exceptions...)
+	if (ex)
+	{
+		ex->handlerSwitchValue = selector;
+		ex->landingPad = landingPad;
+	}
+}
+
+/**
+ * Loads the saved landing pad.  Returns 1 on success, 0 on failure.
+ */
+static int
+load_landing_pad(struct _Unwind_Context *context, struct _Unwind_Exception *ucb,
+						     struct objc_exception *ex, unsigned long *selector,
+						     dw_eh_ptr_t *landingPad)
+{
+	if (ex)
+	{
+		*selector = ex->handlerSwitchValue;
+		*landingPad = ex->landingPad;
+		return 0;
+	}
+	return 0;
+}
+
+
 static Class
 get_type_table_entry(struct _Unwind_Context *context,
 									  struct dwarf_eh_lsda *lsda,
@@ -282,7 +321,7 @@ internal_objc_personality(int version,
 			((handler == handler_catchall_id) && !foreignException) ||
 			(handler == handler_catchall))
 		{
-			saveLandingPad(context, exceptionObject, ex, selector, action.landing_pad);
+			save_landing_pad(context, exceptionObject, ex, selector, action.landing_pad);
 			objc_debug_log("Found handler! %d\n", handler);
 			return _URC_HANDLER_FOUND;
 		}
@@ -334,7 +373,7 @@ internal_objc_personality(int version,
 		}
 	}else{
 		// Restore the saved info if we saved some last time.
-		loadLandingPad(context, exceptionObject, ex, &selector, &action.landing_pad);
+		load_landing_pad(context, exceptionObject, ex, &selector, &action.landing_pad);
 		object = ex->object;
 		if (!isNew){
 			objc_dealloc(ex, M_EXCEPTION_TYPE);
