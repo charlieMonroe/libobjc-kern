@@ -144,6 +144,57 @@ isKindOfClass(Class thrown, Class type)
 	return NO;
 }
 
+static handler_type
+check_action_record(struct _Unwind_Context *context, BOOL foreignException,
+									 struct dwarf_eh_lsda *lsda, dw_eh_ptr_t action_record,
+									 Class thrown_class, unsigned long *selector)
+{
+	if (!action_record) { return handler_cleanup; }
+	while (action_record) {
+		int filter = read_sleb128(&action_record);
+		dw_eh_ptr_t action_record_offset_base = action_record;
+		int displacement = read_sleb128(&action_record);
+		*selector = filter;
+		
+		objc_debug_log("Filter: %d\n", filter);
+		
+		if (filter > 0){
+			Class type = get_type_table_entry(context, lsda, filter);
+			objc_debug_log("%p type: %d\n", type, !foreignException);
+			// Catchall
+			if (Nil == type){
+				return handler_catchall;
+			}
+			// We treat id catches as catchalls when an object is thrown and as
+			// nothing when a foreign exception is thrown
+			else if ((Class)1 == type){
+				objc_debug_log("Found id catch\n");
+				if (!foreignException){
+					return handler_catchall_id;
+				}
+			}else if (!foreignException && isKindOfClass(thrown_class, type)){
+				objc_debug_log("found handler for %s\n", type->name);
+				return handler_class;
+			}else if (thrown_class == type){
+				return handler_class;
+			}
+		}else if (filter == 0){
+			objc_debug_log("0 filter\n");
+			// Cleanup?  I think the GNU ABI doesn't actually use this, but it
+			// would be a good way of indicating a non-id catchall...
+			return handler_cleanup;
+		}else{
+			objc_abort("Filter value: %d\n"
+					  "Your compiler and I disagree on the correct layout of EH data.\n",
+					  filter);
+		}
+		*selector = 0;
+		action_record = displacement ?
+		action_record_offset_base + displacement : 0;
+	}
+	return handler_none;
+}
+
 
 #pragma mark -
 #pragma mark Personality functions
