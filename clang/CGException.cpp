@@ -156,6 +156,7 @@ namespace {
     static const EHPersonality GNU_C;
     static const EHPersonality GNU_C_SJLJ;
     static const EHPersonality GNU_ObjC;
+	  static const EHPersonality Kernel_ObjC;
     static const EHPersonality GNUstep_ObjC;
     static const EHPersonality GNU_ObjCXX;
     static const EHPersonality NeXT_ObjC;
@@ -172,6 +173,8 @@ const EHPersonality
 EHPersonality::GNU_CPlusPlus_SJLJ = { "__gxx_personality_sj0", 0 };
 const EHPersonality
 EHPersonality::GNU_ObjC = {"__gnu_objc_personality_v0", "objc_exception_throw"};
+const EHPersonality EHPersonality::Kernel_ObjC = {"__kern_objc_personality_v0",
+                                                  "objc_exception_throw"};
 const EHPersonality
 EHPersonality::GNU_ObjCXX = { "__gnustep_objcxx_personality_v0", 0 };
 const EHPersonality
@@ -190,8 +193,8 @@ static const EHPersonality &getObjCPersonality(const LangOptions &L) {
   case ObjCRuntime::MacOSX:
   case ObjCRuntime::iOS:
     return EHPersonality::NeXT_ObjC;
-  case ObjCRuntime::KernelObjC: // TODO own personality?
-    return EHPersonality::GNUstep_ObjC;
+  case ObjCRuntime::KernelObjC:
+    return EHPersonality::Kernel_ObjC;
   case ObjCRuntime::GNUstep:
     if (L.ObjCRuntime.getVersion() >= VersionTuple(1, 7))
       return EHPersonality::GNUstep_ObjC;
@@ -234,7 +237,7 @@ static const EHPersonality &getObjCXXPersonality(const LangOptions &L) {
   case ObjCRuntime::GNUstep:
     return EHPersonality::GNU_ObjCXX;
   case ObjCRuntime::KernelObjC:
-    llvm_unreachable("No support for C++ in the kernel yet.");
+    llvm_unreachable("No support for C++ in the kernel.");
   }
   llvm_unreachable("bad runtime kind");
 }
