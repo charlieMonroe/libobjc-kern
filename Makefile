@@ -25,6 +25,7 @@ SRCS	= kernel_module.c \
 		class_registry.c \
 		dtable.c \
 		encoding.c \
+		exception.c \
 		malloc_types.c \
 		message.c \
 		method.c \
