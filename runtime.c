@@ -35,7 +35,7 @@ void objc_runtime_init(void) {
 	objc_arc_init();
 	objc_protocol_init();
 	objc_associated_objects_init();
-//	objc_exceptions_init();
+  objc_exceptions_init();
 	
 	objc_runtime_initialized = YES;
 }
@@ -55,6 +55,7 @@ void	objc_runtime_destroy(void) {
 	objc_dispatch_tables_destroy();
 	objc_arc_destroy();
 	objc_associated_objects_destroy();
+  objc_exceptions_destroy();
 
   /* The lock must be destroyed at the end since some destructors may used it */
   objc_rw_lock_destroy(&objc_runtime_lock);
