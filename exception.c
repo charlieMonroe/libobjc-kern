@@ -17,6 +17,15 @@ enum exception_type
 	BOXED_FOREIGN
 };
 
+typedef enum
+{
+	handler_none,
+	handler_cleanup,
+	handler_catchall_id,
+	handler_catchall,
+	handler_class
+} handler_type;
+
 /* TLS data structure */
 struct thread_data
 {
