@@ -413,7 +413,8 @@ _Unwind_Reason_Code __kern_objc_personality_v0(int version,
 void
 objc_exception_throw(id object)
 {
-	SEL rethrow_sel = sel_registerName("rethrow");
+	SEL rethrow_sel = sel_registerName("rethrow",
+									   sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8");
 	Class object_class = objc_object_get_class_inline(object);
 	if ((nil != object) &&
 	    (class_respondsToSelector(object_class, rethrow_sel)))
