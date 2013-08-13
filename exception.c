@@ -616,6 +616,9 @@ abort(void)
 PRIVATE void
 objc_exceptions_init(void)
 {
+  extern void *__libunwind_default_personality;
+  __libunwind_default_personality = __kern_objc_personality_v0;
+  
 	objc_register_tls(&objc_exception_tls_key, _objc_exceptions_remove_tls);
 }
 
