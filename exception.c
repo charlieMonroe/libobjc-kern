@@ -144,6 +144,31 @@ isKindOfClass(Class thrown, Class type)
 	return NO;
 }
 
+static Class
+get_type_table_entry(struct _Unwind_Context *context,
+									  struct dwarf_eh_lsda *lsda,
+                     int filter)
+{
+	dw_eh_ptr_t record = lsda->type_table -
+	dwarf_size_of_fixed_size_field(lsda->type_table_encoding)*filter;
+	dw_eh_ptr_t start = record;
+	int64_t offset = read_value(lsda->type_table_encoding, &record);
+	
+	if (0 == offset) { return Nil; }
+	
+	// ...so we need to resolve it
+	char *class_name = (char*)(intptr_t)resolve_indirect_value(context,
+															   lsda->type_table_encoding, offset, start);
+	
+	if (0 == class_name) { return Nil; }
+	
+	objc_debug_log("Class name: %s\n", class_name);
+	
+	if (strcmp("@id", class_name) == 0) { return (Class)1; }
+	
+	return (Class)objc_getClass(class_name);
+}
+
 static handler_type
 check_action_record(struct _Unwind_Context *context, BOOL foreignException,
 									 struct dwarf_eh_lsda *lsda, dw_eh_ptr_t action_record,
