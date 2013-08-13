@@ -598,7 +598,8 @@ objc_exception_rethrow(struct _Unwind_Exception *e)
 		}
 	}
 	
-	objc_assert(e == (struct _Unwind_Exception*)td->caughtExceptions);
+	objc_assert(e == (struct _Unwind_Exception*)td->caughtExceptions,
+				      "Wrong list\n");
 	_Unwind_Resume_or_Rethrow(e);
 	objc_abort("");
 }
