@@ -182,6 +182,12 @@ load_landing_pad(struct _Unwind_Context *context, struct _Unwind_Exception *ucb,
 	return 0;
 }
 
+static void
+_objc_exception_cleanup(_Unwind_Reason_Code reason, struct _Unwind_Exception *e)
+{
+	// No-op
+}
+
 
 static Class
 get_type_table_entry(struct _Unwind_Context *context,
@@ -432,7 +438,7 @@ objc_exception_throw(id object)
 																						M_EXCEPTION_TYPE);
 	
 	ex->unwindHeader.exception_class = objc_exception_class;
-	ex->unwindHeader.exception_cleanup = cleanup;
+	ex->unwindHeader.exception_cleanup = _objc_exception_cleanup;
 	
 	ex->object = object;
 	
@@ -558,9 +564,10 @@ objc_exception_rethrow(struct _Unwind_Exception *e)
 	// If this is an Objective-C exception, then
 	if (td->current_exception_type == OBJC){
 		struct objc_exception *ex = objc_exception_from_header(e);
-		objc_assert(e->exception_class == objc_exception_class);
-		objc_assert(ex == td->caughtExceptions);
-		objc_assert(ex->catch_count > 0);
+		objc_assert(e->exception_class == objc_exception_class,
+								"Not an ObjC exception!\n");
+		objc_assert(ex == td->caughtExceptions, "Wrong list!\n");
+		objc_assert(ex->catch_count > 0, "Catch count 0\n");
 		
 		// Negate the catch count, so that we can detect that this is a
 		// rethrown exception in objc_end_catch
