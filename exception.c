@@ -348,7 +348,7 @@ internal_objc_personality(int version,
 		//if (check_action_record(context, foreignException, &lsda,
 		//action.action_record, thrown_class, &selector) != handler_cleanup)
 		if (handler != handler_cleanup){
-			DEBUG_LOG("Ignoring handler! %d\n",handler);
+			objc_debug_log("Ignoring handler! %d\n",handler);
 			return _URC_CONTINUE_UNWIND;
 		}
 		
@@ -368,21 +368,26 @@ internal_objc_personality(int version,
 		if (foreignException){
 			objc_debug_log("Doing the foreign exception thing...\n");
 			//[thrown_class exceptionWithForeignException: exceptionObject];
-			SEL box_sel = sel_registerName("exceptionWithForeignException:");
-			IMP boxfunction = objc_msg_lookup((id)thrown_class, box_sel);
+			BOOL cpu32_bit = sizeof(void*) == 4;
+			const char *box_sel_types = cpu32_bit == 4 ? "@12@0:4@8" : "@24@0:8@16";
+			SEL box_sel = sel_registerName("exceptionWithForeignException:",
+										   box_sel_types);
+			struct objc_slot *boxfunction = objc_get_slot(thrown_class, box_sel);
+			if (boxfunction != NULL){
+				object = boxfunction->implementation((id)thrown_class, box_sel,
+																						exceptionClass);
+			}
 		}
 	}else{
 		// Restore the saved info if we saved some last time.
 		load_landing_pad(context, exceptionObject, ex, &selector, &action.landing_pad);
 		object = ex->object;
-		if (!isNew){
-			objc_dealloc(ex, M_EXCEPTION_TYPE);
-		}
+		objc_dealloc(ex, M_EXCEPTION_TYPE);
 	}
 	
 	_Unwind_SetIP(context, (unsigned long)action.landing_pad);
 	_Unwind_SetGR(context, __builtin_eh_return_data_regno(0),
-				  (unsigned long)(isNew ? exceptionObject : object));
+				  (unsigned long)(exceptionObject));
 	_Unwind_SetGR(context, __builtin_eh_return_data_regno(1), selector);
 	
 	objc_debug_log("Installing context, selector %d\n", (int)selector);
