@@ -6,7 +6,7 @@
 #include "kernobjc/runtime.h"
 #include "class.h"
 #include "private.h"
-#include "unwind/dwarf-eh.h"
+#include "unwind/dwarf_eh.h"
 
 enum exception_type
 {
