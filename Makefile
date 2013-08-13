@@ -12,6 +12,10 @@ LDFLAGS += objc.lds
 
 KMOD	= libobjc
 
+# MAKEOBJDIR = ./build
+# MAKEOBJDIRPREFIX = ./build
+# export MAKEOBJDIR=./build
+
 SRCS	= kernel_module.c \
 		arc.c \
 		associative.c \
@@ -37,7 +41,8 @@ SRCS	= kernel_module.c \
 		test/ivar-test.m \
 		test/test.c \
 		test/weak-ref-test.m \
-		test/compiler-test.m 
+		test/compiler-test.m \
+		test/exception-test.m 
 		
 .include <bsd.kmod.mk>
 

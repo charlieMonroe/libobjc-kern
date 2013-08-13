@@ -61,7 +61,7 @@ void weak_ref_test(void);
 void ivar_test(void);
 void handmade_class_test(void);
 void compiler_test(void);
-//void exception_test(void);
+void exception_test(void);
 
 void run_tests(void);
 void run_tests(void)
@@ -73,7 +73,7 @@ void run_tests(void)
 	ivar_test();
 	handmade_class_test();
 	compiler_test();
-	//exception_test();
+	exception_test();
 	
 	printf("Total number of locks created:              %d\n", objc_lock_count);
 	printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);
