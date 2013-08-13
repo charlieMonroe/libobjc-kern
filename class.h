@@ -50,6 +50,10 @@ objc_object_is_small_object(id obj)
 __attribute__((always_inline)) static inline Class
 objc_object_get_class_inline(id obj)
 {
+	if (UNLIKELY(obj == nil)){
+		return Nil;
+	}
+	
 	Class cl = objc_class_for_small_object(obj);
 	if (UNLIKELY(cl != Nil)){
 		return cl;
