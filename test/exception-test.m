@@ -15,14 +15,31 @@
 @end
 
 
+void __throwing_function(Class cl);
+void __throwing_function(Class cl){
+	@throw [[cl alloc] init];
+}
+
 static void run_exception_test_for_class(Class cl){
+	BOOL was_in_try = NO;
+	BOOL was_in_finally = NO;
+	Class caught_for_class = Nil;
 	@try {
-		// Something
+		was_in_try = YES;
+		__throwing_function(cl);
+	}@catch (OtherExceptionClass *exception){
+		caught_for_class = [OtherExceptionClass class];
 	}@catch (ExceptionClass *exception){
-
+		caught_for_class = [ExceptionClass class];
 	}@finally{
-
-	}		
+		was_in_finally = YES;
+	}
+	
+	objc_assert(was_in_try, "Wasn't in try!\n");
+	objc_assert(was_in_try, "Wasn't in finally!\n");
+	objc_assert(cl == caught_for_class, "Caught exception by the wrong handler:"
+				" %p [%s]!\n", caught_for_class, caught_for_class == Nil ?
+				"null" : class_getName(caught_for_class));
 }
 
 
