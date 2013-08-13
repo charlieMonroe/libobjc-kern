@@ -71,7 +71,7 @@ static inline int dwarf_size_of_fixed_size_field(unsigned char type)
 		case DW_EH_PE_udata8: return 8;
 		case DW_EH_PE_absptr: return sizeof(void*);
 	}
-	abort();
+	objc_abort("Unhandled type\n");
 }
 
 /** 
@@ -89,7 +89,7 @@ static uint64_t read_leb128(unsigned char** data, int *b)
 	{
 		// This check is a bit too strict - we should also check the highest
 		// bit of the digit.
-		assert(bit < sizeof(uint64_t) * 8);
+		objc_assert(bit < sizeof(uint64_t) * 8, "");
 		// Get the base 128 digit 
 		digit = (**data) & 0x7f;
 		// Add it to the current value
@@ -157,7 +157,7 @@ static uint64_t read_value(char encoding, unsigned char **data)
 		case DW_EH_PE_uleb128:
 			v = read_uleb128(data);
 			break;
-		default: abort();
+		default: objc_abort("Unhandled type\n");
 	}
 
 	return v;
