@@ -2,19 +2,9 @@ CC=~/build/Debug+Asserts/bin/clang
 
 
 CFLAGS  += -fobjc-runtime=kernel-runtime
-CFLAGS	+= -wobjc-root-class
 CFLAGS	+= -O0
-CFLAGS	+= -msoft-float
-CFLAGS += -lsoft-fp
-
-LDFLAGS += -T
-LDFLAGS += objc.lds
 
 KMOD	= libobjc
-
-# MAKEOBJDIR = ./build
-# MAKEOBJDIRPREFIX = ./build
-# export MAKEOBJDIR=./build
 
 SRCS	= kernel_module.c \
 		arc.c \
