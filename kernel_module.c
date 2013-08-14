@@ -75,6 +75,51 @@ static void get_elf(struct module *module){
 	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
 
 	
+	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + hdr->e_phoff);
+	Elf_Phdr *phlimit = phdr + hdr->e_phnum;
+	int nsegs = 0;
+	Elf_Phdr *phdyn = NULL;
+	Elf_Phdr *phphdr = NULL;
+	const int MAXSEGS = 32;
+	Elf_Phdr *segs[MAXSEGS];
+	while (phdr < phlimit) {
+		switch (phdr->p_type) {
+			case PT_LOAD:
+				if (nsegs == MAXSEGS) {
+					objc_log("Too many segments!\n");
+					goto out;
+				}
+
+				segs[nsegs] = phdr;
+				++nsegs;
+				break;
+			case PT_PHDR:
+				phphdr = phdr;
+				break;
+			case PT_DYNAMIC:
+				phdyn = phdr;
+				break;
+			case PT_INTERP:
+				error = ENOSYS;
+				goto out;
+		}
+		
+		objc_log("PHDR dump:\n");
+		objc_log("\tp_type: \t\t%u\n", phdr->p_type);
+		objc_log("\tp_flags: \t\t%u\n", phdr->p_flags);
+		objc_log("\tp_offset: \t\t0x%lx\n", phdr->p_offset);
+		objc_log("\tp_vaddr: \t\t0x%lx\n", phdr->p_vaddr);
+		objc_log("\tp_paddr: \t\t0x%lx\n", phdr->p_paddr);
+		objc_log("\tp_filesz: \t\t%lu\n", phdr->p_filesz);
+		objc_log("\tp_memsz: \t\t%lu\n", phdr->p_memsz);
+		objc_log("\tp_align: \t\t%lu\n", phdr->p_align);
+		objc_log("===================\n", phdr->p_align);
+		
+		++phdr;
+	}
+	
+out:
+	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
 	
