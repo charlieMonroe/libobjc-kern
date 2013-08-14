@@ -26,15 +26,15 @@ static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
 	Elf_Phdr *phdr = (Elf_Phdr *)file->address;
 	objc_log("Found ELF program header %p\n", phdr);
-	if (hdr == NULL){
+	if (phdr == NULL){
 		return;
 	}
 
 
 	
 	objc_log("PHDR dump:\n");
-	objc_log("\tp_type: \t\t%lu\n", phdr->p_type);
-	objc_log("\tp_flags: \t\t%lu\n", phdr->p_flags);
+	objc_log("\tp_type: \t\t%u\n", phdr->p_type);
+	objc_log("\tp_flags: \t\t%u\n", phdr->p_flags);
 	objc_log("\tp_offset: \t\t0x%lx\n", phdr->p_offset);
 	objc_log("\tp_vaddr: \t\t0x%lx\n", phdr->p_vaddr);
 	objc_log("\tp_paddr: \t\t0x%lx\n", phdr->p_paddr);
