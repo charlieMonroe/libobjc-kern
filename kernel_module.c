@@ -23,7 +23,7 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 
 static void get_elf(struct module *module){
-	linker_file_t *file = module_file(module);
+	linker_file_t file = module_file(module);
 	Elf_Ehdr *hdr = (Elf_Ehdr *)preload_search_info(file->address,
 													MODINFO_METADATA |
 													MODINFOMD_ELFHDR);
@@ -51,7 +51,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 			break;
 		}
 		// _objc_load_modules(SET_BEGIN(objc_module_list_set),
-						   SET_LIMIT(objc_module_list_set));
+		//				   SET_LIMIT(objc_module_list_set));
 
 		// run_tests();
 		
