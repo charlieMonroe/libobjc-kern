@@ -19,7 +19,7 @@
 
 #include <sys/namei.h>
 #include <sys/fcntl.h>
-#include <sys/vnode.h>
+#include <sys/syscallsubr.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
@@ -30,25 +30,21 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
-	int flags;
-	int error = 0;
 	
-	struct nameidata nd;
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
-	flags = FREAD;
-	error = vn_open(&nd, &flags, 0, NULL);
-	if (error != 0) {
-		objc_log("Failed to open file (%s)!\n", file->pathname);
-		return;
-	}
-	
-	NDFREE(&nd, NDF_ONLY_PNBUF);
-	if (nd.ni_vp->v_type != VREG) {
-		objc_log("Wrong v_type (%s)!\n", file->pathname);
-		return;
-	}
+	int fd = kern_open(curthread, file->pathname, UIO_SYSSPACE, O_RDONLY);
 	
 	caddr_t firstpage = malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
+	struct uio auio;
+	struct iovec aiov;
+	aiov.iov_base = firstpage;
+	aiov.iov_len = PAGE_SIZE;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_resid = PAGE_SIZE;
+	auio.uio_segflg = UIO_SYSSPACE;
+	
+	kern_readv(curthread, fd, &auio);
+	
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
 	objc_log("\te_type: \t\t%lu\n", ehdr->e_type);
