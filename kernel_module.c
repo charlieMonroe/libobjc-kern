@@ -23,7 +23,11 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 
 static void get_elf(struct module *module){
-	caddr_t mdptr = preload_search_by_name(module_getname(module));
+	caddr_t mdptr = preload_search_by_name("libobjc");
+	if (mdptr == NULL){
+		objc_log("No module ptr found!\n");
+		return;
+	}
 	
 	Elf_Ehdr *hdr = (Elf_Ehdr *)preload_search_info(mdptr,
 													MODINFO_METADATA |
