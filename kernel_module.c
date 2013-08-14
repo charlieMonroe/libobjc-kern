@@ -20,6 +20,7 @@
 #include <sys/namei.h>
 #include <sys/fcntl.h>
 #include <sys/syscallsubr.h>
+#include <sys/malloc.h>
 #include <sys/linker.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
