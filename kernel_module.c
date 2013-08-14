@@ -78,7 +78,7 @@ static void get_elf(struct module *module){
 	objc_log("ELF file dump (%p):\n", file);
 	objc_log("\tpreloaded: \t\t%i\n", file->preloaded);
 	objc_log("\taddress: \t\t%p\n", file->address);
-	objc_log("\tddbsymtab: \t\t0x%lx\n", file->ddbsymtab);
+	objc_log("\tddbsymtab: \t\t%p\n", file->ddbsymtab);
 
 
 /*
