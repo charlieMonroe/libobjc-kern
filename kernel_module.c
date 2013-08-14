@@ -17,69 +17,65 @@
 #include "loader.h"
 #include "utils.h"
 
+#include <sys/namei.h>
+#include <sys/fcntl.h>
+#include <sys/vnode.h>
+
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 // extern void run_tests(void);
 
-typedef struct elf_file {
-	struct linker_file lf;		/* Common fields */
-	int		preloaded;	/* Was file pre-loaded */
-	caddr_t		address;	/* Relocation address */
-#ifdef SPARSE_MAPPING
-	vm_object_t	object;		/* VM object to hold file pages */
-#endif
-	Elf_Dyn		*dynamic;	/* Symbol table etc. */
-	Elf_Hashelt	nbuckets;	/* DT_HASH info */
-	Elf_Hashelt	nchains;
-	const Elf_Hashelt *buckets;
-	const Elf_Hashelt *chains;
-	caddr_t		hash;
-	caddr_t		strtab;		/* DT_STRTAB */
-	int		strsz;		/* DT_STRSZ */
-	const Elf_Sym	*symtab;		/* DT_SYMTAB */
-	Elf_Addr	*got;		/* DT_PLTGOT */
-	const Elf_Rel	*pltrel;	/* DT_JMPREL */
-	int		pltrelsize;	/* DT_PLTRELSZ */
-	const Elf_Rela	*pltrela;	/* DT_JMPREL */
-	int		pltrelasize;	/* DT_PLTRELSZ */
-	const Elf_Rel	*rel;		/* DT_REL */
-	int		relsize;	/* DT_RELSZ */
-	const Elf_Rela	*rela;		/* DT_RELA */
-	int		relasize;	/* DT_RELASZ */
-	caddr_t		modptr;
-	const Elf_Sym	*ddbsymtab;	/* The symbol table we are using */
-	long		ddbsymcnt;	/* Number of symbols */
-	caddr_t		ddbstrtab;	/* String table */
-	long		ddbstrcnt;	/* number of bytes in string table */
-	caddr_t		symbase;	/* malloc'ed symbold base */
-	caddr_t		strbase;	/* malloc'ed string base */
-	caddr_t		ctftab;		/* CTF table */
-	long		ctfcnt;		/* number of bytes in CTF table */
-	caddr_t		ctfoff;		/* CTF offset table */
-	caddr_t		typoff;		/* Type offset table */
-	long		typlen;		/* Number of type entries. */
-	Elf_Addr	pcpu_start;	/* Pre-relocation pcpu set start. */
-	Elf_Addr	pcpu_stop;	/* Pre-relocation pcpu set stop. */
-	Elf_Addr	pcpu_base;	/* Relocated pcpu set address. */
-#ifdef VIMAGE
-	Elf_Addr	vnet_start;	/* Pre-relocation vnet set start. */
-	Elf_Addr	vnet_stop;	/* Pre-relocation vnet set stop. */
-	Elf_Addr	vnet_base;	/* Relocated vnet set address. */
-#endif
-#ifdef GDB
-	struct link_map	gdb;		/* hooks for gdb */
-#endif
-} *elf_file_t;
+
 
 
 static void get_elf(struct module *module){
-	elf_file_t file = (elf_file_t)module_file(module);
+	linker_file_t file = module_file(module);
+	int flags;
+	int error = 0;
+	
+	struct nameidata nd;
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
+	flags = FREAD;
+	error = vn_open(&nd, &flags, 0, NULL);
+	if (error != 0) {
+		objc_log("Failed to open file (%s)!\n", file->pathname);
+		return;
+	}
+	
+	NDFREE(&nd, NDF_ONLY_PNBUF);
+	if (nd.ni_vp->v_type != VREG) {
+		objc_log("Wrong v_type (%s)!\n", file->pathname);
+		return;
+	}
+	
+	caddr_t firstpage = malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
+	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
+	objc_log("EHDR dump:\n");
+	objc_log("\te_type: \t\t%lu\n", ehdr->e_type);
+	objc_log("\te_machine: \t\t%u\n", ehdr->e_machine);
+	objc_log("\te_version: \t\t0x%lx\n", ehdr->e_version);
+	objc_log("\te_entry: \t\t0x%lx\n", ehdr->e_entry);
+	objc_log("\te_phoff: \t\t0x%lx\n", ehdr->e_phoff);
+	objc_log("\te_shoff: \t\t%lu\n", ehdr->e_shoff);
+	objc_log("\te_flags: \t\t%lu\n", ehdr->e_flags);
+	objc_log("\te_ehsize: \t\t%lu\n", ehdr->e_ehsize);
+	objc_log("\te_phentsize: \t\t%lu\n", ehdr->e_phentsize);
+	objc_log("\te_phnum: \t\t%lu\n", ehdr->e_phnum);
+	objc_log("\te_shentsize: \t\t%lu\n", ehdr->e_shentsize);
+	objc_log("\te_shnum: \t\t%lu\n", ehdr->e_shnum);
+	objc_log("\te_shstrndx: \t\t%lu\n", ehdr->e_shstrndx);
+	
+	VOP_UNLOCK(nd.ni_vp, 0);
+	vn_close(nd.ni_vp, FREAD, td->td_ucred, td);
+	
+	
+	/*	elf_file_t file = (elf_file_t)module_file(module);
 	
 	objc_log("ELF file dump (%p):\n", file);
 	objc_log("\tpreloaded: \t\t%i\n", file->preloaded);
 	objc_log("\taddress: \t\t%p\n", file->address);
 	objc_log("\tddbsymtab: \t\t%p\n", file->ddbsymtab);
-
+*/
 
 /*
 	objc_log("PHDR dump:\n");
