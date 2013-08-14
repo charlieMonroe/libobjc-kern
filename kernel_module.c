@@ -75,8 +75,8 @@ static void get_elf(struct module *module){
 	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
 
 	
-	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + hdr->e_phoff);
-	Elf_Phdr *phlimit = phdr + hdr->e_phnum;
+	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + ehdr->e_phoff);
+	Elf_Phdr *phlimit = phdr + ehdr->e_phnum;
 	int nsegs = 0;
 	Elf_Phdr *phdyn = NULL;
 	Elf_Phdr *phphdr = NULL;
@@ -113,7 +113,7 @@ static void get_elf(struct module *module){
 		objc_log("\tp_filesz: \t\t%lu\n", phdr->p_filesz);
 		objc_log("\tp_memsz: \t\t%lu\n", phdr->p_memsz);
 		objc_log("\tp_align: \t\t%lu\n", phdr->p_align);
-		objc_log("===================\n", phdr->p_align);
+		objc_log("===================\n");
 		
 		++phdr;
 	}
