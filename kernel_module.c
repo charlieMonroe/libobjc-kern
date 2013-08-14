@@ -20,6 +20,7 @@
 #include <sys/namei.h>
 #include <sys/fcntl.h>
 #include <sys/syscallsubr.h>
+#include <sys/linker.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
@@ -31,7 +32,7 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
 	
-	int fd = kern_open(curthread, file->pathname, UIO_SYSSPACE, O_RDONLY);
+	int fd = kern_open(curthread, file->pathname, UIO_SYSSPACE, O_RDONLY, 0);
 	
 	caddr_t firstpage = malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
 	struct uio auio;
