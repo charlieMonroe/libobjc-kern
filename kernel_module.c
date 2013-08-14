@@ -34,6 +34,7 @@ static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
 	int flags;
 	int error = 0;
+	ssize_t resid;
 	
 	struct nameidata nd;
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
@@ -51,6 +52,12 @@ static void get_elf(struct module *module){
 	}
 	
 	caddr_t firstpage = malloc(PAGE_SIZE, M_LIBUNWIND_FAKE, M_WAITOK);
+	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, PAGE_SIZE, 0,
+					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
+					&resid, curthread);
+
+	
+	
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
 	objc_log("\te_type: \t\t%lx\n", (unsigned long)ehdr->e_type);
