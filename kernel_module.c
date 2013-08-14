@@ -19,7 +19,24 @@
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
-extern void run_tests(void);
+// extern void run_tests(void);
+
+
+static void get_elf(struct module *module){
+	Elf_Ehdr *hdr = (Elf_Ehdr *)preload_search_info(module, MODINFO_METADATA |
+													MODINFOMD_ELFHDR);
+	objc_log("Found ELF header %p\n", hdr);
+	if (hdr == NULL){
+		return;
+	}
+	
+	objc_log("Section headers start at offset %p, number of sections %d\n",
+			 (void*)hdr->e_shoff,
+			 (unsigned)hdr->e_shnum);
+	objc_log("Program headers start at offset %p, number of sections %d\n",
+			 (void*)hdr->e_phoff,
+			 (unsigned)hdr->e_phnum);
+}
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -31,11 +48,12 @@ static int event_handler(struct module *module, int event, void *arg) {
 				" basic required classes.");
 			break;
 		}
-		_objc_load_modules(SET_BEGIN(objc_module_list_set),
+		// _objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
-		run_tests();
+		// run_tests();
 		
+		get_elf(module);
 		break;
 	case MOD_UNLOAD:
 		objc_runtime_destroy();
