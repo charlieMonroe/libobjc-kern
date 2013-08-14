@@ -24,18 +24,24 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
-	Elf_Ehdr *hdr = (Elf_Ehdr *)file->address;
-	objc_log("Found ELF header %p\n", hdr);
+	Elf_Phdr *phdr = (Elf_Phdr *)file->address;
+	objc_log("Found ELF program header %p\n", phdr);
 	if (hdr == NULL){
 		return;
 	}
+
+
 	
-	objc_log("Section headers start at offset %p, number of sections %d\n",
-			 (void*)hdr->e_shoff,
-			 (unsigned)hdr->e_shnum);
-	objc_log("Program headers start at offset %p, number of sections %d\n",
-			 (void*)hdr->e_phoff,
-			 (unsigned)hdr->e_phnum);
+	objc_log("PHDR dump:\n");
+	objc_log("\tp_type: \t\t%lu\n", phdr->p_type);
+	objc_log("\tp_flags: \t\t%lu\n", phdr->p_flags);
+	objc_log("\tp_offset: \t\t0x%lx\n", phdr->p_offset);
+	objc_log("\tp_vaddr: \t\t0x%lx\n", phdr->p_vaddr);
+	objc_log("\tp_paddr: \t\t0x%lx\n", phdr->p_paddr);
+	objc_log("\tp_filesz: \t\t%lu\n", phdr->p_filesz);
+	objc_log("\tp_memsz: \t\t%lu\n", phdr->p_memsz);
+	objc_log("\tp_align: \t\t%lu\n", phdr->p_align);
+	
 }
 
 static int event_handler(struct module *module, int event, void *arg) {
