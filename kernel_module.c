@@ -20,15 +20,13 @@
 #include <sys/namei.h>
 #include <sys/fcntl.h>
 #include <sys/syscallsubr.h>
-#include <sys/malloc.h>
-#include <sys/linker.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 // extern void run_tests(void);
 
 
-
+MALLOC_DECLARE(M_LINKER);
 
 static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
