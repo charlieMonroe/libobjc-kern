@@ -23,7 +23,7 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 
 static void get_elf(struct module *module){
-	link_file_t file = module_file(module);
+	linker_file_t file = module_file(module);
 	Elf_Ehdr *hdr = (Elf_Ehdr *)file->address;
 	objc_log("Found ELF header %p\n", hdr);
 	if (hdr == NULL){
