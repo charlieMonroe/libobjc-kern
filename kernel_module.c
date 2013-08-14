@@ -20,12 +20,14 @@
 #include <sys/namei.h>
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
+#include <sys/malloc.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 // extern void run_tests(void);
 
-
+MALLOC_DECLARE(M_LIBUNWIND_FAKE);
+MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 
 
 static void get_elf(struct module *module){
@@ -48,22 +50,23 @@ static void get_elf(struct module *module){
 		return;
 	}
 	
-	caddr_t firstpage = malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
+	caddr_t firstpage = malloc(PAGE_SIZE, M_LIBUNWIND_FAKE, M_WAITOK);
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
-	objc_log("\te_type: \t\t%lu\n", ehdr->e_type);
-	objc_log("\te_machine: \t\t%u\n", ehdr->e_machine);
-	objc_log("\te_version: \t\t0x%lx\n", ehdr->e_version);
-	objc_log("\te_entry: \t\t0x%lx\n", ehdr->e_entry);
-	objc_log("\te_phoff: \t\t0x%lx\n", ehdr->e_phoff);
-	objc_log("\te_shoff: \t\t%lu\n", ehdr->e_shoff);
-	objc_log("\te_flags: \t\t%lu\n", ehdr->e_flags);
-	objc_log("\te_ehsize: \t\t%lu\n", ehdr->e_ehsize);
-	objc_log("\te_phentsize: \t\t%lu\n", ehdr->e_phentsize);
-	objc_log("\te_phnum: \t\t%lu\n", ehdr->e_phnum);
-	objc_log("\te_shentsize: \t\t%lu\n", ehdr->e_shentsize);
-	objc_log("\te_shnum: \t\t%lu\n", ehdr->e_shnum);
-	objc_log("\te_shstrndx: \t\t%lu\n", ehdr->e_shstrndx);
+	objc_log("\te_type: \t\t%lx\n", (unsigned long)ehdr->e_type);
+	objc_log("\te_machine: \t\t%lx\n", (unsigned long)ehdr->e_machine);
+	objc_log("\te_version: \t\t0x%lx\n", (unsigned long)ehdr->e_version);
+	objc_log("\te_entry: \t\t0x%lx\n", (unsigned long)ehdr->e_entry);
+	objc_log("\te_phoff: \t\t0x%lx\n", (unsigned long)ehdr->e_phoff);
+	objc_log("\te_shoff: \t\t%lx\n", (unsigned long)ehdr->e_shoff);
+	objc_log("\te_flags: \t\t%lu\n", (unsigned long)ehdr->e_flags);
+	objc_log("\te_ehsize: \t\t%lu\n", (unsigned long)ehdr->e_ehsize);
+	objc_log("\te_phentsize: \t\t%lu\n", (unsigned long)ehdr->e_phentsize);
+	objc_log("\te_phnum: \t\t%lu\n", (unsigned long)ehdr->e_phnum);
+	objc_log("\te_shentsize: \t\t%lu\n", (unsigned long)ehdr->e_shentsize);
+	objc_log("\te_shnum: \t\t%lu\n", (unsigned long)ehdr->e_shnum);
+	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
+
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, td->td_ucred, td);
