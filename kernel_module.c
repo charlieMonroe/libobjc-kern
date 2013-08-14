@@ -23,7 +23,9 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 
 static void get_elf(struct module *module){
-	Elf_Ehdr *hdr = (Elf_Ehdr *)preload_search_info(module, MODINFO_METADATA |
+	linker_file_t *file = module_file(module);
+	Elf_Ehdr *hdr = (Elf_Ehdr *)preload_search_info(file->address,
+													MODINFO_METADATA |
 													MODINFOMD_ELFHDR);
 	objc_log("Found ELF header %p\n", hdr);
 	if (hdr == NULL){
