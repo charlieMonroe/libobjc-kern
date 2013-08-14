@@ -69,7 +69,7 @@ static void get_elf(struct module *module){
 
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
-	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, td);
+	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
 	
 	
 	/*	elf_file_t file = (elf_file_t)module_file(module);
