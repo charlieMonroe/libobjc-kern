@@ -23,6 +23,25 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 
 static void get_elf(struct module *module){
+	caddr_t modptr = NULL;
+	const char *modname, *modtype;
+	while ((modptr = preload_search_next_name(modptr)) != NULL) {
+		modname = (char *)preload_search_info(modptr, MODINFO_NAME);
+		modtype = (char *)preload_search_info(modptr, MODINFO_TYPE);
+		if (modname == NULL) {
+			printf("Preloaded module at %p does not have a"
+				   " name!\n", modptr);
+			continue;
+		}
+		if (modtype == NULL) {
+			printf("Preloaded module at %p does not have a type!\n",
+				   modptr);
+			continue;
+		}
+	}
+	
+	
+	
 	caddr_t mdptr = preload_search_by_name("libobjc");
 	if (mdptr == NULL){
 		objc_log("No module ptr found!\n");
