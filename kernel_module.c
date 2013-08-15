@@ -207,6 +207,7 @@ static void get_elf(struct module *module){
 		objc_log("===================\n");
     
     objc_log("\t addr \t\t %p\n", efile->address);
+    objc_log("\t addr \t\t %p\n", efile->lf.address);
     objc_log("\t addr + off \t\t %p\n", efile->address + eh_frame_shdr->sh_offset);
     objc_log("\t *module_begin \t\t %p\n", *module_begin);
     objc_log("\t module_begin \t\t %p\n", module_begin);
