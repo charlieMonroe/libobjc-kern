@@ -161,10 +161,16 @@ static void get_elf(struct module *module){
 	objc_log("\taddress: \t\t%p\n", efile->address);
 	objc_log("\tshdr: \t\t%p\n", efile->e_shdr);
   
+  Elf_Shdr *eh_frame_shdr = NULL;
   Elf_Shdr *shdr = efile->e_shdr;
   for (int i = 0; i < 56; ++i) {
+    const char *name = efile->shstrtab + shdr->sh_name;
+    if (objc_strings_equal(name, "set_objc_module_list_set")){
+      eh_frame_shdr = shdr;
+    }
+    
 		objc_log("SHDR dump:\n");
-		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, efile->shstrtab + shdr->sh_name);
+		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, name);
 		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
 		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
 		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
@@ -177,6 +183,10 @@ static void get_elf(struct module *module){
 		
 		++shdr;
 	}
+  
+  if (eh_frame_shdr != NULL){
+    objc_log("Found .eh_frame, it's at offset 0x%lx", (unsigned long)eh_frame_shdr->sh_offset);
+  }
   
   return;
   
