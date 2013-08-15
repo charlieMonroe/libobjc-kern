@@ -118,6 +118,28 @@ static void get_elf(struct module *module){
 		++phdr;
 	}
 	
+	
+	Elf_Shdr *shdr = (Elf_Shdr *) (firstpage + ehdr->e_shoff);
+	Elf_Phdr *shlimit = shdr + ehdr->e_shnum;
+	nsegs = 0;
+	Elf_Shdr *shdyn = NULL;
+	Elf_Shdr *shphdr = NULL;
+	while (shdr < shlimit) {
+		objc_log("SHDR dump:\n");
+		objc_log("\tsh_name: \t\t%s\n", shdr->sh_name);
+		objc_log("\tsh_type: \t\t%u\n", (unsigned long)shdr->sh_type);
+		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
+		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
+		objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
+		objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
+		objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
+		objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
+		objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+		objc_log("===================\n");
+		
+		++shdr;
+	}
+	
 out:
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
