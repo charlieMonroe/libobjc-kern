@@ -29,61 +29,12 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 MALLOC_DECLARE(M_LIBUNWIND_FAKE);
 MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 
-typedef struct elf_file {
-	struct linker_file lf;		/* Common fields */
-	int		preloaded;	/* Was file pre-loaded */
-	caddr_t		address;	/* Relocation address */
-#ifdef SPARSE_MAPPING
-	vm_object_t	object;		/* VM object to hold file pages */
-#endif
-	Elf_Dyn		*dynamic;	/* Symbol table etc. */
-	Elf_Hashelt	nbuckets;	/* DT_HASH info */
-	Elf_Hashelt	nchains;
-	const Elf_Hashelt *buckets;
-	const Elf_Hashelt *chains;
-	caddr_t		hash;
-	caddr_t		strtab;		/* DT_STRTAB */
-	int		strsz;		/* DT_STRSZ */
-	const Elf_Sym	*symtab;		/* DT_SYMTAB */
-	Elf_Addr	*got;		/* DT_PLTGOT */
-	const Elf_Rel	*pltrel;	/* DT_JMPREL */
-	int		pltrelsize;	/* DT_PLTRELSZ */
-	const Elf_Rela	*pltrela;	/* DT_JMPREL */
-	int		pltrelasize;	/* DT_PLTRELSZ */
-	const Elf_Rel	*rel;		/* DT_REL */
-	int		relsize;	/* DT_RELSZ */
-	const Elf_Rela	*rela;		/* DT_RELA */
-	int		relasize;	/* DT_RELASZ */
-	caddr_t		modptr;
-	const Elf_Sym	*ddbsymtab;	/* The symbol table we are using */
-	long		ddbsymcnt;	/* Number of symbols */
-	caddr_t		ddbstrtab;	/* String table */
-	long		ddbstrcnt;	/* number of bytes in string table */
-	caddr_t		symbase;	/* malloc'ed symbold base */
-	caddr_t		strbase;	/* malloc'ed string base */
-	caddr_t		ctftab;		/* CTF table */
-	long		ctfcnt;		/* number of bytes in CTF table */
-	caddr_t		ctfoff;		/* CTF offset table */
-	caddr_t		typoff;		/* Type offset table */
-	long		typlen;		/* Number of type entries. */
-	Elf_Addr	pcpu_start;	/* Pre-relocation pcpu set start. */
-	Elf_Addr	pcpu_stop;	/* Pre-relocation pcpu set stop. */
-	Elf_Addr	pcpu_base;	/* Relocated pcpu set address. */
-#ifdef VIMAGE
-	Elf_Addr	vnet_start;	/* Pre-relocation vnet set start. */
-	Elf_Addr	vnet_stop;	/* Pre-relocation vnet set stop. */
-	Elf_Addr	vnet_base;	/* Relocated vnet set address. */
-#endif
-#ifdef GDB
-	struct link_map	gdb;		/* hooks for gdb */
-#endif
-} *elf_file_t;
-
 static void list_sections(caddr_t firstpage){
 	
 	// (ef->strtab + ref->st_name)
 	int error = 0;
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
+	Elf_Shdr *shdr;
 	objc_log("EHDR dump:\n");
 	objc_log("\te_type: \t\t%lx\n", (unsigned long)ehdr->e_type);
 	objc_log("\te_machine: \t\t%lx\n", (unsigned long)ehdr->e_machine);
@@ -99,6 +50,28 @@ static void list_sections(caddr_t firstpage){
 	objc_log("\te_shnum: \t\t%lu\n", (unsigned long)ehdr->e_shnum);
 	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
 	
+	
+	
+	
+	
+	int offset = (ehdr.e_shstrndx * ehdr.e_shentsize) + ehdr.e_shoff;
+	shdr = (Elf_Shdr*)(firstpage + offset);
+	objc_log("SHDR dump:\n");
+	objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
+	objc_log("\tsh_type: \t\t%lx vs %lx\n", (unsigned long)shdr->sh_type, (unsigned long)SHT_STRTAB);
+	objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
+	objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
+	objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
+	objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
+	objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
+	objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
+	objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+	
+	
+	
+	
+	
+	return;
 	
 	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + ehdr->e_phoff);
 	Elf_Phdr *phlimit = phdr + ehdr->e_phnum;
@@ -144,7 +117,7 @@ static void list_sections(caddr_t firstpage){
 	}
 	
 	
-	Elf_Shdr *shdr = (Elf_Shdr *) (firstpage + ehdr->e_shoff);
+	shdr = (Elf_Shdr *) (firstpage + ehdr->e_shoff);
 	Elf_Shdr *shlimit = shdr + ehdr->e_shnum;
 	while (shdr < shlimit) {
 		objc_log("SHDR dump:\n");
@@ -193,22 +166,10 @@ static void get_elf(struct module *module){
 					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
 					&resid, curthread);
 
-	objc_log("strtab %p count: %i\n", elf->strtab, elf->strsz);;
-	
-	objc_log("ELF file dump:\n");
-	objc_log("\t address: \t\t%p\n", elf->address);
-	objc_log("\t dynamic: \t\t%p\n", elf->dynamic);
-	objc_log("\t strtab: \t\t%p\n", elf->strtab);
-	objc_log("\t strsize: \t\t%lu\n", (unsigned long)elf->strsz);
-	objc_log("\t ddbstrtab: \t\t%p\n", elf->ddbstrtab);
-	objc_log("\tsh_size: \t\t%lu\n", (unsigned long)elf->ddbstrcnt);
-	
+	list_sections(firstpage);
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
-	return;
-	
-	list_sections(firstpage);
 	
 	
 	/*	elf_file_t file = (elf_file_t)module_file(module);
