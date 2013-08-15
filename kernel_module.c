@@ -32,7 +32,6 @@ MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 static void list_sections(caddr_t firstpage){
 	
 	// (ef->strtab + ref->st_name)
-	int error = 0;
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	Elf_Shdr *shdr;
 	objc_log("EHDR dump:\n");
@@ -51,21 +50,18 @@ static void list_sections(caddr_t firstpage){
 	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
 	
 	
-	
-	
-	
 	int offset = (ehdr->e_shstrndx * ehdr->e_shentsize) + ehdr->e_shoff;
 	Elf_Shdr *sh_strtab = (Elf_Shdr*)(firstpage + offset);
-	objc_log("SHDR dump:\n");
-	objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
-	objc_log("\tsh_type: \t\t%lx vs %lx\n", (unsigned long)shdr->sh_type, (unsigned long)SHT_STRTAB);
-	objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
-	objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
-	objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
-	objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
-	objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
-	objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
-	objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+	objc_log("SH_STRTAB dump:\n");
+	objc_log("\tsh_name: \t\t%lx\n", (unsigned long)sh_strtab->sh_name);
+	objc_log("\tsh_type: \t\t%lx vs %lx\n", (unsigned long)sh_strtab->sh_type, (unsigned long)SHT_STRTAB);
+	objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)sh_strtab->sh_flags);
+	objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)sh_strtab->sh_addr);
+	objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)sh_strtab->sh_offset);
+	objc_log("\tsh_size: \t\t%lu\n", (unsigned long)sh_strtab->sh_size);
+	objc_log("\tsh_link: \t\t%lx\n", (unsigned long)sh_strtab->sh_link);
+	objc_log("\tsh_info: \t\t%lx\n", (unsigned long)sh_strtab->sh_info);
+	objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)sh_strtab->sh_entsize);
 	
 	const char *const sh_strtab_p = firstpage + sh_strtab->sh_offset;
 	
