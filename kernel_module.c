@@ -77,7 +77,7 @@ typedef struct elf_file {
 #ifdef GDB
 	struct link_map	gdb;		/* hooks for gdb */
 #endif
-};
+} *elf_file_t;
 
 static void list_sections(caddr_t firstpage){
 	
