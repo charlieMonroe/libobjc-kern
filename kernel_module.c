@@ -24,7 +24,7 @@
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
-// extern void run_tests(void);
+extern void run_tests(void);
 
 MALLOC_DECLARE(M_LIBUNWIND_FAKE);
 MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
@@ -150,10 +150,10 @@ static int event_handler(struct module *module, int event, void *arg) {
 				" basic required classes.");
 			break;
 		}
-		// _objc_load_modules(SET_BEGIN(objc_module_list_set),
-		//				   SET_LIMIT(objc_module_list_set));
+		_objc_load_modules(SET_BEGIN(objc_module_list_set),
+						   SET_LIMIT(objc_module_list_set));
 
-		// run_tests();
+		run_tests();
 		
 		get_elf(module);
 		break;
