@@ -29,6 +29,39 @@ extern void run_tests(void);
 MALLOC_DECLARE(M_LIBUNWIND_FAKE);
 MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 
+typedef struct elf_file {
+	struct linker_file lf;		/* Common fields */
+  
+	int		preloaded;
+	caddr_t		address;	/* Relocation address */
+	vm_object_t	object;		/* VM object to hold file pages */
+	Elf_Shdr	*e_shdr;
+  
+	Elf_progent	*progtab;
+	int		nprogtab;
+  
+	Elf_relaent	*relatab;
+	int		nrelatab;
+  
+	Elf_relent	*reltab;
+	int		nreltab;
+  
+	Elf_Sym		*ddbsymtab;	/* The symbol table we are using */
+	long		ddbsymcnt;	/* Number of symbols */
+	caddr_t		ddbstrtab;	/* String table */
+	long		ddbstrcnt;	/* number of bytes in string table */
+  
+	caddr_t		shstrtab;	/* Section name string table */
+	long		shstrcnt;	/* number of bytes in string table */
+  
+	caddr_t		ctftab;		/* CTF table */
+	long		ctfcnt;		/* number of bytes in CTF table */
+	caddr_t		ctfoff;		/* CTF offset table */
+	caddr_t		typoff;		/* Type offset table */
+	long		typlen;		/* Number of type entries. */
+  
+} *elf_file_t;
+
 static void list_sections(caddr_t firstpage){
 	
 	// (ef->strtab + ref->st_name)
@@ -86,6 +119,17 @@ static void list_sections(caddr_t firstpage){
 
 
 static void get_elf(struct module *module){
+  
+  elf_file_t efile = (elf_file_t)module_file(module);
+	
+	objc_log("ELF file dump (%p):\n", efile);
+	objc_log("\tpreloaded: \t\t%i\n", efile->preloaded);
+	objc_log("\taddress: \t\t%p\n", efile->address);
+	objc_log("\tshdr: \t\t%p\n", file->e_shdr);
+  
+  return;
+  
+  
 	linker_file_t file = module_file(module);
 	int flags;
 	int error = 0;
@@ -119,13 +163,14 @@ static void get_elf(struct module *module){
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
 	
 	
-	/*	elf_file_t file = (elf_file_t)module_file(module);
+	elf_file_t file = (elf_file_t)module_file(module);
 	
 	objc_log("ELF file dump (%p):\n", file);
 	objc_log("\tpreloaded: \t\t%i\n", file->preloaded);
 	objc_log("\taddress: \t\t%p\n", file->address);
 	objc_log("\tddbsymtab: \t\t%p\n", file->ddbsymtab);
-*/
+  
+  
 
 /*
 	objc_log("PHDR dump:\n");
@@ -150,10 +195,10 @@ static int event_handler(struct module *module, int event, void *arg) {
 				" basic required classes.");
 			break;
 		}
-		_objc_load_modules(SET_BEGIN(objc_module_list_set),
+		/*_objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
-		run_tests();
+		run_tests();*/
 		
 		get_elf(module);
 		break;
