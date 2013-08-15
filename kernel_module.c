@@ -17,10 +17,12 @@
 #include "loader.h"
 #include "utils.h"
 
+#include <sys/elf.h>
 #include <sys/namei.h>
 #include <sys/fcntl.h>
 #include <sys/vnode.h>
 #include <sys/malloc.h>
+#include <sys/vnode.h>
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
@@ -125,7 +127,7 @@ static void get_elf(struct module *module){
 	objc_log("ELF file dump (%p):\n", efile);
 	objc_log("\tpreloaded: \t\t%i\n", efile->preloaded);
 	objc_log("\taddress: \t\t%p\n", efile->address);
-	objc_log("\tshdr: \t\t%p\n", file->e_shdr);
+	objc_log("\tshdr: \t\t%p\n", efile->e_shdr);
   
   return;
   
