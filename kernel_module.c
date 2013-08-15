@@ -24,6 +24,18 @@
 #include <sys/malloc.h>
 #include <sys/vnode.h>
 
+#include <machine/elf.h>
+#include <vm/vm.h>
+#include <vm/vm_param.h>
+#include <vm/vm_object.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_extern.h>
+#include <vm/pmap.h>
+#include <vm/vm_map.h>
+
+#include <sys/link_elf.h>
+
+
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
 extern void run_tests(void);
