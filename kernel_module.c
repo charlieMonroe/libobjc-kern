@@ -54,7 +54,7 @@ static void list_sections(caddr_t firstpage){
 	
 	
 	
-	int offset = (ehdr.e_shstrndx * ehdr.e_shentsize) + ehdr.e_shoff;
+	int offset = (ehdr->e_shstrndx * ehdr->e_shentsize) + ehdr->e_shoff;
 	shdr = (Elf_Shdr*)(firstpage + offset);
 	objc_log("SHDR dump:\n");
 	objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
