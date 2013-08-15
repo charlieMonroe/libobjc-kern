@@ -139,7 +139,6 @@ static void list_sections(caddr_t firstpage){
 
 static void get_elf(struct module *module){
 	linker_file_t file = module_file(module);
-	elf_file_t elf = (elf_file_t)file;
 	int flags;
 	int error = 0;
 	ssize_t resid;
