@@ -187,6 +187,20 @@ static void get_elf(struct module *module){
   if (eh_frame_shdr != NULL){
     struct objc_loader_module **module_begin = SET_BEGIN(objc_module_list_set);
     objc_log("Found .eh_frame, it's at offset 0x%lx\n", (unsigned long)eh_frame_shdr->sh_offset);
+    
+    shdr = eh_frame_shdr;
+    objc_log("SHDR dump:\n");
+		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, name);
+		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
+		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
+		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
+		objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
+		objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
+		objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
+		objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
+		objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+		objc_log("===================\n");
+    
     objc_log("\t addr \t\t %p\n", efile->address);
     objc_log("\t addr + off \t\t %p\n", efile->address + eh_frame_shdr->sh_offset);
     objc_log("\t *module_begin \t\t %p\n", *module_begin);
