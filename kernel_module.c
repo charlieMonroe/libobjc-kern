@@ -36,6 +36,9 @@ static void get_elf(struct module *module){
 	int error = 0;
 	ssize_t resid;
 	
+
+	int readsize = 250000;
+
 	struct nameidata nd;
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
 	flags = FREAD;
@@ -51,8 +54,8 @@ static void get_elf(struct module *module){
 		return;
 	}
 	
-	caddr_t firstpage = malloc(PAGE_SIZE, M_LIBUNWIND_FAKE, M_WAITOK);
-	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, PAGE_SIZE, 0,
+	caddr_t firstpage = malloc(readsize, M_LIBUNWIND_FAKE, M_WAITOK);
+	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, readsize, 0,
 					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
 					&resid, curthread);
 

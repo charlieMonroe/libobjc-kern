@@ -4,6 +4,8 @@ CC=~/build/Debug+Asserts/bin/clang
 CFLAGS  += -fobjc-runtime=kernel-runtime
 CFLAGS	+= -O0
 
+LDFLAGS += --print-gc-sections
+
 KMOD	= libobjc
 
 SRCS	= kernel_module.c \
