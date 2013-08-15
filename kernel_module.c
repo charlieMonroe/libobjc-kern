@@ -236,10 +236,10 @@ static int event_handler(struct module *module, int event, void *arg) {
 				" basic required classes.");
 			break;
 		}
-		/*_objc_load_modules(SET_BEGIN(objc_module_list_set),
+		_objc_load_modules(SET_BEGIN(objc_module_list_set),
 						   SET_LIMIT(objc_module_list_set));
 
-		run_tests();*/
+		run_tests();
 		
 		get_elf(module);
 		break;
