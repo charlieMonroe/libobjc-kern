@@ -35,6 +35,26 @@
 
 #include <sys/link_elf.h>
 
+typedef struct {
+	void		*addr;
+	Elf_Off		size;
+	int		flags;
+	int		sec;	/* Original section */
+	char		*name;
+} Elf_progent;
+
+typedef struct {
+	Elf_Rel		*rel;
+	int		nrel;
+	int		sec;
+} Elf_relent;
+
+typedef struct {
+	Elf_Rela	*rela;
+	int		nrela;
+	int		sec;
+} Elf_relaent;
+
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 
