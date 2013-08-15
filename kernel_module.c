@@ -67,7 +67,8 @@ static void list_sections(caddr_t firstpage){
 	objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
 	objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
 	
-	
+	caddr_t sh_section = firstpage + shdr->sh_offset;
+	printf("%s\n", (char*)sh_section);
 	
 	
 	
