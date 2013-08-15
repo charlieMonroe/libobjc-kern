@@ -195,28 +195,6 @@ static void get_elf(struct module *module){
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
-	
-	
-	elf_file_t file = (elf_file_t)module_file(module);
-	
-	objc_log("ELF file dump (%p):\n", file);
-	objc_log("\tpreloaded: \t\t%i\n", file->preloaded);
-	objc_log("\taddress: \t\t%p\n", file->address);
-	objc_log("\tddbsymtab: \t\t%p\n", file->ddbsymtab);
-  
-  
-
-/*
-	objc_log("PHDR dump:\n");
-	objc_log("\tp_type: \t\t%u\n", phdr->p_type);
-	objc_log("\tp_flags: \t\t%u\n", phdr->p_flags);
-	objc_log("\tp_offset: \t\t0x%lx\n", phdr->p_offset);
-	objc_log("\tp_vaddr: \t\t0x%lx\n", phdr->p_vaddr);
-	objc_log("\tp_paddr: \t\t0x%lx\n", phdr->p_paddr);
-	objc_log("\tp_filesz: \t\t%lu\n", phdr->p_filesz);
-	objc_log("\tp_memsz: \t\t%lu\n", phdr->p_memsz);
-	objc_log("\tp_align: \t\t%lu\n", phdr->p_align);
-*/	
 }
 
 static int event_handler(struct module *module, int event, void *arg) {
