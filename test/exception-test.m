@@ -28,10 +28,13 @@ static void run_exception_test_for_class(Class cl){
 		was_in_try = YES;
 		__throwing_function(cl);
 	}@catch (OtherExceptionClass *exception){
+		objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
 	}@catch (ExceptionClass *exception){
+		objc_debug_log("In ExceptionClass catch!\n");
 		caught_for_class = [ExceptionClass class];
 	}@finally{
+		objc_debug_log("In finally!\n");
 		was_in_finally = YES;
 	}
 	
