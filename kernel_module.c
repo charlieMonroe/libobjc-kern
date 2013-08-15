@@ -161,54 +161,31 @@ static void get_elf(struct module *module){
 	objc_log("\taddress: \t\t%p\n", efile->address);
 	objc_log("\tshdr: \t\t%p\n", efile->e_shdr);
   
-  Elf_Shdr *eh_frame_shdr = NULL;
-  Elf_Shdr *shdr = efile->e_shdr;
-  for (int i = 0; i < 56; ++i) {
-    const char *name = efile->shstrtab + shdr->sh_name;
-    if (objc_strings_equal(name, "set_objc_module_list_set")){
-      eh_frame_shdr = shdr;
+  Elf_progent *eh_frame_progent = NULL;
+  Elf_progent *progent = NULL;
+  for (int i = 0; i < efile->nprogtab; ++i) {
+    progent = &efile->progtab[i];
+    
+    if (objc_strings_equal(progent->name, "set_objc_module_list_set")){
+      eh_frame_progent = &efile->progent[i];
     }
     
-		objc_log("SHDR dump:\n");
-		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, name);
-		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
-		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
-		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
-		objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
-		objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
-		objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
-		objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
-		objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+		objc_log("Progtab dump:\n");
+		objc_log("\tsh_name: \t\t%s\n", progent->name);
+		objc_log("\tsh_addr: \t\t%p\n", progent->addr);
 		objc_log("===================\n");
-		
-		++shdr;
 	}
   
-  if (eh_frame_shdr != NULL){
+  if (eh_frame_progent != NULL){
     struct objc_loader_module **module_begin = SET_BEGIN(objc_module_list_set);
-    objc_log("Found .eh_frame, it's at offset 0x%lx\n", (unsigned long)eh_frame_shdr->sh_offset);
-    
-    shdr = eh_frame_shdr;
-    const char *name = efile->shstrtab + shdr->sh_name;
-    if (objc_strings_equal(name, "set_objc_module_list_set")){
-      eh_frame_shdr = shdr;
-    }
-
-    objc_log("SHDR dump:\n");
-		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, name);
-		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
-		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
-		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
-		objc_log("\tsh_offset: \t\t0x%lx\n", (unsigned long)shdr->sh_offset);
-		objc_log("\tsh_size: \t\t%lu\n", (unsigned long)shdr->sh_size);
-		objc_log("\tsh_link: \t\t%lx\n", (unsigned long)shdr->sh_link);
-		objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
-		objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
+    progent = eh_frame_progent;
+  
+    objc_log("Progtab dump:\n");
+		objc_log("\tsh_name: \t\t%s\n", progent->name);
+		objc_log("\tsh_addr: \t\t%p\n", progent->addr);
 		objc_log("===================\n");
     
     objc_log("\t addr \t\t %p\n", efile->address);
-    objc_log("\t relocaddr \t\t %p\n", (void*)elf_relocaddr(&efile->lf, (Elf_Addr)eh_frame_shdr->sh_offset));
-    objc_log("\t addr + off \t\t %p\n", efile->address + eh_frame_shdr->sh_offset);
     objc_log("\t *module_begin \t\t %p\n", *module_begin);
     objc_log("\t module_begin \t\t %p\n", module_begin);
   }
