@@ -162,10 +162,9 @@ static void get_elf(struct module *module){
 	objc_log("\tshdr: \t\t%p\n", efile->e_shdr);
   
   Elf_Shdr *shdr = efile->e_shdr;
-  for (int i = 0; i < 57; ++i) {
-    
+  for (int i = 0; i < 56; ++i) {
 		objc_log("SHDR dump:\n");
-		objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
+		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, efile->shstrtab + shdr->sh_name);
 		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
 		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
 		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
