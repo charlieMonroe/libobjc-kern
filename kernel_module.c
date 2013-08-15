@@ -167,7 +167,7 @@ static void get_elf(struct module *module){
     progent = &efile->progtab[i];
     
     if (objc_strings_equal(progent->name, "set_objc_module_list_set")){
-      eh_frame_progent = &efile->progtab[i];
+      eh_frame_progent = progent;
     }
     
 		objc_log("Progtab dump:\n");
