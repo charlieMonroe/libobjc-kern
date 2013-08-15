@@ -29,40 +29,7 @@ SET_DECLARE(objc_module_list_set, struct objc_loader_module);
 MALLOC_DECLARE(M_LIBUNWIND_FAKE);
 MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 
-
-static void get_elf(struct module *module){
-	linker_file_t file = module_file(module);
-	int flags;
-	int error = 0;
-	ssize_t resid;
-	
-	int readsize = 250000;
-
-	struct nameidata nd;
-	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
-	flags = FREAD;
-	error = vn_open(&nd, &flags, 0, NULL);
-	if (error != 0) {
-		objc_log("Failed to open file (%s)!\n", file->pathname);
-		return;
-	}
-	
-	NDFREE(&nd, NDF_ONLY_PNBUF);
-	if (nd.ni_vp->v_type != VREG) {
-		objc_log("Wrong v_type (%s)!\n", file->pathname);
-		return;
-	}
-	
-	caddr_t firstpage = malloc(readsize, M_LIBUNWIND_FAKE, M_WAITOK);
-	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, readsize, 0,
-					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
-					&resid, curthread);
-
-	linker_ctf_t ctf;
-	linker_ctf_get(file, &ctf);
-	objc_log("CTF->strtab %p count: %i\n", ctf.strtab, ctf.strcnt);
-	goto out;
-	
+static void list_sections(caddr_t firstpage){
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
 	objc_log("\te_type: \t\t%lx\n", (unsigned long)ehdr->e_type);
@@ -78,7 +45,7 @@ static void get_elf(struct module *module){
 	objc_log("\te_shentsize: \t\t%lu\n", (unsigned long)ehdr->e_shentsize);
 	objc_log("\te_shnum: \t\t%lu\n", (unsigned long)ehdr->e_shnum);
 	objc_log("\te_shstrndx: \t\t%lu\n", (unsigned long)ehdr->e_shstrndx);
-
+	
 	
 	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + ehdr->e_phoff);
 	Elf_Phdr *phlimit = phdr + ehdr->e_phnum;
@@ -94,7 +61,7 @@ static void get_elf(struct module *module){
 					objc_log("Too many segments!\n");
 					goto out;
 				}
-
+				
 				segs[nsegs] = phdr;
 				++nsegs;
 				break;
@@ -141,6 +108,40 @@ static void get_elf(struct module *module){
 		
 		++shdr;
 	}
+}
+
+
+static void get_elf(struct module *module){
+	linker_file_t file = module_file(module);
+	int flags;
+	int error = 0;
+	ssize_t resid;
+	
+	int readsize = 250000;
+
+	struct nameidata nd;
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_SYSSPACE, file->pathname, curthread);
+	flags = FREAD;
+	error = vn_open(&nd, &flags, 0, NULL);
+	if (error != 0) {
+		objc_log("Failed to open file (%s)!\n", file->pathname);
+		return;
+	}
+	
+	NDFREE(&nd, NDF_ONLY_PNBUF);
+	if (nd.ni_vp->v_type != VREG) {
+		objc_log("Wrong v_type (%s)!\n", file->pathname);
+		return;
+	}
+	
+	caddr_t firstpage = malloc(readsize, M_LIBUNWIND_FAKE, M_WAITOK);
+	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, readsize, 0,
+					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
+					&resid, curthread);
+
+	linker_ctf_t ctf;
+	linker_ctf_get(file, &ctf);
+	objc_log("CTF->strtab %p count: %i\n", ctf.strtab, ctf.strcnt);
 	
 out:
 	
