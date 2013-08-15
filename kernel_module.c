@@ -144,8 +144,12 @@ static void get_elf(struct module *module){
 	linker_ctf_get(file, &ctf);
 	objc_log("CTF->strtab %p count: %i\n", ctf.strtab, ctf.strcnt);
 	
+	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
+	return;
+	
+	list_sections(firstpage);
 	
 	
 	/*	elf_file_t file = (elf_file_t)module_file(module);
