@@ -55,7 +55,7 @@ static void list_sections(caddr_t firstpage){
 	
 	
 	int offset = (ehdr->e_shstrndx * ehdr->e_shentsize) + ehdr->e_shoff;
-	shdr = (Elf_Shdr*)(firstpage + offset);
+	Elf_Shdr *sh_strtab = (Elf_Shdr*)(firstpage + offset);
 	objc_log("SHDR dump:\n");
 	objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
 	objc_log("\tsh_type: \t\t%lx vs %lx\n", (unsigned long)shdr->sh_type, (unsigned long)SHT_STRTAB);
@@ -67,62 +67,13 @@ static void list_sections(caddr_t firstpage){
 	objc_log("\tsh_info: \t\t%lx\n", (unsigned long)shdr->sh_info);
 	objc_log("\tsh_entsize: \t\t%lu\n", (unsigned long)shdr->sh_entsize);
 	
-	caddr_t sh_section = firstpage + shdr->sh_offset;
-	printf("%s\n", (char*)sh_section);
-	
-	
-	
-	return;
-	
-	Elf_Phdr *phdr = (Elf_Phdr *) (firstpage + ehdr->e_phoff);
-	Elf_Phdr *phlimit = phdr + ehdr->e_phnum;
-	int nsegs = 0;
-	Elf_Phdr *phdyn = NULL;
-	Elf_Phdr *phphdr = NULL;
-	const int MAXSEGS = 32;
-	Elf_Phdr *segs[MAXSEGS];
-	while (phdr < phlimit) {
-		switch (phdr->p_type) {
-			case PT_LOAD:
-				if (nsegs == MAXSEGS) {
-					objc_log("Too many segments!\n");
-					return;
-				}
-				
-				segs[nsegs] = phdr;
-				++nsegs;
-				break;
-			case PT_PHDR:
-				phphdr = phdr;
-				break;
-			case PT_DYNAMIC:
-				phdyn = phdr;
-				break;
-			case PT_INTERP:
-				error = ENOSYS;
-				return;
-		}
-		
-		objc_log("PHDR dump:\n");
-		objc_log("\tp_type: \t\t%u\n", phdr->p_type);
-		objc_log("\tp_flags: \t\t%u\n", phdr->p_flags);
-		objc_log("\tp_offset: \t\t0x%lx\n", phdr->p_offset);
-		objc_log("\tp_vaddr: \t\t0x%lx\n", phdr->p_vaddr);
-		objc_log("\tp_paddr: \t\t0x%lx\n", phdr->p_paddr);
-		objc_log("\tp_filesz: \t\t%lu\n", phdr->p_filesz);
-		objc_log("\tp_memsz: \t\t%lu\n", phdr->p_memsz);
-		objc_log("\tp_align: \t\t%lu\n", phdr->p_align);
-		objc_log("===================\n");
-		
-		++phdr;
-	}
-	
+	const char *const sh_strtab_p = firstpage + sh_strtab->sh_offset;
 	
 	shdr = (Elf_Shdr *) (firstpage + ehdr->e_shoff);
 	Elf_Shdr *shlimit = shdr + ehdr->e_shnum;
 	while (shdr < shlimit) {
 		objc_log("SHDR dump:\n");
-		objc_log("\tsh_name: \t\t%lx\n", (unsigned long)shdr->sh_name);
+		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, sh_strtab_p + shdr->sh_name);
 		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
 		objc_log("\tsh_flags: \t\t0x%lx\n", (unsigned long)shdr->sh_flags);
 		objc_log("\tsh_addr: \t\t0x%lx\n", (unsigned long)shdr->sh_addr);
