@@ -219,7 +219,7 @@ check_action_record(struct _Unwind_Context *context, BOOL foreignException,
 									 struct dwarf_eh_lsda *lsda, dw_eh_ptr_t action_record,
 									 Class thrown_class, unsigned long *selector)
 {
-	if (!action_record) { return handler_cleanup; }
+//	if (!action_record) { return handler_cleanup; }
 	while (action_record) {
 		int filter = read_sleb128(&action_record);
 		dw_eh_ptr_t action_record_offset_base = action_record;
@@ -315,7 +315,17 @@ internal_objc_personality(int version,
 	if (actions & _UA_SEARCH_PHASE){
 		objc_debug_log("Search phase...\n");
 		struct dwarf_eh_lsda lsda = parse_lsda(context, lsda_addr);
+		objc_debug_log("\t action table: \t\t %p", lsda.action_table);
+		objc_debug_log("\t call site table: \t\t %p", lsda.call_site_table);
+		objc_debug_log("\t landing pads: \t\t %p", lsda.landing_pads);
+		objc_debug_log("\t region start: \t\t %p", lsda.region_start);
+		
 		action = dwarf_eh_find_callsite(context, &lsda);
+		
+		objc_debug_log("ACTION:", lsda.landing_pads);
+		objc_debug_log("\t action record: \t\t %p", action.action_record);
+		objc_debug_log("\t landing pad: \t\t %p", action.landing_pad);
+		
 		handler_type handler = check_action_record(context, foreignException,
 												   &lsda, action.action_record, thrown_class, &selector);
 		objc_debug_log("handler: %d\n", handler);
