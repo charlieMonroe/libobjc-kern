@@ -195,6 +195,14 @@ static void get_elf(struct module *module){
 
 	objc_log("strtab %p count: %i\n", elf->strtab, elf->strsz);;
 	
+	objc_log("ELF file dump:\n");
+	objc_log("\t address: \t\t%p\n", elf->address);
+	objc_log("\t dynamic: \t\t%p\n", elf->dynamic);
+	objc_log("\t strtab: \t\t%p\n", elf->strtab);
+	objc_log("\t strsize: \t\t%lu\n", (unsigned long)elf->strsz);
+	objc_log("\t ddbstrtab: \t\t%p\n", elf->ddbstrtab);
+	objc_log("\tsh_size: \t\t%lu\n", (unsigned long)elf->ddbstrcnt);
+	
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
