@@ -36,7 +36,6 @@ static void get_elf(struct module *module){
 	int error = 0;
 	ssize_t resid;
 	
-
 	int readsize = 250000;
 
 	struct nameidata nd;
@@ -59,7 +58,10 @@ static void get_elf(struct module *module){
 					UIO_SYSSPACE, IO_NODELOCKED, curthread->td_ucred, NOCRED,
 					&resid, curthread);
 
-	
+	linker_ctf_t ctf;
+	linker_ctf_get(file, &ctf);
+	objc_log("CTF->strtab %p count: %i\n", ctf.strtab, ctf.strcnt);
+	goto out;
 	
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
