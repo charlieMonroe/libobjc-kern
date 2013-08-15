@@ -189,6 +189,11 @@ static void get_elf(struct module *module){
     objc_log("Found .eh_frame, it's at offset 0x%lx\n", (unsigned long)eh_frame_shdr->sh_offset);
     
     shdr = eh_frame_shdr;
+    const char *name = efile->shstrtab + shdr->sh_name;
+    if (objc_strings_equal(name, "set_objc_module_list_set")){
+      eh_frame_shdr = shdr;
+    }
+
     objc_log("SHDR dump:\n");
 		objc_log("\tsh_name: \t\t%lx -> %s\n", (unsigned long)shdr->sh_name, name);
 		objc_log("\tsh_type: \t\t%lx\n", (unsigned long)shdr->sh_type);
