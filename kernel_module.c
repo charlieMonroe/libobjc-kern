@@ -30,6 +30,7 @@ MALLOC_DECLARE(M_LIBUNWIND_FAKE);
 MALLOC_DEFINE(M_LIBUNWIND_FAKE, "fake", "fake");
 
 static void list_sections(caddr_t firstpage){
+	int error = 0;
 	Elf_Ehdr *ehdr = (Elf_Ehdr *)firstpage;
 	objc_log("EHDR dump:\n");
 	objc_log("\te_type: \t\t%lx\n", (unsigned long)ehdr->e_type);
@@ -59,7 +60,7 @@ static void list_sections(caddr_t firstpage){
 			case PT_LOAD:
 				if (nsegs == MAXSEGS) {
 					objc_log("Too many segments!\n");
-					goto out;
+					return;
 				}
 				
 				segs[nsegs] = phdr;
@@ -73,7 +74,7 @@ static void list_sections(caddr_t firstpage){
 				break;
 			case PT_INTERP:
 				error = ENOSYS;
-				goto out;
+				return;
 		}
 		
 		objc_log("PHDR dump:\n");
@@ -142,8 +143,6 @@ static void get_elf(struct module *module){
 	linker_ctf_t ctf;
 	linker_ctf_get(file, &ctf);
 	objc_log("CTF->strtab %p count: %i\n", ctf.strtab, ctf.strcnt);
-	
-out:
 	
 	VOP_UNLOCK(nd.ni_vp, 0);
 	vn_close(nd.ni_vp, FREAD, curthread->td_ucred, curthread);
