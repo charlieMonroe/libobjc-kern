@@ -269,20 +269,6 @@ check_action_record(struct _Unwind_Context *context, BOOL foreignException,
 #pragma mark -
 #pragma mark Personality functions
 
-// TODO remove
-#define UNW_TDEP_CURSOR_LEN	127
-typedef struct unw_cursor
-{
-  unw_word_t opaque[UNW_TDEP_CURSOR_LEN];
-}
-unw_cursor_t;
-
-// TODO remove
-struct _Unwind_Context {
-  unw_cursor_t cursor;
-  int end_of_stack;	/* set to 1 if the end of stack was reached */
-};
-
 static inline _Unwind_Reason_Code
 internal_objc_personality(int version,
 												_Unwind_Action actions,
