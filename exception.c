@@ -315,16 +315,16 @@ internal_objc_personality(int version,
 	if (actions & _UA_SEARCH_PHASE){
 		objc_debug_log("Search phase...\n");
 		struct dwarf_eh_lsda lsda = parse_lsda(context, lsda_addr);
-		objc_debug_log("\t action table: \t\t %p", lsda.action_table);
-		objc_debug_log("\t call site table: \t\t %p", lsda.call_site_table);
-		objc_debug_log("\t landing pads: \t\t %p", lsda.landing_pads);
-		objc_debug_log("\t region start: \t\t %p", lsda.region_start);
+		objc_debug_log("\t action table: \t\t %p\n", lsda.action_table);
+		objc_debug_log("\t call site table: \t\t %p\n", lsda.call_site_table);
+		objc_debug_log("\t landing pads: \t\t %p\n", lsda.landing_pads);
+		objc_debug_log("\t region start: \t\t %p\n", lsda.region_start);
 		
 		action = dwarf_eh_find_callsite(context, &lsda);
 		
-		objc_debug_log("ACTION:", lsda.landing_pads);
-		objc_debug_log("\t action record: \t\t %p", action.action_record);
-		objc_debug_log("\t landing pad: \t\t %p", action.landing_pad);
+		objc_debug_log("ACTION:\n");
+		objc_debug_log("\t action record: \t\t %p\n", action.action_record);
+		objc_debug_log("\t landing pad: \t\t %p\n", action.landing_pad);
 		
 		handler_type handler = check_action_record(context, foreignException,
 												   &lsda, action.action_record, thrown_class, &selector);
