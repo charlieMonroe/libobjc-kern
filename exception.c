@@ -394,8 +394,11 @@ internal_objc_personality(int version,
 		}
 	}else{
 		// Restore the saved info if we saved some last time.
+    objc_log("Loading landing pad...");
 		load_landing_pad(context, exceptionObject, ex, &selector, &action.landing_pad);
+    objc_log("%p\n", action.landing_pad);
 		object = ex->object;
+    objc_debug_log("Freeing exception object %p\n",ex);
 		objc_dealloc(ex, M_EXCEPTION_TYPE);
 	}
 	
