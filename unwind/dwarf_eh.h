@@ -282,6 +282,7 @@ static struct dwarf_eh_action
 		call_site_start = read_value(lsda->callsite_encoding, &callsite_table);
 		call_site_size = read_value(lsda->callsite_encoding, &callsite_table);
 
+    objc_debug_log("ip: %p\n", (void*)ip);
     objc_debug_log("call_site_start: %p\n", (void*)call_site_start);
     objc_debug_log("call_site_size: %p\n", (void*)call_site_size);
     

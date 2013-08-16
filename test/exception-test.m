@@ -14,19 +14,13 @@
 @implementation OtherExceptionClass
 @end
 
-
-void __throwing_function(Class cl);
-void __throwing_function(Class cl){
-	@throw [[cl alloc] init];
-}
-
 static void run_exception_test_for_class(Class cl){
 	BOOL was_in_try = NO;
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
 	@try {
 		was_in_try = YES;
-		__throwing_function(cl);
+		@throw [[cl alloc] init];
 	}@catch (OtherExceptionClass *exception){
 		objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
