@@ -6,6 +6,13 @@
 #include "kernobjc/runtime.h"
 #include "class.h"
 #include "private.h"
+
+// TODO remove
+// Temporarily remove all debug logs
+#undef OBJC_DEBUG_LOG
+#define OBJC_DEBUG_LOG 0
+
+
 #include "unwind/dwarf_eh.h"
 
 enum exception_type
