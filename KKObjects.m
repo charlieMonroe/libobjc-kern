@@ -4,6 +4,7 @@
 #include "kernobjc/types.h"
 #include "os.h"
 #include "private.h"
+#include "types.h"
 
 #pragma mark KKObject
 
@@ -21,6 +22,11 @@
 
 +(Class)class
 {
+  struct objc_class *cl = (struct objc_class *)self;
+  objc_debug_log("Returning +class [self=%p]\n", self);
+  objc_debug_log("\t isMeta = %s\n", cl->flags.meta ? "YES" : "NO");
+  objc_debug_log("\t isFake = %s\n", cl->flags.fake ? "YES" : "NO");
+  
   return (Class)self;
 }
 

@@ -18,6 +18,7 @@ static void run_exception_test_for_class(Class cl){
 	BOOL was_in_try = NO;
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
+  
 	@try {
 		was_in_try = YES;
 		@throw [[cl alloc] init];
