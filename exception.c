@@ -473,6 +473,9 @@ id objc_begin_catch(struct _Unwind_Exception *exceptionObject)
 {
 	struct thread_data *td = _objc_exception_get_thread_data();
 	objc_debug_log("Beginning catch %p\n", exceptionObject);
+  char *cls = (char*)&(exceptionObject->exception_class);
+	objc_debug_log("\tClass: %c%c%c%c%c%c%c%c\n", cls[7], cls[6], cls[5], cls[4],
+                 cls[3], cls[2], cls[1], cls[0]);
 	if (exceptionObject->exception_class == objc_exception_class){
 		td->current_exception_type = OBJC;
 		struct objc_exception *ex = objc_exception_from_header(exceptionObject);
@@ -548,6 +551,7 @@ objc_end_catch(void)
 	
 	if (td->current_exception_type == FOREIGN) {
 		struct _Unwind_Exception *e = ((struct _Unwind_Exception*)td->caughtExceptions);
+    objc_debug_log("Will be calling cleanup at %p\n", e->exception_cleanup);
 		e->exception_cleanup(_URC_FOREIGN_EXCEPTION_CAUGHT, e);
 		td->current_exception_type = NONE;
 		td->caughtExceptions = 0;
