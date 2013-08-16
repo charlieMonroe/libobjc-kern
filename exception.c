@@ -269,6 +269,20 @@ check_action_record(struct _Unwind_Context *context, BOOL foreignException,
 #pragma mark -
 #pragma mark Personality functions
 
+// TODO remove
+#define UNW_TDEP_CURSOR_LEN	127
+typedef struct unw_cursor
+{
+  unw_word_t opaque[UNW_TDEP_CURSOR_LEN];
+}
+unw_cursor_t;
+
+// TODO remove
+struct _Unwind_Context {
+  unw_cursor_t cursor;
+  int end_of_stack;	/* set to 1 if the end of stack was reached */
+};
+
 static inline _Unwind_Reason_Code
 internal_objc_personality(int version,
 												_Unwind_Action actions,
@@ -404,6 +418,10 @@ internal_objc_personality(int version,
 				  (unsigned long)(exceptionObject));
 	_Unwind_SetGR(context, __builtin_eh_return_data_regno(1), selector);
 	
+  objc_debug_log("Installing IP: %p\n", action.landing_pad);
+  objc_debug_log("Installing GR[0]: %p\n", exceptionObject);
+  objc_debug_log("Installing GR[1]: %p\n", (void*)selector);
+  
 	objc_debug_log("Installing context, selector %d\n", (int)selector);
 	return _URC_INSTALL_CONTEXT;
 }
