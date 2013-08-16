@@ -35,8 +35,8 @@ static void run_exception_test_for_class(Class cl){
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");
 	objc_assert(cl == caught_for_class, "Caught exception by the wrong handler:"
-				" %p [%s]!\n", caught_for_class, caught_for_class == Nil ?
-				"null" : class_getName(caught_for_class));
+              " should be %p, is %p [%s]!\n", cl, caught_for_class,
+              caught_for_class == Nil ? "null" : class_getName(caught_for_class));
 }
 
 
