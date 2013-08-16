@@ -398,8 +398,8 @@ internal_objc_personality(int version,
 		load_landing_pad(context, exceptionObject, ex, &selector, &action.landing_pad);
     objc_log("%p\n", action.landing_pad);
 		object = ex->object;
-    objc_debug_log("Freeing exception object %p\n",ex);
-		objc_dealloc(ex, M_EXCEPTION_TYPE);
+    //objc_debug_log("Freeing exception object %p\n",ex);
+		//objc_dealloc(ex, M_EXCEPTION_TYPE);
 	}
 	
 	_Unwind_SetIP(context, (unsigned long)action.landing_pad);
