@@ -219,7 +219,7 @@ check_action_record(struct _Unwind_Context *context, BOOL foreignException,
 									 struct dwarf_eh_lsda *lsda, dw_eh_ptr_t action_record,
 									 Class thrown_class, unsigned long *selector)
 {
-//	if (!action_record) { return handler_cleanup; }
+	if (!action_record) { return handler_cleanup; }
 	while (action_record) {
 		int filter = read_sleb128(&action_record);
 		dw_eh_ptr_t action_record_offset_base = action_record;

@@ -282,12 +282,19 @@ static struct dwarf_eh_action
 		call_site_start = read_value(lsda->callsite_encoding, &callsite_table);
 		call_site_size = read_value(lsda->callsite_encoding, &callsite_table);
 
+    objc_debug_log("call_site_start: %p\n", (void*)call_site_start);
+    objc_debug_log("call_site_size: %p\n", (void*)call_site_size);
+    
 		// Call site entries are started
 		if (call_site_start > ip) { break; }
 
 		landing_pad = read_value(lsda->callsite_encoding, &callsite_table);
-		action = read_uleb128(&callsite_table);
-
+		objc_debug_log("landing_pad: %p\n", (void*)landing_pad);
+    
+    action = read_uleb128(&callsite_table);
+    objc_debug_log("action: %p\n", (void*)action);
+    objc_debug_log("=========\n");
+    
 		if (call_site_start <= ip && ip <= call_site_start + call_site_size)
 		{
 			if (action)
