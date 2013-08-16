@@ -4,12 +4,16 @@
 #include "../KKObjects.h"
 
 @interface ExceptionClass : KKObject
++(void)throw;
 @end
 @interface OtherExceptionClass : ExceptionClass
 @end
 
 
 @implementation ExceptionClass
++(void)throw{
+  @throw [[self alloc] init];
+}
 @end
 @implementation OtherExceptionClass
 @end
@@ -21,7 +25,7 @@ static void run_exception_test_for_class(Class cl){
   
 	@try {
 		was_in_try = YES;
-		@throw [[cl alloc] init];
+    [cl throw];
 	}@catch (OtherExceptionClass *exception){
 		objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
