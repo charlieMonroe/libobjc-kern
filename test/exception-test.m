@@ -25,7 +25,8 @@ static void run_exception_test_for_class(Class cl){
   
 	@try {
 		was_in_try = YES;
-		@throw [[cl alloc] init];
+		id exc = [[cl alloc] init];
+		@throw exc;
 	}@catch (OtherExceptionClass *exception){
 		objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
