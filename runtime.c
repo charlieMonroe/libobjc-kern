@@ -35,9 +35,11 @@ void objc_runtime_init(void) {
 	objc_arc_init();
 	objc_protocol_init();
 	objc_associated_objects_init();
-  objc_exceptions_init();
+	objc_exceptions_init();
 	
 	objc_runtime_initialized = YES;
+	
+	pause("objc_debug", 10000);
 }
 
 void	objc_runtime_destroy(void) {
