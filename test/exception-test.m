@@ -23,20 +23,26 @@ static void run_exception_test_for_class(Class cl){
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
   
+	objc_debug_log("Return address: %p\n", __builtin_return_address(0));
+	
 	@try {
 		was_in_try = YES;
 		id exc = [[cl alloc] init];
 		@throw exc;
 	}@catch (OtherExceptionClass *exception){
-		objc_debug_log("In OtherExceptionClass catch!\n");
+		//objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
 	}@catch (ExceptionClass *exception){
-		objc_debug_log("In ExceptionClass catch!\n");
+		//objc_debug_log("In ExceptionClass catch!\n");
+		objc_debug_log("Return address in catch block: %p\n", __builtin_return_address(0));
 		caught_for_class = [ExceptionClass class];
 	}@finally{
-		objc_debug_log("In finally!\n");
+		//objc_debug_log("In finally!\n");
+		objc_debug_log("Return address in finally: %p\n", __builtin_return_address(0));
 		was_in_finally = YES;
 	}
+	
+	objc_debug_log("Return address after try-catch-finally: %p\n", __builtin_return_address(0));
 	
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");

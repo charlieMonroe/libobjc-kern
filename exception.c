@@ -558,7 +558,7 @@ objc_end_catch(void)
 	
 	if (td->current_exception_type == FOREIGN) {
 		struct _Unwind_Exception *e = ((struct _Unwind_Exception*)td->caughtExceptions);
-    objc_debug_log("Will be calling cleanup at %p\n", e->exception_cleanup);
+		objc_debug_log("Will be calling cleanup at %p\n", e->exception_cleanup);
 		e->exception_cleanup(_URC_FOREIGN_EXCEPTION_CAUGHT, e);
 		td->current_exception_type = NONE;
 		td->caughtExceptions = 0;
