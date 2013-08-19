@@ -12,7 +12,7 @@
 
 @implementation ExceptionClass
 +(void)throw{
-  @throw [[self alloc] init];
+	@throw [[self alloc] init];
 }
 @end
 @implementation OtherExceptionClass
@@ -25,7 +25,7 @@ static void run_exception_test_for_class(Class cl){
   
 	@try {
 		was_in_try = YES;
-    [cl throw];
+		@throw [[cl alloc] init];
 	}@catch (OtherExceptionClass *exception){
 		objc_debug_log("In OtherExceptionClass catch!\n");
 		caught_for_class = [OtherExceptionClass class];
