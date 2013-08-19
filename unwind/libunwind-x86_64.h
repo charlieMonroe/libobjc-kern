@@ -45,7 +45,7 @@ extern "C" {
    require recompiling all users of this library.  Stack allocation is
    relatively cheap and unwind-state copying is relatively rare, so we
    want to err on making it rather too big than too small.  */
-#define UNW_TDEP_CURSOR_LEN	127
+#define UNW_TDEP_CURSOR_LEN	512
 
 typedef uint64_t unw_word_t;
 typedef int64_t unw_sword_t;
@@ -71,7 +71,27 @@ typedef enum
     UNW_X86_64_R14,
     UNW_X86_64_R15,
     UNW_X86_64_RIP,
+#ifdef CONFIG_MSABI_SUPPORT
+    UNW_X86_64_XMM0,
+    UNW_X86_64_XMM1,
+    UNW_X86_64_XMM2,
+    UNW_X86_64_XMM3,
+    UNW_X86_64_XMM4,
+    UNW_X86_64_XMM5,
+    UNW_X86_64_XMM6,
+    UNW_X86_64_XMM7,
+    UNW_X86_64_XMM8,
+    UNW_X86_64_XMM9,
+    UNW_X86_64_XMM10,
+    UNW_X86_64_XMM11,
+    UNW_X86_64_XMM12,
+    UNW_X86_64_XMM13,
+    UNW_X86_64_XMM14,
+    UNW_X86_64_XMM15,
+    UNW_TDEP_LAST_REG = UNW_X86_64_XMM15,
+#else
     UNW_TDEP_LAST_REG = UNW_X86_64_RIP,
+#endif
 
     /* XXX Add other regs here */
 
