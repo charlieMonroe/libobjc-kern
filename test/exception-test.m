@@ -34,15 +34,15 @@ static void run_exception_test_for_class(Class cl){
 		caught_for_class = [OtherExceptionClass class];
 	}@catch (ExceptionClass *exception){
 		//objc_debug_log("In ExceptionClass catch!\n");
-		objc_debug_log("Return address in catch block: %p\n", __builtin_return_address(0));
+		objc_debug_log("Return address in catch block: %p\n", (&cl)[-1]);
 		caught_for_class = [ExceptionClass class];
 	}@finally{
 		//objc_debug_log("In finally!\n");
-		objc_debug_log("Return address in finally: %p\n", __builtin_return_address(0));
+		objc_debug_log("Return address in finally: %p\n", (&cl)[-1]);
 		was_in_finally = YES;
 	}
 	
-	objc_debug_log("Return address after try-catch-finally: %p\n", __builtin_return_address(0));
+	objc_debug_log("Return address after try-catch-finally: %p\n", (&cl)[-1]);
 	
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");
