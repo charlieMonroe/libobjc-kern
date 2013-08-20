@@ -466,6 +466,12 @@ objc_exception_throw(id object)
 	
 	ex->object = object;
 	
+	void *rbp = NULL;
+	void *rsp = NULL;
+	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
+	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
+	objc_debug_log("%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
+	
 	_Unwind_Reason_Code err = _Unwind_RaiseException(&ex->unwindHeader);
 	objc_dealloc(ex, M_EXCEPTION_TYPE);
 	if (_URC_END_OF_STACK == err && 0 != _objc_unexpected_exception)
@@ -480,7 +486,7 @@ id objc_begin_catch(struct _Unwind_Exception *exceptionObject)
 {
 	struct thread_data *td = _objc_exception_get_thread_data();
 	objc_debug_log("Beginning catch %p\n", exceptionObject);
-  char *cls = (char*)&(exceptionObject->exception_class);
+	char *cls = (char*)&(exceptionObject->exception_class);
 	objc_debug_log("\tClass: %c%c%c%c%c%c%c%c\n", cls[7], cls[6], cls[5], cls[4],
                  cls[3], cls[2], cls[1], cls[0]);
 	if (exceptionObject->exception_class == objc_exception_class){

@@ -27,7 +27,7 @@ static void run_exception_test_for_class(Class cl){
 	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
 	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
 	
-	objc_debug_log("Return address: %p\n", __builtin_return_address(0));
+	objc_debug_log("Return address: %p\n", (&cl)[-1]);
 	
 	@try {
 		was_in_try = YES;
@@ -60,6 +60,12 @@ static void run_exception_test_for_class(Class cl){
 
 void exception_test(void);
 void exception_test(void){
+	void *rbp = NULL;
+	void *rsp = NULL;
+	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
+	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
+	objc_debug_log("%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
+  
 	run_exception_test_for_class([ExceptionClass class]);
 	run_exception_test_for_class([OtherExceptionClass class]);
 	

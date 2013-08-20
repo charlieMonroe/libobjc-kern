@@ -12,37 +12,32 @@
 
 +(id)alloc
 {
-  return class_createInstance((Class)self, 0);
+	return class_createInstance((Class)self, 0);
 }
 
 +(id)new
 {
-  return [[self alloc] init];
+	return [[self alloc] init];
 }
 
 +(Class)class
 {
-  struct objc_class *cl = (struct objc_class *)self;
-  objc_debug_log("Returning +class [self=%p]\n", self);
-  objc_debug_log("\t isMeta = %s\n", cl->flags.meta ? "YES" : "NO");
-  objc_debug_log("\t isFake = %s\n", cl->flags.fake ? "YES" : "NO");
-  
-  return (Class)self;
+	return (Class)self;
 }
 
 +(void)dealloc
 {
-  // No-op
+	// No-op
 }
 
 +(id)retain
 {
-  return self;
+	return self;
 }
 
 +(void)release
 {
-  // No-op
+	// No-op
 }
 
 -(void)dealloc
@@ -53,7 +48,7 @@
 
 -(id)init
 {
-  return self;
+	return self;
 }
 
 -(void)release
@@ -85,12 +80,12 @@
 
 -(const char*)cString
 {
-  return self->_cString;
+	return self->_cString;
 }
 
 -(void)dealloc
 {
-  // No-op
+	// No-op
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-missing-super-calls"
 }
@@ -98,17 +93,17 @@
 
 -(unsigned int)length
 {
-  return self->_length;
+	return self->_length;
 }
 
 -(void)release
 {
-  // No-op
+	// No-op
 }
 
 -(id)retain
 {
-  return self;
+	return self;
 }
 
 @end
