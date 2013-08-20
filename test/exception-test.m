@@ -27,7 +27,8 @@ static void run_exception_test_for_class(Class cl){
 	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
 	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
 	
-	objc_debug_log("Return address: %p\n", (&cl)[-1]);
+	void **return_address = (void**)((char*)rbp + 0x8);
+	objc_debug_log("Return address: %p\n", *return_address);
 	
 	@try {
 		was_in_try = YES;
@@ -38,17 +39,22 @@ static void run_exception_test_for_class(Class cl){
 		caught_for_class = [OtherExceptionClass class];
 	}@catch (ExceptionClass *exception){
 		//objc_debug_log("In ExceptionClass catch!\n");
-		objc_debug_log("Return address in catch block: %p\n", (&cl)[-1]);
+		objc_debug_log("Return address in catch block: %p\n", *return_address);
 		caught_for_class = [ExceptionClass class];
 	}@finally{
 		//objc_debug_log("In finally!\n");
-		objc_debug_log("Return address in finally: %p\n", (&cl)[-1]);
+		objc_debug_log("Return address in finally: %p\n", *return_address);
 		was_in_finally = YES;
 	}
 	
-	objc_debug_log("Return address after try-catch-finally: %p\n", (&cl)[-1]);
-	objc_debug_log("RBP should be %p\n", rbp);
-	objc_debug_log("RSP should be %p\n", rsp);
+	objc_debug_log("Return address after try-catch-finally: %p\n", *return_address);
+	
+	void *rbp2;
+	void *rsp2;
+	__asm__("\t movq %%rbp, %0" : "=r"(rbp2));
+	objc_debug_log("RBP should be %p vs %p\n", rbp, rbp2);
+	__asm__("\t movq %%rsp, %0" : "=r"(rsp2));
+	objc_debug_log("RSP should be %p vs %p\n", rsp, rsp2);
 	
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");
