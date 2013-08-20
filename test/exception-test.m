@@ -48,7 +48,7 @@ static void run_exception_test_for_class(Class cl){
 	
 	objc_debug_log("Return address after try-catch-finally: %p\n", (&cl)[-1]);
 	objc_debug_log("RBP should be %p\n", rbp);
-	objc_debug_log("RSP should be %p\n", rbp);
+	objc_debug_log("RSP should be %p\n", rsp);
 	
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");
