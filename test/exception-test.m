@@ -70,7 +70,7 @@ void exception_test(void){
 	void *rsp = NULL;
 	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
 	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
-	objc_debug_log("%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
+	objc_debug_log(">>>>>%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
   
 	run_exception_test_for_class([ExceptionClass class]);
 	run_exception_test_for_class([OtherExceptionClass class]);

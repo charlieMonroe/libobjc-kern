@@ -459,7 +459,7 @@ objc_exception_throw(id object)
 	objc_debug_log("Throwing %p\n", object);
 	
 	struct objc_exception *ex = objc_zero_alloc(sizeof(struct objc_exception),
-																						M_EXCEPTION_TYPE);
+									M_EXCEPTION_TYPE);
 	
 	ex->unwindHeader.exception_class = objc_exception_class;
 	ex->unwindHeader.exception_cleanup = _objc_exception_cleanup;
@@ -470,7 +470,7 @@ objc_exception_throw(id object)
 	void *rsp = NULL;
 	__asm__("\t movq %%rbp, %0" : "=r"(rbp));
 	__asm__("\t movq %%rsp, %0" : "=r"(rsp));
-	objc_debug_log("%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
+	objc_debug_log(">>>>>%s - rbp: %p rsp: %p\n", __FUNCTION__, rbp, rsp);
 	
 	_Unwind_Reason_Code err = _Unwind_RaiseException(&ex->unwindHeader);
 	objc_dealloc(ex, M_EXCEPTION_TYPE);
