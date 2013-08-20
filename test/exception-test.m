@@ -23,9 +23,7 @@ static void run_exception_test_for_class(Class cl){
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
 	void *rbp = NULL;
-	__asm {
-		movq %rbp, rbp
-	};
+	asm("\t movq %%rbp, %0" : "=r"(rbp));
 	
 	objc_debug_log("Return address: %p\n", __builtin_return_address(0));
 	
