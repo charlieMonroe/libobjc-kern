@@ -22,7 +22,11 @@ static void run_exception_test_for_class(Class cl){
 	BOOL was_in_try = NO;
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
-  
+	void *rbp = NULL;
+	__asm {
+		movq %rbp, rbp
+	};
+	
 	objc_debug_log("Return address: %p\n", __builtin_return_address(0));
 	
 	@try {
@@ -43,6 +47,7 @@ static void run_exception_test_for_class(Class cl){
 	}
 	
 	objc_debug_log("Return address after try-catch-finally: %p\n", (&cl)[-1]);
+	objc_debug_log("RBP should be %p\n", rbp);
 	
 	objc_assert(was_in_try, "Wasn't in try!\n");
 	objc_assert(was_in_try, "Wasn't in finally!\n");
