@@ -7,9 +7,10 @@
 #include <sys/kernel.h>
 #include <sys/malloc.h>
 #include <sys/osd.h>
+#include <ddb/ddb.h>
 
 /* LOGGING */
-#define objc_log printf
+#define objc_log db_printf
 
 typedef __ptrdiff_t ptrdiff_t;
 
