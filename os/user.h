@@ -10,7 +10,7 @@
 #define PAGE_SIZE 4096
 
 /* LOGGING */
-#define objc_log kprintf
+#define objc_log printf
 
 #define objc_debug_log(...)						\
 		if (OBJC_DEBUG_LOG) {					\
@@ -94,7 +94,7 @@ static inline void objc_yield(void){
 }
 
 #define objc_abort(reason...)	{					\
-					kprintf(reason);			\
+					printf(reason);			\
 					abort();			\
 				}
 

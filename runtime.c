@@ -39,7 +39,11 @@ void objc_runtime_init(void) {
 	
 	objc_runtime_initialized = YES;
 	
-	pause("objc_debug", 10);
+	/* 
+	 * For debugging purposes, when one needs to enter some breakpoints in the
+	 * kernel debugger.
+	 */
+	// pause("objc_debug", 1000);
 }
 
 void	objc_runtime_destroy(void) {
