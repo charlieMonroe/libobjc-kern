@@ -28,6 +28,8 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/IR/InlineAsm.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
@@ -35,11 +37,14 @@
 #include "llvm/Support/Compiler.h"
 #include <cstdarg>
 
-// TODO remove
-#include <iostream>
-
 using namespace clang;
 using namespace CodeGen;
+
+/// Used to determine whether the target OS is OS X, which is used for debugging
+/// the kernel ObjC run-time.
+#ifndef __APPLE__
+#define __APPLE__ 0
+#endif
 
 
 namespace {
@@ -48,10 +53,12 @@ namespace {
   /// avoids constructing the type more than once if it's used more than once.
   class LazyRuntimeFunction {
     CodeGenModule *CGM;
-    std::vector<llvm::Type*> ArgTys;
+    
     const char *FunctionName;
     llvm::Constant *Function;
   public:
+    // TODO put back
+    std::vector<llvm::Type*> ArgTys;
     /// Constructor leaves this class uninitialized, because it is intended to
     /// be used as a field in another class and not all of the types that are
     /// used as arguments will necessarily be available at construction time.
@@ -250,7 +257,7 @@ namespace {
     std::string GetClassSymbolName(const std::string &Name, bool isMeta)
     {
       return ((isMeta ? "_OBJC_METACLASS_": "_OBJC_CLASS_") +
-                std::string(Name));
+              std::string(Name));
     }
     /// Returns a name for a class ref symbol
     std::string GetClassRefSymbolName(const std::string &Name, bool isMeta)
@@ -1505,6 +1512,26 @@ namespace {
     llvm::IntegerType *IntegerBit;
     /// A structure with class flags
     llvm::StructType *FlagsStructTy;
+    /// A structure defining the exception data type
+    llvm::StructType *ExceptionDataTy;
+    /// A function called before entering the try block
+    LazyRuntimeFunction ExceptionTryEnterFn;
+    /// A function called when exiting the try block
+    LazyRuntimeFunction ExceptionTryExitFn;
+    /// A function that's used for extracting exception from the exception data
+    LazyRuntimeFunction ExceptionExtractFn;
+    /// A function that's used for throwing exceptions
+    LazyRuntimeFunction ExceptionThrowFn;
+    /// A function that's used for matching the exception class
+    LazyRuntimeFunction ExceptionMatchFn;
+    
+    /// A setjmp function
+    llvm::Constant *SetJmpFn;
+    /// Setjmp buffer type is an array of this size
+    uint64_t SetJmpBufferSize;
+    /// Type of integers that are used in the buffer type
+    llvm::Type *SetJmpBufferIntTy;
+    
     
     /// For each variant of a selector, we store the type encoding and a
     /// placeholder value.  For an untyped selector, the type will be the empty
@@ -1537,6 +1564,14 @@ namespace {
     }
     
   public:
+    
+    LazyRuntimeFunction GetExceptionTryExitFunction(void){
+      return ExceptionTryExitFn;
+    }
+    LazyRuntimeFunction GetSyncExitFunction(void){
+      return SyncExitFn;
+    }
+    
     // TODO real version numbers
     CGObjCKern(CodeGenModule &Mod) : CGObjCNonMacBase<llvm::IntegerType>(Mod, 0, 0,
                                                                          CreateSelectorType(Mod)) {
@@ -1615,6 +1650,57 @@ namespace {
                                       
                                       IntTy,               // version
                                       NULL);
+	    
+	    if (llvm::Module::Pointer64){
+		    // On FreeBSD the setjmp is just (12 * long), oven on AMD64,
+		    // since it doesn't save anything from the FPU in the kernel.
+		    // On OS X it's (37 * int), though.
+#if __APPLE__
+        SetJmpBufferSize = ((9 * 2) + 3 + 16); // From #include <setjmp.h>
+        SetJmpBufferIntTy = IntTy;
+#else
+        SetJmpBufferSize = 12;
+        SetJmpBufferIntTy = LongTy;
+#endif
+	    }else if (llvm::Module::Pointer32){
+        SetJmpBufferSize = (18);
+        SetJmpBufferIntTy = IntTy;
+	    }else{
+#warning TODO: error
+	    }
+	    
+	    // Exceptions
+	    llvm::Type *StackPtrTy = llvm::ArrayType::get(CGM.Int8PtrTy, 4);
+      
+      llvm::Type *SetJmpType = llvm::ArrayType::get(SetJmpBufferIntTy,
+                                                    SetJmpBufferSize);
+      
+	    ExceptionDataTy =
+	    llvm::StructType::create("struct._objc_exception_data",
+                               SetJmpType,
+                               StackPtrTy,
+                               NULL);
+	    llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
+      
+	    ExceptionTryEnterFn.init(&CGM,
+                               "objc_exception_try_enter",
+                               VoidTy,
+                               ExceptionDataPointerTy, NULL);
+      
+      SetJmpFn = CGM.CreateRuntimeFunction(llvm::FunctionType::get(Int32Ty, SetJmpBufferIntTy->getPointerTo(), false), "setjmp", llvm::AttributeSet::get(CGM.getLLVMContext(),
+                                                                                                                                                         llvm::AttributeSet::FunctionIndex,
+                                                                                                                                                         llvm::Attribute::NonLazyBind));
+      
+      ExceptionExtractFn.init(&CGM, "objc_exception_extract",
+                              IdTy, ExceptionDataPointerTy, NULL);
+      
+      ExceptionThrowFn.init(&CGM, "objc_exception_throw", VoidTy, IdTy, NULL);
+      
+      ExceptionMatchFn.init(&CGM, "objc_exception_match",
+                            Int32Ty, ClassTy->getPointerTo(), IdTy, NULL);
+      
+      ExceptionTryExitFn.init(&CGM, "objc_exception_try_exit",
+                              VoidTy, ExceptionDataTy->getPointerTo(), NULL);
       
     }
     
@@ -1663,6 +1749,25 @@ namespace {
       }
       return CGF.Builder.CreateLoad(CGF.Builder.CreateGEP(SelValue, Zeros[0]));
     }
+    
+    virtual llvm::Value *GetSelector(CodeGenFunction &CGF, Selector Sel,
+                                     bool lval = false){
+      /// In order to allow @selector, we need to allow this generic GetSelector
+      /// but only return if such a selector already is available...
+      SmallVectorImpl<TypedSelector> &Types = SelectorTable[Sel];
+      if (Types.size() > 0){
+        llvm::GlobalVariable *SelValue = Types[0].second;
+        if (lval) {
+          llvm::Value *tmp = CGF.CreateTempAlloca(SelValue->getType());
+          CGF.Builder.CreateStore(SelValue, tmp);
+          return tmp;
+        }
+        return CGF.Builder.CreateLoad(CGF.Builder.CreateGEP(SelValue, Zeros[0]));
+      }
+      
+      llvm_unreachable("No untyped selectors support in kernel runtime.");
+    }
+	  
     
     virtual llvm::Constant *GetOptimizedPropertySetFunction(bool atomic,
                                                             bool copy) {
@@ -1717,6 +1822,15 @@ namespace {
     
     virtual llvm::Function *ModuleInitFunction();
     
+	  virtual llvm::Constant *GetClassStructureRef(const std::string &name,
+                                                 bool isMeta);
+	  
+    virtual void EmitTryStmt(CodeGenFunction &CGF,
+                             const ObjCAtTryStmt &S);
+    virtual void EmitThrowStmt(CodeGen::CodeGenFunction &CGF,
+                               const ObjCAtThrowStmt &S,
+                               bool ClearInsertionPoint);
+    
 #pragma mark CGObjCKern Unreachables
     
     virtual llvm::Value * EmitObjCWeakRead(CodeGenFunction &CGF,
@@ -1745,11 +1859,6 @@ namespace {
     
     virtual void RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
       llvm_unreachable("No alias support in kernel runtime.");
-    }
-    
-    virtual llvm::Value *GetSelector(CodeGenFunction &CGF, Selector Sel,
-                                     bool lval = false){
-      llvm_unreachable("No untyped selectors support in kernel runtime.");
     }
     
     virtual void EmitGCMemmoveCollectable(CodeGenFunction &CGF,
@@ -1833,7 +1942,7 @@ GenerateMethodList(const StringRef &ClassName,
 }
 
 llvm::Value *CGObjCPointerSelectorBase::GetSelector(CodeGenFunction &CGF, Selector Sel,
-                                                         const std::string &TypeEncoding, bool lval) {
+                                                    const std::string &TypeEncoding, bool lval) {
   
   SmallVectorImpl<TypedSelector> &Types = SelectorTable[Sel];
   llvm::GlobalAlias *SelValue = 0;
@@ -1864,7 +1973,7 @@ llvm::Value *CGObjCPointerSelectorBase::GetSelector(CodeGenFunction &CGF, Select
 }
 
 llvm::Value *CGObjCPointerSelectorBase::GetSelector(CodeGenFunction &CGF, Selector Sel,
-                                                         bool lval) {
+                                                    bool lval) {
   return GetSelector(CGF, Sel, std::string(), lval);
 }
 
@@ -2407,7 +2516,7 @@ void CGObjCPointerSelectorBase::RegisterAlias(const ObjCCompatibleAliasDecl *OAD
 template<class SelectorType>
 llvm::Constant *
 CGObjCNonMacBase<SelectorType>::EmitClassRef(const std::string &className,
-                                                  bool isMeta) {
+                                             bool isMeta) {
   printf("Emiting class ref for class %s%s\n", className.c_str(), isMeta ? "[meta]" : "");
   
   std::string symbolRef = GetClassRefSymbolName(className, isMeta);
@@ -2422,7 +2531,7 @@ CGObjCNonMacBase<SelectorType>::EmitClassRef(const std::string &className,
                                            llvm::GlobalValue::ExternalLinkage, 0, symbolName);
   }
   return new llvm::GlobalVariable(TheModule, ClassSymbol->getType(), true,
-                           llvm::GlobalValue::WeakAnyLinkage, ClassSymbol, symbolRef);
+                                  llvm::GlobalValue::WeakAnyLinkage, ClassSymbol, symbolRef);
 }
 
 
@@ -2685,7 +2794,7 @@ GenerateMessageSendSuper(CodeGenFunction &CGF,
   // Cast the pointer to a simplified version of the class structure
   llvm::StructType *ClassStructTy = llvm::StructType::get(IdTy, IdTy, NULL);
   llvm::PointerType *ClassTy = llvm::PointerType::getUnqual(ClassStructTy);
-
+  
   ReceiverClass = Builder.CreateBitCast(ReceiverClass, ClassTy);
   // Get the superclass pointer
   ReceiverClass = Builder.CreateStructGEP(ReceiverClass, 1);
@@ -3404,7 +3513,7 @@ llvm::Value *CGObjCKern::LookupIMPSuper(CodeGenFunction &CGF,
                                         llvm::Value *cmd,
                                         MessageSendInfo &MSI) {
   CGBuilderTy &Builder = CGF.Builder;
-//  cmd = Builder.CreateLoad(cmd);
+  //  cmd = Builder.CreateLoad(cmd);
   llvm::Value *lookupArgs[] = {ObjCSuper, cmd};
   
   llvm::CallInst *slot =
@@ -3661,7 +3770,7 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   
   // Fill in the structure
   std::vector<llvm::Constant*> Elements;
-    
+  
   // .isa
   Elements.push_back(llvm::ConstantExpr::getBitCast(MetaClass, IdTy));
   
@@ -3735,6 +3844,33 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   return Class;
 }
 
+llvm::Constant *CGObjCKern::GetClassStructureRef(const std::string &name,
+                                                 bool isMeta) {
+	llvm::Constant *Class = NULLPtr;
+	// Means there really is a superclass
+  ClassPair &pair = ClassTable[name];
+  if (pair.first != NULL){
+	  return isMeta ? pair.second : pair.first;
+  }else{
+		
+		std::string SuperclassSymbolName = GetClassSymbolName(name, isMeta);
+		
+		Class = TheModule.getGlobalVariable(SuperclassSymbolName);
+		printf("Superclass %ssymbol: %s\n\n", isMeta ? "meta " : "",
+           SuperclassSymbolName.c_str());
+		
+		if (Class == NULL){
+			Class = new llvm::GlobalVariable(TheModule,
+                                       PtrTy,
+                                       false,
+                                       llvm::GlobalValue::ExternalLinkage,
+                                       0,
+                                       SuperclassSymbolName);
+		}
+  }
+	return Class;
+}
+
 void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
   ASTContext &Context = CGM.getContext();
   
@@ -3749,7 +3885,7 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
     EmitClassRef(SuperClassName, true);
   }
   
-
+  
   // Get the class name
   ObjCInterfaceDecl *ClassDecl =
   const_cast<ObjCInterfaceDecl *>(OID->getClassInterface());
@@ -3762,9 +3898,9 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
     ClassSymbol->setInitializer(llvm::ConstantInt::get(LongTy, 0));
   } else {
     ClassSymbol = new llvm::GlobalVariable(TheModule, LongTy, false,
-                             llvm::GlobalValue::ExternalLinkage,
-                             llvm::ConstantInt::get(LongTy, 0),
-                             classSymbolName);
+                                           llvm::GlobalValue::ExternalLinkage,
+                                           llvm::ConstantInt::get(LongTy, 0),
+                                           classSymbolName);
   }
   
   // The same with the meta class
@@ -3783,39 +3919,8 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
   llvm::Constant *Superclass = NULLPtr;
   llvm::Constant *SuperclassMeta = NULLPtr;
   if (SuperClassDecl){
-    // Means there really is a superclass
-    ClassPair &pair = ClassTable[SuperClassName];
-    if (pair.first != NULL){
-      Superclass = pair.first;
-      SuperclassMeta = pair.second;
-    }else{
-      
-      std::string SuperclassSymbolName = GetClassSymbolName(SuperClassName, false);
-      std::string SuperclassMetaSymbolName = GetClassSymbolName(SuperClassName, true);
-      
-      Superclass = TheModule.getGlobalVariable(SuperclassSymbolName);
-      SuperclassMeta = TheModule.getGlobalVariable(SuperclassMetaSymbolName);
-      
-      printf("Superclass symbol: %s\nSuperclass meta symbol: %s\n", SuperclassSymbolName.c_str(),
-			SuperclassMetaSymbolName.c_str());
-
-      if (Superclass == NULL){
-        Superclass = new llvm::GlobalVariable(TheModule,
-                                              PtrTy,
-                                              false,
-                                              llvm::GlobalValue::ExternalLinkage,
-                                              0,
-                                              SuperclassSymbolName);
-      }
-      if (SuperclassMeta == NULL){
-        SuperclassMeta = new llvm::GlobalVariable(TheModule,
-                                                  PtrTy,
-                                                  false,
-                                                  llvm::GlobalValue::ExternalLinkage,
-                                                  0,
-                                                  SuperclassMetaSymbolName);
-      }
-    }
+	  Superclass = GetClassStructureRef(SuperClassName, false);
+	  SuperclassMeta = GetClassStructureRef(SuperClassName, true);
   }
   
   // Get the size of instances.
@@ -3905,15 +4010,15 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
        I = ClassDecl->protocol_begin(),
        E = ClassDecl->protocol_end(); I != E; ++I)
     Protocols.push_back((*I)->getNameAsString());
-
+  
   /*
-  // Get the superclass pointer. TODO use pointer to global var
-  llvm::Constant *SuperClass;
-  if (!SuperClassName.empty()) {
-    SuperClass = MakeConstantString(SuperClassName, ".super_class_name");
-  } else {
-    SuperClass = llvm::ConstantPointerNull::get(PtrToInt8Ty);
-  }
+   // Get the superclass pointer. TODO use pointer to global var
+   llvm::Constant *SuperClass;
+   if (!SuperClassName.empty()) {
+   SuperClass = MakeConstantString(SuperClassName, ".super_class_name");
+   } else {
+   SuperClass = llvm::ConstantPointerNull::get(PtrToInt8Ty);
+   }
    */
   
   // Empty vector used to construct empty method lists
@@ -4054,7 +4159,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   llvm::PointerType *PtrToSymbolTableStructTy;
   
   SelRefStructTy = llvm::StructType::get(PtrToInt8Ty, // Selector name
-										 PtrToInt8Ty, // Selector types
+                                         PtrToInt8Ty, // Selector types
                                          PtrToSelectorTy, // Pointer to static SEL
                                          NULL);
   SymbolTableStructTy = llvm::StructType::get(IntTy, // Number of selector refs
@@ -4062,7 +4167,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                               Int16Ty, // Class count
                                               PtrToInt8Ty, // Class list
                                               Int16Ty, // Category count
-					      PtrToInt8Ty, // Categories list
+                                              PtrToInt8Ty, // Categories list
                                               NULL // TODO class and cat defs
                                               );
   PtrToSymbolTableStructTy = llvm::PointerType::getUnqual(SymbolTableStructTy);
@@ -4072,7 +4177,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                          NULL);
   
   std::vector<llvm::Constant*> Elements;
-
+  
   // Selectors.
   std::vector<llvm::Constant*> Selectors;
   for (SelectorMap::iterator iter = SelectorTable.begin(),
@@ -4092,13 +4197,13 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
         llvm_unreachable("Selector has no type!");
       
       
-	  std::string Name = iter->first.getAsString();
-		std::string Types = i->first;
-		printf("Creating a selector reference [%s; %s]\n", Name.c_str(), i->first.c_str());
-		
+      std::string Name = iter->first.getAsString();
+      std::string Types = i->first;
+      printf("Creating a selector reference [%s; %s]\n", Name.c_str(), i->first.c_str());
+      
       Elements.push_back(MakeConstantString(Name));
-		Elements.push_back(MakeConstantString(Types));
-
+      Elements.push_back(MakeConstantString(Types));
+      
       // Second is the global variable - we supply a pointer to it to the
       // runtime which then fixes it
       Elements.push_back(i->second);
@@ -4110,7 +4215,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   }
   
   unsigned SelectorCount = Selectors.size();
-
+  
   // Selectors
   Elements.push_back(llvm::ConstantInt::get(IntTy, SelectorCount));
   llvm::Constant *SelectorList = MakeGlobalArray(SelRefStructTy, Selectors,
@@ -4120,7 +4225,7 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   
   Elements.push_back(llvm::ConstantInt::get(Int16Ty, Classes.size())); // Classes
   llvm::Constant *ClassList = MakeGlobalArray(IdTy, Classes,
-                                                 ".objc_class_list");
+                                              ".objc_class_list");
   Elements.push_back(llvm::ConstantExpr::getBitCast(ClassList,
                                                     PtrToInt8Ty));
   
@@ -4137,10 +4242,10 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   Elements.push_back(MakeConstantString(TheModule.getModuleIdentifier())); // Name
   Elements.push_back(SymbolTable);
   Elements.push_back(llvm::ConstantInt::get(IntTy, (int)0x301));
-
+  
   llvm::GlobalVariable *ModuleStruct = MakeGlobal(ModuleStructTy,
-                                            Elements,
-                                            ".objc_module");
+                                                  Elements,
+                                                  ".objc_module");
   llvm::GlobalVariable *ModuleList = new llvm::GlobalVariable(TheModule,
                                                               PtrTy,
                                                               false,
@@ -4148,10 +4253,6 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                                               llvm::ConstantExpr::getBitCast(ModuleStruct, PtrTy),
                                                               "objc_module_list");
   
-  
-#ifndef __APPLE__
-  #define __APPLE__ 0
-#endif
 #if __APPLE__
   // Mach-O
   ModuleList->setSection("__DATA, objc_module_list");
@@ -4160,9 +4261,10 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
   ModuleList->setSection("set_objc_module_list_set");
 #endif
   
-
+  CGM.AddUsedGlobal(ModuleList);
+  
   printf("============================creating module structure for %s\n", TheModule.getModuleIdentifier().c_str());
-
+  
 #if __APPLE__
 	// TODO - actually return NULL and let the loader handle this.
   // Create the load function calling the runtime entry point with the module
@@ -4186,6 +4288,562 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
 #else
   return NULL;
 #endif
+}
+
+
+
+namespace {
+	struct PerformFragileFinally : EHScopeStack::Cleanup {
+		const Stmt &S;
+		llvm::Value *SyncArgSlot;
+		llvm::Value *CallTryExitVar;
+		llvm::Value *ExceptionData;
+		CGObjCKern *Runtime;
+		PerformFragileFinally(const Stmt *S,
+                          llvm::Value *SyncArgSlot,
+                          llvm::Value *CallTryExitVar,
+                          llvm::Value *ExceptionData,
+                          CGObjCKern *Runtime)
+		: S(*S), SyncArgSlot(SyncArgSlot), CallTryExitVar(CallTryExitVar),
+		ExceptionData(ExceptionData), Runtime(Runtime) {}
+		
+		void Emit(CodeGenFunction &CGF, Flags flags) {
+			// Check whether we need to call objc_exception_try_exit.
+			// In optimized code, this branch will always be folded.
+			llvm::BasicBlock *FinallyCallExit =
+			CGF.createBasicBlock("finally.call_exit");
+			llvm::BasicBlock *FinallyNoCallExit =
+			CGF.createBasicBlock("finally.no_call_exit");
+			CGF.Builder.CreateCondBr(CGF.Builder.CreateLoad(CallTryExitVar),
+                               FinallyCallExit, FinallyNoCallExit);
+			
+			CGF.EmitBlock(FinallyCallExit);
+			CGF.EmitNounwindRuntimeCall(Runtime->GetExceptionTryExitFunction(),
+                                  ExceptionData);
+			
+			CGF.EmitBlock(FinallyNoCallExit);
+			
+			if (isa<ObjCAtTryStmt>(S)) {
+				if (const ObjCAtFinallyStmt* FinallyStmt =
+				    cast<ObjCAtTryStmt>(S).getFinallyStmt()) {
+					// Don't try to do the @finally if this is an EH cleanup.
+					if (flags.isForEHCleanup()) return;
+					
+					// Save the current cleanup destination in case there's
+					// control flow inside the finally statement.
+					llvm::Value *CurCleanupDest =
+					CGF.Builder.CreateLoad(CGF.getNormalCleanupDestSlot());
+					
+					CGF.EmitStmt(FinallyStmt->getFinallyBody());
+					
+					if (CGF.HaveInsertPoint()) {
+						CGF.Builder.CreateStore(CurCleanupDest,
+                                    CGF.getNormalCleanupDestSlot());
+					} else {
+						// Currently, the end of the cleanup must always exist.
+						CGF.EnsureInsertPoint();
+					}
+				}
+			} else {
+				// Emit objc_sync_exit(expr); as finally's sole statement for
+				// @synchronized.
+				llvm::Value *SyncArg = CGF.Builder.CreateLoad(SyncArgSlot);
+				CGF.EmitNounwindRuntimeCall(Runtime->GetSyncExitFunction(), SyncArg);
+			}
+		}
+	};
+	
+	class FragileHazards {
+		CodeGenFunction &CGF;
+		SmallVector<llvm::Value*, 20> Locals;
+		llvm::DenseSet<llvm::BasicBlock*> BlocksBeforeTry;
+		
+		llvm::InlineAsm *ReadHazard;
+		llvm::InlineAsm *WriteHazard;
+		
+		llvm::FunctionType *GetAsmFnType();
+		
+		void collectLocals();
+		void emitReadHazard(CGBuilderTy &Builder);
+		
+	public:
+		FragileHazards(CodeGenFunction &CGF);
+		
+		void emitWriteHazard();
+		void emitHazardsInNewBlocks();
+	};
+}
+
+/// Create the fragile-ABI read and write hazards based on the current
+/// state of the function, which is presumed to be immediately prior
+/// to a @try block.  These hazards are used to maintain correct
+/// semantics in the face of optimization and the fragile ABI's
+/// cavalier use of setjmp/longjmp.
+FragileHazards::FragileHazards(CodeGenFunction &CGF) : CGF(CGF) {
+	collectLocals();
+	
+	if (Locals.empty()) return;
+	
+	// Collect all the blocks in the function.
+	for (llvm::Function::iterator
+	     I = CGF.CurFn->begin(), E = CGF.CurFn->end(); I != E; ++I)
+		BlocksBeforeTry.insert(&*I);
+	
+	llvm::FunctionType *AsmFnTy = GetAsmFnType();
+	
+	// Create a read hazard for the allocas.  This inhibits dead-store
+	// optimizations and forces the values to memory.  This hazard is
+	// inserted before any 'throwing' calls in the protected scope to
+	// reflect the possibility that the variables might be read from the
+	// catch block if the call throws.
+	{
+		std::string Constraint;
+		for (unsigned I = 0, E = Locals.size(); I != E; ++I) {
+			if (I) Constraint += ',';
+			Constraint += "*m";
+		}
+		
+		ReadHazard = llvm::InlineAsm::get(AsmFnTy, "", Constraint, true, false);
+	}
+	
+	// Create a write hazard for the allocas.  This inhibits folding
+	// loads across the hazard.  This hazard is inserted at the
+	// beginning of the catch path to reflect the possibility that the
+	// variables might have been written within the protected scope.
+	{
+		std::string Constraint;
+		for (unsigned I = 0, E = Locals.size(); I != E; ++I) {
+			if (I) Constraint += ',';
+			Constraint += "=*m";
+		}
+		
+		WriteHazard = llvm::InlineAsm::get(AsmFnTy, "", Constraint, true, false);
+	}
+}
+
+/// Emit a write hazard at the current location.
+void FragileHazards::emitWriteHazard() {
+	if (Locals.empty()) return;
+	
+	CGF.EmitNounwindRuntimeCall(WriteHazard, Locals);
+}
+
+void FragileHazards::emitReadHazard(CGBuilderTy &Builder) {
+	assert(!Locals.empty());
+	llvm::CallInst *call = Builder.CreateCall(ReadHazard, Locals);
+	call->setDoesNotThrow();
+	call->setCallingConv(CGF.getRuntimeCC());
+}
+
+/// Emit read hazards in all the protected blocks, i.e. all the blocks
+/// which have been inserted since the beginning of the try.
+void FragileHazards::emitHazardsInNewBlocks() {
+	if (Locals.empty()) return;
+	
+	CGBuilderTy Builder(CGF.getLLVMContext());
+	
+	// Iterate through all blocks, skipping those prior to the try.
+	for (llvm::Function::iterator
+	     FI = CGF.CurFn->begin(), FE = CGF.CurFn->end(); FI != FE; ++FI) {
+		llvm::BasicBlock &BB = *FI;
+		if (BlocksBeforeTry.count(&BB)) continue;
+		
+		// Walk through all the calls in the block.
+		for (llvm::BasicBlock::iterator
+		     BI = BB.begin(), BE = BB.end(); BI != BE; ++BI) {
+			llvm::Instruction &I = *BI;
+			
+			// Ignore instructions that aren't non-intrinsic calls.
+			// These are the only calls that can possibly call longjmp.
+			if (!isa<llvm::CallInst>(I) && !isa<llvm::InvokeInst>(I)) continue;
+			if (isa<llvm::IntrinsicInst>(I))
+				continue;
+			
+			// Ignore call sites marked nounwind.  This may be questionable,
+			// since 'nounwind' doesn't necessarily mean 'does not call longjmp'.
+			llvm::CallSite CS(&I);
+			if (CS.doesNotThrow()) continue;
+			
+			// Insert a read hazard before the call.  This will ensure that
+			// any writes to the locals are performed before making the
+			// call.  If the call throws, then this is sufficient to
+			// guarantee correctness as long as it doesn't also write to any
+			// locals.
+			Builder.SetInsertPoint(&BB, BI);
+			emitReadHazard(Builder);
+		}
+	}
+}
+
+static void addIfPresent(llvm::DenseSet<llvm::Value*> &S, llvm::Value *V) {
+	if (V) S.insert(V);
+}
+
+void FragileHazards::collectLocals() {
+	// Compute a set of allocas to ignore.
+	llvm::DenseSet<llvm::Value*> AllocasToIgnore;
+	addIfPresent(AllocasToIgnore, CGF.ReturnValue);
+	addIfPresent(AllocasToIgnore, CGF.NormalCleanupDest);
+	
+	// Collect all the allocas currently in the function.  This is
+	// probably way too aggressive.
+	llvm::BasicBlock &Entry = CGF.CurFn->getEntryBlock();
+	for (llvm::BasicBlock::iterator
+	     I = Entry.begin(), E = Entry.end(); I != E; ++I)
+		if (isa<llvm::AllocaInst>(*I) && !AllocasToIgnore.count(&*I))
+			Locals.push_back(&*I);
+}
+
+llvm::FunctionType *FragileHazards::GetAsmFnType() {
+	SmallVector<llvm::Type *, 16> tys(Locals.size());
+	for (unsigned i = 0, e = Locals.size(); i != e; ++i)
+		tys[i] = Locals[i]->getType();
+	return llvm::FunctionType::get(CGF.VoidTy, tys, false);
+}
+
+
+void CGObjCKern::EmitTryStmt(CodeGenFunction &CGF,
+                             const ObjCAtTryStmt &S) {
+	bool isTry = isa<ObjCAtTryStmt>(S);
+	
+	// A destination for the fall-through edges of the catch handlers to
+	// jump to.
+	CodeGenFunction::JumpDest FinallyEnd =
+	CGF.getJumpDestInCurrentScope("finally.end");
+	
+	// A destination for the rethrow edge of the catch handlers to jump
+	// to.
+	CodeGenFunction::JumpDest FinallyRethrow =
+	CGF.getJumpDestInCurrentScope("finally.rethrow");
+	
+	// For @synchronized, call objc_sync_enter(sync.expr). The
+	// evaluation of the expression must occur before we enter the
+	// @synchronized.  We can't avoid a temp here because we need the
+	// value to be preserved.  If the backend ever does liveness
+	// correctly after setjmp, this will be unnecessary.
+	llvm::Value *SyncArgSlot = 0;
+	if (!isTry) {
+		llvm::Value *SyncArg =
+		CGF.EmitScalarExpr(cast<ObjCAtSynchronizedStmt>(S).getSynchExpr());
+		SyncArg = CGF.Builder.CreateBitCast(SyncArg, PtrToIdTy);
+		CGF.EmitNounwindRuntimeCall(SyncEnterFn, SyncArg);
+		
+		SyncArgSlot = CGF.CreateTempAlloca(SyncArg->getType(), "sync.arg");
+		CGF.Builder.CreateStore(SyncArg, SyncArgSlot);
+	}
+	
+	// Allocate memory for the setjmp buffer.  This needs to be kept
+	// live throughout the try and catch blocks.
+	llvm::Value *ExceptionData = CGF.CreateTempAlloca(ExceptionDataTy,
+                                                    "exceptiondata.ptr");
+	
+	// Create the fragile hazards.  Note that this will not capture any
+	// of the allocas required for exception processing, but will
+	// capture the current basic block (which extends all the way to the
+	// setjmp call) as "before the @try".
+	FragileHazards Hazards(CGF);
+	
+	// Create a flag indicating whether the cleanup needs to call
+	// objc_exception_try_exit.  This is true except when
+	//   - no catches match and we're branching through the cleanup
+	//     just to rethrow the exception, or
+	//   - a catch matched and we're falling out of the catch handler.
+	// The setjmp-safety rule here is that we should always store to this
+	// variable in a place that dominates the branch through the cleanup
+	// without passing through any setjmps.
+	llvm::Value *CallTryExitVar = CGF.CreateTempAlloca(CGF.Builder.getInt1Ty(),
+                                                     "_call_try_exit");
+	
+	// A slot containing the exception to rethrow.  Only needed when we
+	// have both a @catch and a @finally.
+	llvm::Value *PropagatingExnVar = 0;
+	
+	// Push a normal cleanup to leave the try scope.
+	CGF.EHStack.pushCleanup<PerformFragileFinally>(NormalAndEHCleanup, &S,
+                                                 SyncArgSlot,
+                                                 CallTryExitVar,
+                                                 ExceptionData,
+                                                 this);
+	
+	// Enter a try block:
+	//  - Call objc_exception_try_enter to push ExceptionData on top of
+	//    the EH stack.
+	CGF.EmitNounwindRuntimeCall(ExceptionTryEnterFn,
+                              ExceptionData);
+	
+	//  - Call setjmp on the exception data buffer.
+	llvm::Constant *Zero = llvm::ConstantInt::get(Int32Ty, 0);
+	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
+	llvm::Value *SetJmpBuffer =
+	CGF.Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
+  
+	llvm::CallInst *SetJmpResult =
+	CGF.EmitNounwindRuntimeCall(SetJmpFn, SetJmpBuffer,
+                              "setjmp_result");
+	SetJmpResult->setCanReturnTwice();
+	
+	// If setjmp returned 0, enter the protected block; otherwise,
+	// branch to the handler.
+	llvm::BasicBlock *TryBlock = CGF.createBasicBlock("try");
+	llvm::BasicBlock *TryHandler = CGF.createBasicBlock("try.handler");
+	llvm::Value *DidCatch =
+	CGF.Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
+	CGF.Builder.CreateCondBr(DidCatch, TryHandler, TryBlock);
+	
+	// Emit the protected block.
+	CGF.EmitBlock(TryBlock);
+	CGF.Builder.CreateStore(CGF.Builder.getTrue(), CallTryExitVar);
+	CGF.EmitStmt(isTry ? cast<ObjCAtTryStmt>(S).getTryBody()
+               : cast<ObjCAtSynchronizedStmt>(S).getSynchBody());
+	
+	CGBuilderTy::InsertPoint TryFallthroughIP = CGF.Builder.saveAndClearIP();
+	
+	// Emit the exception handler block.
+	CGF.EmitBlock(TryHandler);
+	
+	// Don't optimize loads of the in-scope locals across this point.
+	Hazards.emitWriteHazard();
+	
+	// For a @synchronized (or a @try with no catches), just branch
+	// through the cleanup to the rethrow block.
+	if (!isTry || !cast<ObjCAtTryStmt>(S).getNumCatchStmts()) {
+		// Tell the cleanup not to re-pop the exit.
+		CGF.Builder.CreateStore(CGF.Builder.getFalse(), CallTryExitVar);
+		CGF.EmitBranchThroughCleanup(FinallyRethrow);
+		
+		// Otherwise, we have to match against the caught exceptions.
+	} else {
+		// Retrieve the exception object.  We may emit multiple blocks but
+		// nothing can cross this so the value is already in SSA form.
+		llvm::CallInst *Caught =
+		CGF.EmitNounwindRuntimeCall(ExceptionExtractFn,
+                                ExceptionData, "caught");
+		
+		// Push the exception to rethrow onto the EH value stack for the
+		// benefit of any @throws in the handlers.
+		CGF.ObjCEHValueStack.push_back(Caught);
+		
+		const ObjCAtTryStmt* AtTryStmt = cast<ObjCAtTryStmt>(&S);
+		
+		bool HasFinally = (AtTryStmt->getFinallyStmt() != 0);
+		
+		llvm::BasicBlock *CatchBlock = 0;
+		llvm::BasicBlock *CatchHandler = 0;
+		if (HasFinally) {
+			// Save the currently-propagating exception before
+			// objc_exception_try_enter clears the exception slot.
+			PropagatingExnVar = CGF.CreateTempAlloca(Caught->getType(),
+                                               "propagating_exception");
+			CGF.Builder.CreateStore(Caught, PropagatingExnVar);
+			
+			// Enter a new exception try block (in case a @catch block
+			// throws an exception).
+			CGF.EmitNounwindRuntimeCall(ExceptionTryEnterFn,
+                                  ExceptionData);
+			
+			llvm::CallInst *SetJmpResult =
+			CGF.EmitNounwindRuntimeCall(SetJmpFn,
+                                  SetJmpBuffer, "setjmp.result");
+			SetJmpResult->setCanReturnTwice();
+			
+			llvm::Value *Threw =
+			CGF.Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
+			
+			CatchBlock = CGF.createBasicBlock("catch");
+			CatchHandler = CGF.createBasicBlock("catch_for_catch");
+			CGF.Builder.CreateCondBr(Threw, CatchHandler, CatchBlock);
+			
+			CGF.EmitBlock(CatchBlock);
+		}
+		
+		CGF.Builder.CreateStore(CGF.Builder.getInt1(HasFinally), CallTryExitVar);
+		
+		// Handle catch list. As a special case we check if everything is
+		// matched and avoid generating code for falling off the end if
+		// so.
+		bool AllMatched = false;
+		for (unsigned I = 0, N = AtTryStmt->getNumCatchStmts(); I != N; ++I) {
+			const ObjCAtCatchStmt *CatchStmt = AtTryStmt->getCatchStmt(I);
+			
+			const VarDecl *CatchParam = CatchStmt->getCatchParamDecl();
+			const ObjCObjectPointerType *OPT = 0;
+			
+			// catch(...) always matches.
+			if (!CatchParam) {
+				AllMatched = true;
+			} else {
+				OPT = CatchParam->getType()->getAs<ObjCObjectPointerType>();
+				
+				// catch(id e) always matches under this ABI, since only
+				// ObjC exceptions end up here in the first place.
+				// FIXME: For the time being we also match id<X>; this should
+				// be rejected by Sema instead.
+				if (OPT && (OPT->isObjCIdType() || OPT->isObjCQualifiedIdType()))
+					AllMatched = true;
+			}
+			
+			// If this is a catch-all, we don't need to test anything.
+			if (AllMatched) {
+				CodeGenFunction::RunCleanupsScope CatchVarCleanups(CGF);
+				
+				if (CatchParam) {
+					CGF.EmitAutoVarDecl(*CatchParam);
+					assert(CGF.HaveInsertPoint() && "DeclStmt destroyed insert point?");
+					
+					// These types work out because ConvertType(id) == i8*.
+					CGF.Builder.CreateStore(Caught, CGF.GetAddrOfLocalVar(CatchParam));
+				}
+				
+				CGF.EmitStmt(CatchStmt->getCatchBody());
+				
+				// The scope of the catch variable ends right here.
+				CatchVarCleanups.ForceCleanup();
+				
+				CGF.EmitBranchThroughCleanup(FinallyEnd);
+				break;
+			}
+			
+			assert(OPT && "Unexpected non-object pointer type in @catch");
+			const ObjCObjectType *ObjTy = OPT->getObjectType();
+			
+			// FIXME: @catch (Class c) ?
+			ObjCInterfaceDecl *IDecl = ObjTy->getInterface();
+			assert(IDecl && "Catch parameter must have Objective-C type!");
+			
+			// Check if the @catch block matches the exception object.
+			llvm::Constant *Class = GetClassStructureRef(IDecl->getNameAsString(), false);
+      Class = llvm::ConstantExpr::getPointerCast(Class, ClassTy->getPointerTo());
+			
+      Class->getType()->dump(); printf("\n"); Caught->getType()->dump();
+      
+			llvm::Value *matchArgs[] = { Class, Caught };
+			llvm::CallInst *Match =
+			CGF.EmitNounwindRuntimeCall(ExceptionMatchFn,
+                                  matchArgs, "match");
+			
+			llvm::BasicBlock *MatchedBlock = CGF.createBasicBlock("match");
+			llvm::BasicBlock *NextCatchBlock = CGF.createBasicBlock("catch.next");
+			
+			CGF.Builder.CreateCondBr(CGF.Builder.CreateIsNotNull(Match, "matched"),
+                               MatchedBlock, NextCatchBlock);
+			
+			// Emit the @catch block.
+			CGF.EmitBlock(MatchedBlock);
+			
+			// Collect any cleanups for the catch variable.  The scope lasts until
+			// the end of the catch body.
+			CodeGenFunction::RunCleanupsScope CatchVarCleanups(CGF);
+			
+			CGF.EmitAutoVarDecl(*CatchParam);
+			assert(CGF.HaveInsertPoint() && "DeclStmt destroyed insert point?");
+			
+			// Initialize the catch variable.
+			llvm::Value *Tmp =
+			CGF.Builder.CreateBitCast(Caught,
+                                CGF.ConvertType(CatchParam->getType()));
+			CGF.Builder.CreateStore(Tmp, CGF.GetAddrOfLocalVar(CatchParam));
+			
+			CGF.EmitStmt(CatchStmt->getCatchBody());
+			
+			// We're done with the catch variable.
+			CatchVarCleanups.ForceCleanup();
+			
+			CGF.EmitBranchThroughCleanup(FinallyEnd);
+			
+			CGF.EmitBlock(NextCatchBlock);
+		}
+		
+		CGF.ObjCEHValueStack.pop_back();
+		
+		// If nothing wanted anything to do with the caught exception,
+		// kill the extract call.
+		if (Caught->use_empty())
+			Caught->eraseFromParent();
+		
+		if (!AllMatched)
+			CGF.EmitBranchThroughCleanup(FinallyRethrow);
+		
+		if (HasFinally) {
+			// Emit the exception handler for the @catch blocks.
+			CGF.EmitBlock(CatchHandler);
+			
+			// In theory we might now need a write hazard, but actually it's
+			// unnecessary because there's no local-accessing code between
+			// the try's write hazard and here.
+			//Hazards.emitWriteHazard();
+			
+			// Extract the new exception and save it to the
+			// propagating-exception slot.
+			assert(PropagatingExnVar);
+			llvm::CallInst *NewCaught =
+			CGF.EmitNounwindRuntimeCall(ExceptionExtractFn,
+                                  ExceptionData, "caught");
+			CGF.Builder.CreateStore(NewCaught, PropagatingExnVar);
+			
+			// Don't pop the catch handler; the throw already did.
+			CGF.Builder.CreateStore(CGF.Builder.getFalse(), CallTryExitVar);
+			CGF.EmitBranchThroughCleanup(FinallyRethrow);
+		}
+	}
+	
+	// Insert read hazards as required in the new blocks.
+	Hazards.emitHazardsInNewBlocks();
+	
+	// Pop the cleanup.
+	CGF.Builder.restoreIP(TryFallthroughIP);
+	if (CGF.HaveInsertPoint())
+		CGF.Builder.CreateStore(CGF.Builder.getTrue(), CallTryExitVar);
+	CGF.PopCleanupBlock();
+	CGF.EmitBlock(FinallyEnd.getBlock(), true);
+	
+	// Emit the rethrow block.
+	CGBuilderTy::InsertPoint SavedIP = CGF.Builder.saveAndClearIP();
+	CGF.EmitBlock(FinallyRethrow.getBlock(), true);
+	if (CGF.HaveInsertPoint()) {
+		// If we have a propagating-exception variable, check it.
+		llvm::Value *PropagatingExn;
+		if (PropagatingExnVar) {
+			PropagatingExn = CGF.Builder.CreateLoad(PropagatingExnVar);
+			
+			// Otherwise, just look in the buffer for the exception to throw.
+		} else {
+			llvm::CallInst *Caught =
+			CGF.EmitNounwindRuntimeCall(ExceptionExtractFn,
+                                  ExceptionData);
+			PropagatingExn = Caught;
+		}
+		
+		CGF.EmitNounwindRuntimeCall(ExceptionThrowFn,
+                                PropagatingExn);
+		CGF.Builder.CreateUnreachable();
+	}
+	
+	CGF.Builder.restoreIP(SavedIP);
+}
+
+void CGObjCKern::EmitThrowStmt(CodeGen::CodeGenFunction &CGF,
+                               const ObjCAtThrowStmt &S,
+                               bool ClearInsertionPoint) {
+	llvm::Value *ExceptionAsObject;
+	
+	if (const Expr *ThrowExpr = S.getThrowExpr()) {
+		llvm::Value *Exception = CGF.EmitObjCThrowOperand(ThrowExpr);
+		ExceptionAsObject =
+		CGF.Builder.CreateBitCast(Exception, IdTy);
+	} else {
+		assert((!CGF.ObjCEHValueStack.empty() && CGF.ObjCEHValueStack.back()) &&
+		       "Unexpected rethrow outside @catch block.");
+		ExceptionAsObject = CGF.ObjCEHValueStack.back();
+	}
+	
+	CGF.EmitRuntimeCall(ExceptionThrowFn,
+                      ExceptionAsObject)
+	->setDoesNotReturn();
+	CGF.Builder.CreateUnreachable();
+	
+	// Clear the insertion point to indicate we are in unreachable code.
+	if (ClearInsertionPoint)
+		CGF.Builder.ClearInsertionPoint();
 }
 
 

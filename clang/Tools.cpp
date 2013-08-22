@@ -9,7 +9,6 @@
 
 #include "Tools.h"
 #include "InputInfo.h"
-#include "SanitizerArgs.h"
 #include "ToolChains.h"
 #include "clang/Basic/ObjCRuntime.h"
 #include "clang/Basic/Version.h"
@@ -19,6 +18,7 @@
 #include "clang/Driver/DriverDiagnostic.h"
 #include "clang/Driver/Job.h"
 #include "clang/Driver/Options.h"
+#include "clang/Driver/SanitizerArgs.h"
 #include "clang/Driver/ToolChain.h"
 #include "clang/Driver/Util.h"
 #include "llvm/ADT/SmallString.h"
@@ -552,7 +552,18 @@ static bool isSignedCharDefault(const llvm::Triple &Triple) {
 
   case llvm::Triple::ppc64le:
   case llvm::Triple::systemz:
+  case llvm::Triple::xcore:
     return false;
+  }
+}
+
+static bool isNoCommonDefault(const llvm::Triple &Triple) {
+  switch (Triple.getArch()) {
+  default:
+    return false;
+
+  case llvm::Triple::xcore:
+    return true;
   }
 }
 
@@ -752,10 +763,6 @@ void Clang::AddARMTargetArgs(const ArgList &Args,
   CmdArgs.push_back("-target-abi");
   CmdArgs.push_back(ABIName);
 
-  // Set the CPU based on -march= and -mcpu=.
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(Args.MakeArgString(CPUName));
-
   // Determine floating point ABI from the options & target defaults.
   StringRef FloatABI = getARMFloatABI(D, Args, Triple);
   if (FloatABI == "soft") {
@@ -821,7 +828,7 @@ void Clang::AddARMTargetArgs(const ArgList &Args,
 
     // The kext linker doesn't know how to deal with movw/movt.
     CmdArgs.push_back("-backend-option");
-    CmdArgs.push_back("-arm-darwin-use-movt=0");
+    CmdArgs.push_back("-arm-use-movt=0");
   }
 
   // Setting -mno-global-merge disables the codegen global merge pass. Setting 
@@ -855,7 +862,7 @@ static StringRef getMipsCPUFromAlias(const Arg &A) {
 // Get CPU and ABI names. They are not independent
 // so we have to calculate them together.
 static void getMipsCPUAndABI(const ArgList &Args,
-                             const ToolChain &TC,
+                             const llvm::Triple &Triple,
                              StringRef &CPUName,
                              StringRef &ABIName) {
   const char *DefMips32CPU = "mips32";
@@ -882,7 +889,7 @@ static void getMipsCPUAndABI(const ArgList &Args,
 
   // Setup default CPU and ABI names.
   if (CPUName.empty() && ABIName.empty()) {
-    switch (TC.getArch()) {
+    switch (Triple.getArch()) {
     default:
       llvm_unreachable("Unexpected triple arch name");
     case llvm::Triple::mips:
@@ -972,10 +979,8 @@ void Clang::AddMIPSTargetArgs(const ArgList &Args,
   const Driver &D = getToolChain().getDriver();
   StringRef CPUName;
   StringRef ABIName;
-  getMipsCPUAndABI(Args, getToolChain(), CPUName, ABIName);
-
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(CPUName.data());
+  const llvm::Triple &Triple = getToolChain().getTriple();
+  getMipsCPUAndABI(Args, Triple, CPUName, ABIName);
 
   CmdArgs.push_back("-target-abi");
   CmdArgs.push_back(ABIName.data());
@@ -1023,6 +1028,9 @@ void Clang::AddMIPSTargetArgs(const ArgList &Args,
   AddTargetFeature(Args, CmdArgs,
                    options::OPT_mdspr2, options::OPT_mno_dspr2,
                    "dspr2");
+  AddTargetFeature(Args, CmdArgs,
+                   options::OPT_mmsa, options::OPT_mno_msa,
+                   "msa");
 
   if (Arg *A = Args.getLastArg(options::OPT_mxgot, options::OPT_mno_xgot)) {
     if (A->getOption().matches(options::OPT_mxgot)) {
@@ -1119,26 +1127,6 @@ static std::string getPPCTargetCPU(const ArgList &Args) {
 
 void Clang::AddPPCTargetArgs(const ArgList &Args,
                              ArgStringList &CmdArgs) const {
-  std::string TargetCPUName = getPPCTargetCPU(Args);
-
-  // LLVM may default to generating code for the native CPU,
-  // but, like gcc, we default to a more generic option for
-  // each architecture. (except on Darwin)
-  llvm::Triple Triple = getToolChain().getTriple();
-  if (TargetCPUName.empty() && !Triple.isOSDarwin()) {
-    if (Triple.getArch() == llvm::Triple::ppc64)
-      TargetCPUName = "ppc64";
-    else if (Triple.getArch() == llvm::Triple::ppc64le)
-      TargetCPUName = "ppc64le";
-    else
-      TargetCPUName = "ppc";
-  }
-
-  if (!TargetCPUName.empty()) {
-    CmdArgs.push_back("-target-cpu");
-    CmdArgs.push_back(Args.MakeArgString(TargetCPUName.c_str()));
-  }
-
   // Allow override of the Altivec feature.
   AddTargetFeature(Args, CmdArgs,
                    options::OPT_faltivec, options::OPT_fno_altivec,
@@ -1182,21 +1170,9 @@ static std::string getR600TargetGPU(const ArgList &Args) {
   return "";
 }
 
-void Clang::AddR600TargetArgs(const ArgList &Args,
-                              ArgStringList &CmdArgs) const {
-  std::string TargetGPUName = getR600TargetGPU(Args);
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(Args.MakeArgString(TargetGPUName.c_str()));
-}
-
 void Clang::AddSparcTargetArgs(const ArgList &Args,
                              ArgStringList &CmdArgs) const {
   const Driver &D = getToolChain().getDriver();
-
-  if (const Arg *A = Args.getLastArg(options::OPT_march_EQ)) {
-    CmdArgs.push_back("-target-cpu");
-    CmdArgs.push_back(A->getValue());
-  }
 
   // Select the float ABI as determined by -msoft-float, -mhard-float, and
   StringRef FloatABI;
@@ -1232,13 +1208,6 @@ static const char *getSystemZTargetCPU(const ArgList &Args) {
   if (const Arg *A = Args.getLastArg(options::OPT_march_EQ))
     return A->getValue();
   return "z10";
-}
-
-void Clang::AddSystemZTargetArgs(const ArgList &Args,
-                                 ArgStringList &CmdArgs) const {
-  const char *CPUName = getSystemZTargetCPU(Args);
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(CPUName);
 }
 
 static const char *getX86TargetCPU(const ArgList &Args,
@@ -1292,6 +1261,63 @@ static const char *getX86TargetCPU(const ArgList &Args,
   return "pentium4";
 }
 
+static std::string getCPUName(const ArgList &Args, const llvm::Triple &T) {
+  switch(T.getArch()) {
+  default:
+    return "";
+
+  case llvm::Triple::arm:
+  case llvm::Triple::thumb:
+    return getARMTargetCPU(Args, T);
+
+  case llvm::Triple::mips:
+  case llvm::Triple::mipsel:
+  case llvm::Triple::mips64:
+  case llvm::Triple::mips64el: {
+    StringRef CPUName;
+    StringRef ABIName;
+    getMipsCPUAndABI(Args, T, CPUName, ABIName);
+    return CPUName;
+  }
+
+  case llvm::Triple::ppc:
+  case llvm::Triple::ppc64:
+  case llvm::Triple::ppc64le: {
+    std::string TargetCPUName = getPPCTargetCPU(Args);
+    // LLVM may default to generating code for the native CPU,
+    // but, like gcc, we default to a more generic option for
+    // each architecture. (except on Darwin)
+    if (TargetCPUName.empty() && !T.isOSDarwin()) {
+      if (T.getArch() == llvm::Triple::ppc64)
+        TargetCPUName = "ppc64";
+      else if (T.getArch() == llvm::Triple::ppc64le)
+        TargetCPUName = "ppc64le";
+      else
+        TargetCPUName = "ppc";
+    }
+    return TargetCPUName;
+  }
+
+  case llvm::Triple::sparc:
+    if (const Arg *A = Args.getLastArg(options::OPT_march_EQ))
+      return A->getValue();
+    return "";
+
+  case llvm::Triple::x86:
+  case llvm::Triple::x86_64:
+    return getX86TargetCPU(Args, T);
+
+  case llvm::Triple::hexagon:
+    return "hexagon" + toolchains::Hexagon_TC::GetTargetCPU(Args).str();
+
+  case llvm::Triple::systemz:
+    return getSystemZTargetCPU(Args);
+
+  case llvm::Triple::r600:
+    return getR600TargetGPU(Args);
+  }
+}
+
 void Clang::AddX86TargetArgs(const ArgList &Args,
                              ArgStringList &CmdArgs) const {
   if (!Args.hasFlag(options::OPT_mred_zone,
@@ -1316,19 +1342,6 @@ void Clang::AddX86TargetArgs(const ArgList &Args,
   if (NoImplicitFloat)
     CmdArgs.push_back("-no-implicit-float");
 
-  if (const char *CPUName = getX86TargetCPU(Args, getToolChain().getTriple())) {
-    CmdArgs.push_back("-target-cpu");
-    CmdArgs.push_back(CPUName);
-  }
-
-  // The required algorithm here is slightly strange: the options are applied
-  // in order (so -mno-sse -msse2 disables SSE3), but any option that gets
-  // directly overridden later is ignored (so "-mno-sse -msse2 -mno-sse2 -msse"
-  // is equivalent to "-mno-sse2 -msse"). The -cc1 handling deals with the
-  // former correctly, but not the latter; handle directly-overridden
-  // attributes here.
-  llvm::StringMap<unsigned> PrevFeature;
-  std::vector<const char*> Features;
   for (arg_iterator it = Args.filtered_begin(options::OPT_m_x86_Features_Group),
          ie = Args.filtered_end(); it != ie; ++it) {
     StringRef Name = (*it)->getOption().getName();
@@ -1342,17 +1355,8 @@ void Clang::AddX86TargetArgs(const ArgList &Args,
     if (IsNegative)
       Name = Name.substr(3);
 
-    unsigned& Prev = PrevFeature[Name];
-    if (Prev)
-      Features[Prev - 1] = 0;
-    Prev = Features.size() + 1;
-    Features.push_back(Args.MakeArgString((IsNegative ? "-" : "+") + Name));
-  }
-  for (unsigned i = 0; i < Features.size(); i++) {
-    if (Features[i]) {
-      CmdArgs.push_back("-target-feature");
-      CmdArgs.push_back(Features[i]);
-    }
+    CmdArgs.push_back("-target-feature");
+    CmdArgs.push_back(Args.MakeArgString((IsNegative ? "-" : "+") + Name));
   }
 }
 
@@ -1380,12 +1384,6 @@ static std::string GetHexagonSmallDataThresholdValue(const ArgList &Args) {
 
 void Clang::AddHexagonTargetArgs(const ArgList &Args,
                                  ArgStringList &CmdArgs) const {
-  llvm::Triple Triple = getToolChain().getTriple();
-
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(Args.MakeArgString(
-                      "hexagon"
-                      + toolchains::Hexagon_TC::GetTargetCPU(Args)));
   CmdArgs.push_back("-fno-signed-char");
   CmdArgs.push_back("-mqdsp6-compat");
   CmdArgs.push_back("-Wreturn-type");
@@ -1720,9 +1718,6 @@ static void addLsanRTLinux(const ToolChain &TC, const ArgList &Args,
 static void addUbsanRTLinux(const ToolChain &TC, const ArgList &Args,
                             ArgStringList &CmdArgs, bool IsCXX,
                             bool HasOtherSanitizerRt) {
-  if (Args.hasArg(options::OPT_shared))
-    return;
-
   // Need a copy of sanitizer_common. This could come from another sanitizer
   // runtime; if we're not including one, include our own copy.
   if (!HasOtherSanitizerRt)
@@ -1758,6 +1753,9 @@ static bool shouldUseFramePointer(const ArgList &Args,
         return false;
   }
 
+  if (Triple.getArch() == llvm::Triple::xcore)
+    return false;
+
   return true;
 }
 
@@ -1777,27 +1775,14 @@ static bool shouldUseLeafFramePointer(const ArgList &Args,
         return false;
   }
 
+  if (Triple.getArch() == llvm::Triple::xcore)
+    return false;
+
   return true;
 }
 
-/// If the PWD environment variable is set, add a CC1 option to specify the
-/// debug compilation directory.
+/// Add a CC1 option to specify the debug compilation directory.
 static void addDebugCompDirArg(const ArgList &Args, ArgStringList &CmdArgs) {
-  const char *pwd = ::getenv("PWD");
-  if (!pwd)
-    return;
-
-  llvm::sys::fs::file_status PWDStatus, DotStatus;
-  if (llvm::sys::path::is_absolute(pwd) &&
-      !llvm::sys::fs::status(pwd, PWDStatus) &&
-      !llvm::sys::fs::status(".", DotStatus) &&
-      PWDStatus.getUniqueID() == DotStatus.getUniqueID()) {
-    CmdArgs.push_back("-fdebug-compilation-dir");
-    CmdArgs.push_back(Args.MakeArgString(pwd));
-    return;
-  }
-
-  // Fall back to using getcwd.
   SmallString<128> cwd;
   if (!llvm::sys::fs::current_path(cwd)) {
     CmdArgs.push_back("-fdebug-compilation-dir");
@@ -1851,6 +1836,37 @@ static bool isOptimizationLevelFast(const ArgList &Args) {
   if (Arg *A = Args.getLastArg(options::OPT_O_Group))
     if (A->getOption().matches(options::OPT_Ofast))
       return true;
+  return false;
+}
+
+/// \brief Vectorize at all optimization levels greater than 1 except for -Oz.
+static bool shouldEnableVectorizerAtOLevel(const ArgList &Args) {
+  if (Arg *A = Args.getLastArg(options::OPT_O_Group)) {
+    if (A->getOption().matches(options::OPT_O4) ||
+        A->getOption().matches(options::OPT_Ofast))
+      return true;
+
+    if (A->getOption().matches(options::OPT_O0))
+      return false;
+
+    assert(A->getOption().matches(options::OPT_O) && "Must have a -O flag");
+
+    // Vectorize -O (which really is -O2), -Os.
+    StringRef S(A->getValue());
+    if (S == "s" || S.empty())
+      return true;
+
+    // Don't vectorize -Oz.
+    if (S == "z")
+      return false;
+
+    unsigned OptLevel = 0;
+    if (S.getAsInteger(10, OptLevel))
+      return false;
+
+    return OptLevel > 1;
+  }
+
   return false;
 }
 
@@ -2343,7 +2359,16 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back(A->getValue());
   }
 
-  // Add target specific cpu and features flags.
+  // Add the target cpu
+  std::string ETripleStr = getToolChain().ComputeEffectiveClangTriple(Args);
+  llvm::Triple ETriple(ETripleStr);
+  std::string CPU = getCPUName(Args, ETriple);
+  if (!CPU.empty()) {
+    CmdArgs.push_back("-target-cpu");
+    CmdArgs.push_back(Args.MakeArgString(CPU));
+  }
+
+  // Add target specific flags.
   switch(getToolChain().getArch()) {
   default:
     break;
@@ -2366,16 +2391,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     AddPPCTargetArgs(Args, CmdArgs);
     break;
 
-  case llvm::Triple::r600:
-    AddR600TargetArgs(Args, CmdArgs);
-    break;
-
   case llvm::Triple::sparc:
     AddSparcTargetArgs(Args, CmdArgs);
-    break;
-
-  case llvm::Triple::systemz:
-    AddSystemZTargetArgs(Args, CmdArgs);
     break;
 
   case llvm::Triple::x86:
@@ -2494,12 +2511,10 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
       CmdArgs.push_back("-coverage-file");
       SmallString<128> CoverageFilename(Output.getFilename());
       if (llvm::sys::path::is_relative(CoverageFilename.str())) {
-        if (const char *pwd = ::getenv("PWD")) {
-          if (llvm::sys::path::is_absolute(pwd)) {
-            SmallString<128> Pwd(pwd);
-            llvm::sys::path::append(Pwd, CoverageFilename.str());
-            CoverageFilename.swap(Pwd);
-          }
+        SmallString<128> Pwd;
+        if (!llvm::sys::fs::current_path(Pwd)) {
+          llvm::sys::path::append(Pwd, CoverageFilename.str());
+          CoverageFilename.swap(Pwd);
         }
       }
       CmdArgs.push_back(Args.MakeArgString(CoverageFilename));
@@ -2792,8 +2807,8 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
   Args.AddLastArg(CmdArgs, options::OPT_fdiagnostics_show_template_tree);
   Args.AddLastArg(CmdArgs, options::OPT_fno_elide_type);
 
-  SanitizerArgs Sanitize(getToolChain(), Args);
-  Sanitize.addArgs(Args, CmdArgs);
+  const SanitizerArgs &Sanitize = D.getOrParseSanitizerArgs(Args);
+  Sanitize.addArgs(getToolChain(), Args, CmdArgs);
 
   if (!Args.hasFlag(options::OPT_fsanitize_recover,
                     options::OPT_fno_sanitize_recover,
@@ -3215,7 +3230,7 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     CmdArgs.push_back("-fpack-struct=1");
   }
 
-  if (KernelOrKext) {
+  if (KernelOrKext || isNoCommonDefault(getToolChain().getTriple())) {
     if (!Args.hasArg(options::OPT_fcommon))
       CmdArgs.push_back("-fno-common");
     Args.ClaimAllArgs(options::OPT_fno_common);
@@ -3334,14 +3349,14 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
                    false))
     CmdArgs.push_back("-fasm-blocks");
 
-  // If -Ofast is the optimization level, then -fvectorize should be enabled.
-  // This alias option is being used to simplify the hasFlag logic.
-  OptSpecifier VectorizeAliasOption = OFastEnabled ? options::OPT_Ofast :
+  // Enable vectorization per default according to the optimization level
+  // selected. For optimization levels that want vectorization we use the alias
+  // option to simplify the hasFlag logic.
+  bool EnableVec = shouldEnableVectorizerAtOLevel(Args);
+  OptSpecifier VectorizeAliasOption = EnableVec ? options::OPT_O_Group :
     options::OPT_fvectorize;
-
-  // -fvectorize is default.
   if (Args.hasFlag(options::OPT_fvectorize, VectorizeAliasOption,
-                   options::OPT_fno_vectorize, true))
+                   options::OPT_fno_vectorize, EnableVec))
     CmdArgs.push_back("-vectorize-loops");
 
   // -fslp-vectorize is default.
@@ -3537,10 +3552,6 @@ void ClangAs::AddARMTargetArgs(const ArgList &Args,
   const Driver &D = getToolChain().getDriver();
   llvm::Triple Triple = getToolChain().getTriple();
 
-  // Set the CPU based on -march= and -mcpu=.
-  CmdArgs.push_back("-target-cpu");
-  CmdArgs.push_back(Args.MakeArgString(getARMTargetCPU(Args, Triple)));
-
   // Honor -mfpu=.
   if (const Arg *A = Args.getLastArg(options::OPT_mfpu_EQ))
     addFPUArgs(D, A, Args, CmdArgs);
@@ -3548,15 +3559,6 @@ void ClangAs::AddARMTargetArgs(const ArgList &Args,
   // Honor -mfpmath=.
   if (const Arg *A = Args.getLastArg(options::OPT_mfpmath_EQ))
     addFPMathArgs(D, A, Args, CmdArgs, getARMTargetCPU(Args, Triple));
-}
-
-void ClangAs::AddX86TargetArgs(const ArgList &Args,
-                               ArgStringList &CmdArgs) const {
-  // Set the CPU based on -march=.
-  if (const char *CPUName = getX86TargetCPU(Args, getToolChain().getTriple())) {
-    CmdArgs.push_back("-target-cpu");
-    CmdArgs.push_back(CPUName);
-  }
 }
 
 /// Add options related to the Objective-C runtime/ABI.
@@ -3721,10 +3723,17 @@ void Clang::AddClangCLArgs(const ArgList &Args, ArgStringList &CmdArgs) const {
       llvm_unreachable("Unexpected option ID.");
   }
 
-  // This provides POSIX compatibility (maps 'open' to '_open'), which most users
-  // want.  MSVC has a switch to turn off this autolinking, but it's not
-  // implemented in clang yet.
+  // This provides POSIX compatibility (maps 'open' to '_open'), which most
+  // users want.  The /Za flag to cl.exe turns this off, but it's not
+  // implemented in clang.
   CmdArgs.push_back("--dependent-lib=oldnames");
+
+  // FIXME: Make this default for the win32 triple.
+  CmdArgs.push_back("-cxx-abi");
+  CmdArgs.push_back("microsoft");
+
+  if (Arg *A = Args.getLastArg(options::OPT_show_includes))
+    A->render(Args, CmdArgs);
 }
 
 void ClangAs::ConstructJob(Compilation &C, const JobAction &JA,
@@ -3765,7 +3774,14 @@ void ClangAs::ConstructJob(Compilation &C, const JobAction &JA,
   CmdArgs.push_back("-main-file-name");
   CmdArgs.push_back(Clang::getBaseInputName(Args, Inputs));
 
-  // Add target specific cpu and features flags.
+  // Add the target cpu
+  std::string CPU = getCPUName(Args, getToolChain().getTriple());
+  if (!CPU.empty()) {
+    CmdArgs.push_back("-target-cpu");
+    CmdArgs.push_back(Args.MakeArgString(CPU));
+  }
+
+  // Add target specific features flags.
   switch(getToolChain().getArch()) {
   default:
     break;
@@ -3773,11 +3789,6 @@ void ClangAs::ConstructJob(Compilation &C, const JobAction &JA,
   case llvm::Triple::arm:
   case llvm::Triple::thumb:
     AddARMTargetArgs(Args, CmdArgs);
-    break;
-
-  case llvm::Triple::x86:
-  case llvm::Triple::x86_64:
-    AddX86TargetArgs(Args, CmdArgs);
     break;
   }
 
@@ -3869,6 +3880,11 @@ void gcc::Common::ConstructJob(Compilation &C, const JobAction &JA,
       // Don't forward any -g arguments to assembly steps.
       if (isa<AssembleJobAction>(JA) &&
           A->getOption().matches(options::OPT_g_Group))
+        continue;
+
+      // Don't forward any -W arguments to assembly and link steps.
+      if ((isa<AssembleJobAction>(JA) || isa<LinkJobAction>(JA)) &&
+          A->getOption().matches(options::OPT_W_Group))
         continue;
 
       // It is unfortunate that we have to claim here, as this means
@@ -4760,7 +4776,8 @@ void darwin::Link::ConstructJob(Compilation &C, const JobAction &JA,
 
   Args.AddAllArgs(CmdArgs, options::OPT_L);
 
-  SanitizerArgs Sanitize(getToolChain(), Args);
+  const SanitizerArgs &Sanitize =
+      getToolChain().getDriver().getOrParseSanitizerArgs(Args);
   // If we're building a dynamic lib with -fsanitize=address,
   // unresolved symbols may appear. Mark all
   // of them as dynamic_lookup. Linking executables is handled in
@@ -5456,7 +5473,7 @@ void freebsd::Assemble::ConstructJob(Compilation &C, const JobAction &JA,
            getToolChain().getArch() == llvm::Triple::mips64el) {
     StringRef CPUName;
     StringRef ABIName;
-    getMipsCPUAndABI(Args, getToolChain(), CPUName, ABIName);
+    getMipsCPUAndABI(Args, getToolChain().getTriple(), CPUName, ABIName);
 
     CmdArgs.push_back("-march");
     CmdArgs.push_back(CPUName.data());
@@ -5880,7 +5897,7 @@ void gnutools::Assemble::ConstructJob(Compilation &C, const JobAction &JA,
              getToolChain().getArch() == llvm::Triple::mips64el) {
     StringRef CPUName;
     StringRef ABIName;
-    getMipsCPUAndABI(Args, getToolChain(), CPUName, ABIName);
+    getMipsCPUAndABI(Args, getToolChain().getTriple(), CPUName, ABIName);
 
     CmdArgs.push_back("-march");
     CmdArgs.push_back(CPUName.data());
@@ -6024,10 +6041,10 @@ void gnutools::Link::ConstructJob(Compilation &C, const JobAction &JA,
   const Driver &D = ToolChain.getDriver();
   const bool isAndroid =
     ToolChain.getTriple().getEnvironment() == llvm::Triple::Android;
-  SanitizerArgs Sanitize(getToolChain(), Args);
+  const SanitizerArgs &Sanitize = D.getOrParseSanitizerArgs(Args);
   const bool IsPIE =
     !Args.hasArg(options::OPT_shared) &&
-    (Args.hasArg(options::OPT_pie) || Sanitize.hasZeroBaseShadow());
+    (Args.hasArg(options::OPT_pie) || Sanitize.hasZeroBaseShadow(ToolChain));
 
   ArgStringList CmdArgs;
 
@@ -6170,20 +6187,13 @@ void gnutools::Link::ConstructJob(Compilation &C, const JobAction &JA,
     // Try to pass driver level flags relevant to LTO code generation down to
     // the plugin.
 
-    // Handle architecture-specific flags for selecting CPU variants.
-    if (ToolChain.getArch() == llvm::Triple::x86 ||
-        ToolChain.getArch() == llvm::Triple::x86_64)
+    // Handle flags for selecting CPU variants.
+    std::string CPU = getCPUName(Args, ToolChain.getTriple());
+    if (!CPU.empty()) {
       CmdArgs.push_back(
-          Args.MakeArgString(Twine("-plugin-opt=mcpu=") +
-                             getX86TargetCPU(Args, ToolChain.getTriple())));
-    else if (ToolChain.getArch() == llvm::Triple::arm ||
-             ToolChain.getArch() == llvm::Triple::thumb)
-      CmdArgs.push_back(
-          Args.MakeArgString(Twine("-plugin-opt=mcpu=") +
-                             getARMTargetCPU(Args, ToolChain.getTriple())));
-
-    // FIXME: Factor out logic for MIPS, PPC, and other targets to support this
-    // as well.
+                        Args.MakeArgString(Twine("-plugin-opt=mcpu=") +
+                                           CPU));
+    }
   }
 
 
@@ -6547,19 +6557,23 @@ void visualstudio::Link::ConstructJob(Compilation &C, const JobAction &JA,
   }
 
   if (!Args.hasArg(options::OPT_nostdlib) &&
-    !Args.hasArg(options::OPT_nostartfiles)) {
+      !Args.hasArg(options::OPT_nostartfiles) &&
+      !C.getDriver().IsCLMode()) {
     CmdArgs.push_back("-defaultlib:libcmt");
   }
 
   CmdArgs.push_back("-nologo");
 
   Args.AddAllArgValues(CmdArgs, options::OPT_l);
+  Args.AddAllArgValues(CmdArgs, options::OPT__SLASH_link);
 
   // Add filenames immediately.
   for (InputInfoList::const_iterator
        it = Inputs.begin(), ie = Inputs.end(); it != ie; ++it) {
     if (it->isFilename())
       CmdArgs.push_back(it->getFilename());
+    else
+      it->getInputArg().renderAsInput(Args, CmdArgs);
   }
 
   const char *Exec =

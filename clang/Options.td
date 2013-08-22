@@ -179,6 +179,8 @@ def ccc_ : Joined<["-"], "ccc-">, Group<internal_Group>, Flags<[Unsupported]>;
 
 def _HASH_HASH_HASH : Flag<["-"], "###">, Flags<[DriverOption, CoreOption]>,
     HelpText<"Print the commands to run for this compilation">;
+def _DASH_DASH : Option<["--"], "", KIND_REMAINING_ARGS>,
+    Flags<[DriverOption, CoreOption]>;
 def A : JoinedOrSeparate<["-"], "A">;
 def B : JoinedOrSeparate<["-"], "B">;
 def CC : Flag<["-"], "CC">, Flags<[CC1Option]>;
@@ -262,7 +264,7 @@ def Xassembler : Separate<["-"], "Xassembler">,
   HelpText<"Pass <arg> to the assembler">, MetaVarName<"<arg>">;
 def Xclang : Separate<["-"], "Xclang">,
   HelpText<"Pass <arg> to the clang compiler">, MetaVarName<"<arg>">,
-  Flags<[DriverOption]>;
+  Flags<[DriverOption, CoreOption]>;
 def Xlinker : Separate<["-"], "Xlinker">, Flags<[LinkerInput, RenderAsInput]>,
   HelpText<"Pass <arg> to the linker">, MetaVarName<"<arg>">;
 def Xpreprocessor : Separate<["-"], "Xpreprocessor">,
@@ -968,6 +970,10 @@ def mno_ssse3 : Flag<["-"], "mno-ssse3">, Group<m_x86_Features_Group>;
 def mno_aes : Flag<["-"], "mno-aes">, Group<m_x86_Features_Group>;
 def mno_avx : Flag<["-"], "mno-avx">, Group<m_x86_Features_Group>;
 def mno_avx2 : Flag<["-"], "mno-avx2">, Group<m_x86_Features_Group>;
+def mno_avx512f : Flag<["-"], "mno-avx512f">, Group<m_x86_Features_Group>;
+def mno_avx512cd : Flag<["-"], "mno-avx512cd">, Group<m_x86_Features_Group>;
+def mno_avx512er : Flag<["-"], "mno-avx512er">, Group<m_x86_Features_Group>;
+def mno_avx512pd : Flag<["-"], "mno-avx512pd">, Group<m_x86_Features_Group>;
 def mno_pclmul : Flag<["-"], "mno-pclmul">, Group<m_x86_Features_Group>;
 def mno_lzcnt : Flag<["-"], "mno-lzcnt">, Group<m_x86_Features_Group>;
 def mno_rdrnd : Flag<["-"], "mno-rdrnd">, Group<m_x86_Features_Group>;
@@ -1014,6 +1020,10 @@ def mssse3 : Flag<["-"], "mssse3">, Group<m_x86_Features_Group>;
 def maes : Flag<["-"], "maes">, Group<m_x86_Features_Group>;
 def mavx : Flag<["-"], "mavx">, Group<m_x86_Features_Group>;
 def mavx2 : Flag<["-"], "mavx2">, Group<m_x86_Features_Group>;
+def mavx512f : Flag<["-"], "mavx512f">, Group<m_x86_Features_Group>;
+def mavx512cd : Flag<["-"], "mavx512cd">, Group<m_x86_Features_Group>;
+def mavx512er : Flag<["-"], "mavx512er">, Group<m_x86_Features_Group>;
+def mavx512pd : Flag<["-"], "mavx512pd">, Group<m_x86_Features_Group>;
 def mpclmul : Flag<["-"], "mpclmul">, Group<m_x86_Features_Group>;
 def mlzcnt : Flag<["-"], "mlzcnt">, Group<m_x86_Features_Group>;
 def mrdrnd : Flag<["-"], "mrdrnd">, Group<m_x86_Features_Group>;
@@ -1044,6 +1054,10 @@ def mdspr2 : Flag<["-"], "mdspr2">, Group<m_Group>;
 def mno_dspr2 : Flag<["-"], "mno-dspr2">, Group<m_Group>;
 def msingle_float : Flag<["-"], "msingle-float">, Group<m_Group>;
 def mdouble_float : Flag<["-"], "mdouble-float">, Group<m_Group>;
+def mmsa : Flag<["-"], "mmsa">, Group<m_Group>,
+  HelpText<"Enable MSA ASE on MIPS processors">, Flags<[HelpHidden]>;
+def mno_msa : Flag<["-"], "mno-msa">, Group<m_Group>,
+  HelpText<"Disable MSA ASE on MIPS processors">, Flags<[HelpHidden]>;
 def mips32 : Flag<["-"], "mips32">, Group<mips_CPUs_Group>,
   HelpText<"Equivalent to -march=mips32">, Flags<[HelpHidden]>;
 def mips32r2 : Flag<["-"], "mips32r2">, Group<mips_CPUs_Group>,
@@ -1335,6 +1349,6 @@ def Z_reserved_lib_stdcxx : Flag<["-"], "Z-reserved-lib-stdc++">,
 def Z_reserved_lib_cckext : Flag<["-"], "Z-reserved-lib-cckext">,
     Flags<[LinkerInput, NoArgumentUnused, Unsupported]>, Group<reserved_lib_Group>;
 
-include "CLCompatOptions.td"
-
 include "CC1Options.td"
+
+include "CLCompatOptions.td"

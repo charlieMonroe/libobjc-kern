@@ -270,7 +270,7 @@ public:
     case GCC: return true;
     case GNUstep: return true;
     case ObjFW: return true;
-    case KernelObjC: return true;
+    case KernelObjC: return false;
     }
     llvm_unreachable("bad kind");
   }
@@ -284,7 +284,7 @@ public:
     case GCC: return true;
     case GNUstep: return true;
     case ObjFW: return true;
-    case KernelObjC: return true; // TODO: It will
+    case KernelObjC: return false;
     }
     llvm_unreachable("bad kind");
   }
