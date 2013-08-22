@@ -13,6 +13,7 @@
 #include "message.h"
 #include "private.h"
 #include "init.h"
+#include "exception.h"
 
 PRIVATE dtable_t uninstalled_dtable;
 
@@ -422,8 +423,14 @@ PRIVATE void objc_send_initialize(id object)
 
 	// If there's no initialize method, then don't bother installing and
 	// removing the initialize dtable, just install both dtables correctly now
-	if (0 == initializeSlot)
+	if (0 == initializeSlot
+		|| ((class->flags.meta && (initializeSlot->owner != class))
+			|| (!class->flags.meta && (initializeSlot->owner != class->isa))))
 	{
+		objc_debug_log("Not sending +initialize message to class %s since the"
+					   " +initialize method is implemented on %s\n",
+					   class->name, initializeSlot == NULL ? "null" :
+					   initializeSlot->owner->name);
 		if (!skipMeta)
 		{
 			meta->dtable = dtable;
@@ -441,7 +448,6 @@ PRIVATE void objc_send_initialize(id object)
 	// buffer if the receiver's dtable is not installed, and block if
 	// attempting to send a message to this class.
 	InitializingDtable buffer = { class, class_dtable, temporary_dtables };
-	__attribute__((cleanup(remove_dtable)))
 	InitializingDtable meta_buffer = { meta, dtable, &buffer };
 	temporary_dtables = &meta_buffer;
 	// We now release the initialize lock.  We'll reacquire it later when we do
@@ -453,18 +459,26 @@ PRIVATE void objc_send_initialize(id object)
 
 	checkARCAccessors(class);
 
-	// Note that the initialize method needs to be installed directly on the
-	// class we want to send the message to!
-	if ((class->flags.meta && (initializeSlot->owner != class))
-	    || (!class->flags.meta && (initializeSlot->owner != class->isa))){
-		objc_debug_log("Not sending +initialize message to class %s since the +initialize method is implemented on %s\n", class->name, initializeSlot->owner->name);
-		return;
+	/* Since we don't have libunwind in the kernel yet, there may be some issues
+	 * caused if the initialize method threw an exception -> the buffer needs
+	 * to be removed from the temp dtables!
+	 */
+	struct objc_exception_handler handler;
+	objc_exception_try_enter(&handler);
+	if (setjmp(handler.jump_buffer) == 0){
+		/* Try */
+		// Store the buffer in the temporary dtables list.  Note that it is safe to
+		// insert it into a global list, even though it's a temporary variable,
+		// because we will clean it up after this function.
+		initializeSlot->implementation((id)class, objc_initialize_selector);
+		remove_dtable(&meta_buffer);
+	}else{
+		// Catch
+		id _caught = objc_exception_extract(&handler);
+		objc_exception_try_exit(&handler);
+		remove_dtable(&meta_buffer);
+		objc_exception_throw(_caught);
 	}
-	
-	// Store the buffer in the temporary dtables list.  Note that it is safe to
-	// insert it into a global list, even though it's a temporary variable,
-	// because we will clean it up after this function.
-	initializeSlot->implementation((id)class, objc_initialize_selector);
 }
 
 PRIVATE void objc_install_dtable_for_object(id receiver){

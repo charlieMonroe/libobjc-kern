@@ -137,6 +137,36 @@ static int rethrow_catchall(void)
 	return 0;
 }
 
+/* NestedExceptions test. */
+static id a;
+
+static void throw_nested(void){
+	@throw a;
+}
+
+static void nested_exceptions_test(void){
+	id e1 = [KKObject new];
+	id e2 = [KKObject new];
+	@try
+	{
+		a = e1;
+		throw_nested();
+	}
+	@catch (id x)
+	{
+		objc_assert(x == e1, "Wrong catch.\n");
+		@try {
+			a = e2;
+		}
+		@catch (id y)
+		{
+			objc_assert(y == e2, "Wrong catch.\n");
+		}
+	}
+	[e1 release];
+	[e2 release];
+}
+
 
 void exception_test(void);
 void exception_test(void){
@@ -168,6 +198,8 @@ void exception_test(void){
 		objc_assert(object_getClass(x) == [KKObject class], "Wrong class!\n");
 		[x release];
 	}
+	
+	nested_exceptions_test();
 	
 	objc_log("===================\n");
 	objc_log("Passed exception tests.\n\n");

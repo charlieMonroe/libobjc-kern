@@ -53,12 +53,10 @@ namespace {
   /// avoids constructing the type more than once if it's used more than once.
   class LazyRuntimeFunction {
     CodeGenModule *CGM;
-    
+    std::vector<llvm::Type*> ArgTys;
     const char *FunctionName;
     llvm::Constant *Function;
   public:
-    // TODO put back
-    std::vector<llvm::Type*> ArgTys;
     /// Constructor leaves this class uninitialized, because it is intended to
     /// be used as a field in another class and not all of the types that are
     /// used as arguments will necessarily be available at construction time.
@@ -1531,6 +1529,11 @@ namespace {
     uint64_t SetJmpBufferSize;
     /// Type of integers that are used in the buffer type
     llvm::Type *SetJmpBufferIntTy;
+	  
+	  
+	  /// A function that is used for getting untyped selectors, mostly within
+    /// @selector(...) constructs
+    LazyRuntimeFunction GetSelectorFn;
     
     
     /// For each variant of a selector, we store the type encoding and a
@@ -1702,6 +1705,8 @@ namespace {
       ExceptionTryExitFn.init(&CGM, "objc_exception_try_exit",
                               VoidTy, ExceptionDataTy->getPointerTo(), NULL);
       
+      GetSelectorFn.init(&CGM, "sel_getNamed", SelectorTy, PtrToInt8Ty, NULL);
+      
     }
     
     virtual llvm::Value *GetSelector(CodeGenFunction &CGF, Selector Sel,
@@ -1763,8 +1768,16 @@ namespace {
           return tmp;
         }
         return CGF.Builder.CreateLoad(CGF.Builder.CreateGEP(SelValue, Zeros[0]));
+      }else{
+        /// Instead of aborting at this point, use the run-time function to get
+        /// the selector - it will abort the program if none is found.
+        llvm::Constant *selName = MakeConstantString(Sel.getAsString());
+        llvm::Value *Args[] = { selName };
+        llvm::CallInst *GetSEL =
+        CGF.EmitNounwindRuntimeCall(GetSelectorFn,
+                                    Args, "getSEL");
+        return GetSEL;
       }
-      
       llvm_unreachable("No untyped selectors support in kernel runtime.");
     }
 	  
@@ -4712,10 +4725,8 @@ void CGObjCKern::EmitTryStmt(CodeGenFunction &CGF,
 			
 			// Check if the @catch block matches the exception object.
 			llvm::Constant *Class = GetClassStructureRef(IDecl->getNameAsString(), false);
-      Class = llvm::ConstantExpr::getPointerCast(Class, ClassTy->getPointerTo());
+			Class = llvm::ConstantExpr::getPointerCast(Class, ClassTy->getPointerTo());
 			
-      Class->getType()->dump(); printf("\n"); Caught->getType()->dump();
-      
 			llvm::Value *matchArgs[] = { Class, Caught };
 			llvm::CallInst *Match =
 			CGF.EmitNounwindRuntimeCall(ExceptionMatchFn,

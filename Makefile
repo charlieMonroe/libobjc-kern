@@ -37,6 +37,7 @@ SRCS	= kernel_module.c \
 		test/compiler-test.m \
 		test/exception-test.m \
 		test/forwarding-test.m \
+		test/message-send-test.m \
 		test/many-selectors-test.m
 
 .include <bsd.kmod.mk>
