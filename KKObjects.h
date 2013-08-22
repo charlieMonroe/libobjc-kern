@@ -1,3 +1,6 @@
+
+#include "kernobjc/types.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wobjc-root-class"
 @interface KKObject {
@@ -10,8 +13,12 @@
 +(id)new;
 
 +(Class)class;
++(BOOL)respondsToSelector:(SEL)selector;
 
+-(Class)class;
 -(id)init;
+
+-(BOOL)respondsToSelector:(SEL)selector;
 
 -(void)dealloc;
 -(id)retain;

@@ -38,7 +38,7 @@ PRIVATE extern unsigned int objc_lock_locked_count;
 
 #include "malloc_types.h"
 
-#define objc_format_string(buffer, format...) sprintf(buffer, format)
+#define objc_format_string snprintf
 
 #define objc_assert(condition, description...)				\
 	if (!(condition)){						\

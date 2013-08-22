@@ -1,10 +1,9 @@
-
-#import "KKObjects.h"
-
-#include "kernobjc/types.h"
+#include "kernobjc/runtime.h"
 #include "os.h"
 #include "private.h"
 #include "types.h"
+
+#import "KKObjects.h"
 
 #pragma mark KKObject
 
@@ -22,7 +21,11 @@
 
 +(Class)class
 {
-	return (Class)self;
+	return self;
+}
++(BOOL)respondsToSelector:(SEL)selector
+{
+	return class_respondsToSelector(self->isa, selector);
 }
 
 +(void)dealloc
@@ -45,7 +48,10 @@
 	object_dispose((id)self);
 }
 
-
+-(Class)class
+{
+	return object_getClass(self);
+}
 -(id)init
 {
 	return self;
@@ -68,6 +74,11 @@
 	objc_debug_log("Retaining an object %p\n", self);
 	__sync_add_and_fetch(&self->retain_count, 1);
 	return self;
+}
+
+-(BOOL)respondsToSelector:(SEL)selector
+{
+	return class_respondsToSelector([self class], selector);
 }
 
 

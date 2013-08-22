@@ -42,7 +42,7 @@ objc_msg_forward3_null(id receiver, SEL op)
 struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender);
 static struct objc_slot *objc_msg_lookup_internal(id *receiver, SEL selector, id sender);
 
-/* 
+/*
  * The proxy lookup. When the method isn't cached the slow msg lookup goes on
  * to ask the proxy hook to supply a different receiver. If none is supplied,
  * the dispatch goes to the the __objc_msg_forward3 hook.
@@ -54,13 +54,13 @@ id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_null;
  * the dispatch tries this hook for forwarding.
  */
 struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op)
-						= objc_msg_forward3_null;
+= objc_msg_forward3_null;
 
 /*
- * An export of the other otherwise 
+ * An export of the other otherwise
  */
 struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
-							objc_msg_lookup_internal;
+objc_msg_lookup_internal;
 
 
 
@@ -77,12 +77,13 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 		dtable_t dtable = dtable_for_class(class);
 		/* Install the dtable if it hasn't already been initialized. */
 		if (dtable == uninstalled_dtable){
+			objc_debug_log("Sending initialize to receiver %p, selector %s[%d]\n", *receiver, sel_getName(selector), (unsigned)selector);
 			objc_send_initialize(*receiver);
 			dtable = dtable_for_class(class);
 			result = objc_dtable_lookup(dtable, selector);
 		}else{
 			/*
-			 * Check again incase another thread updated the dtable
+			 * Check again in case another thread updated the dtable
 			 * while we weren't looking.
 			 */
 			result = objc_dtable_lookup(dtable, selector);
@@ -90,17 +91,17 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 		if (NULL == result) {
 			id newReceiver = objc_proxy_lookup(*receiver, selector);
 			/*
-			 * If some other library wants us to play forwarding 
+			 * If some other library wants us to play forwarding
 			 * games, try again with the new object.
 			 */
 			if (nil != newReceiver) {
 				*receiver = newReceiver;
 				return objc_msg_lookup_sender(receiver,
-							      selector,
-							      sender);
+											  selector,
+											  sender);
 			} else {
 				result = __objc_msg_forward3(*receiver,
-							     selector);
+											 selector);
 			}
 		}
 	}
@@ -111,8 +112,8 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 PRIVATE IMP
 slowMsgLookup(id *receiver, SEL cmd)
 {
-  objc_debug_log("slowMsgLookup: selector (%i), receiver (%p)\n", (int)cmd,
-                 *receiver);
+	objc_debug_log("slowMsgLookup: selector (%i), receiver (%p)\n", (int)cmd,
+				   *receiver);
 	return objc_msg_lookup_sender(receiver, cmd, nil)->implementation;
 }
 
@@ -137,7 +138,7 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 	 * can be inlined trivially.
 	 */
 	if (UNLIKELY(*receiver == nil)){
-		/* 
+		/*
 		 * Return the correct kind of zero, depending on the type
 		 * encoding.
 		 */
@@ -150,10 +151,10 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 		}
 		
 		switch (types[0]){
-// TODO runtime error
-//			case 'D': return &nil_slot_D;
-//			case 'd': return &nil_slot_d;
-//			case 'f': return &nil_slot_f;
+				// TODO runtime error
+				//			case 'D': return &nil_slot_D;
+				//			case 'd': return &nil_slot_d;
+				//			case 'f': return &nil_slot_f;
 		}
 		return &nil_slot;
 	}
@@ -209,7 +210,37 @@ class_respondsToSelector(Class cl, SEL selector)
 	if (cl == Nil || selector == null_selector){
 		return NO;
 	}
-	return objc_get_slot(cl, selector) != NULL;
+	if (cl->dtable != uninstalled_dtable){
+		objc_debug_log("Trying to get a slot directly [isMeta=%s]\n", cl->flags.meta ? "YES" : "NO");
+		
+		SparseArray *arr = cl->dtable;
+		uint16_t idx = 0;
+		struct objc_slot *slot;
+		while ((slot = SparseArrayNext(arr, &idx))){
+			objc_debug_log("\t %s[%d] -> %p\n", sel_getName(slot->selector), slot->selector, slot->implementation);
+		}
+		
+		return objc_get_slot(cl, selector) != NULL;
+	}else{
+		objc_debug_log("Getting it directly\n");
+		
+		/* Need to find it manually */
+		if (cl->flags.fake) {
+			cl = objc_class_get_nonfake_inline(cl);
+		}
+		
+		struct objc_method_list_struct *method_list = cl->methods;
+		while (method_list != NULL){
+			for (int i = 0; i < method_list->size; ++i){
+				if (method_list->list[i].selector == selector){
+					return YES;
+				}
+			}
+			method_list = method_list->next;
+		}
+		
+		return class_respondsToSelector(class_getSuperclass(cl), selector);
+	}
 }
 
 #pragma mark -
@@ -218,7 +249,7 @@ class_respondsToSelector(Class cl, SEL selector)
 IMP
 class_getMethodImplementation(Class cl, SEL selector)
 {
-	/* 
+	/*
 	 * No forwarding here! This is simply to lookup
 	 * a method implementation.
 	 */

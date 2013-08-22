@@ -53,7 +53,7 @@ _objc_find_class_for_object(id object)
 	Class cl = object->isa;
   objc_debug_log("Looking for a class for object (%p), obj->isa = %p\n", object, cl);
 	while (cl != Nil && !cl->flags.fake) {
-    objc_debug_log("Getting a superclass of %p[%s]\n", cl, class_getName(cl));
+		objc_debug_log("Getting a superclass of %p[%s%s]\n", cl, class_getName(cl), cl->flags.meta ? "::meta" : "");
 		cl = class_getSuperclass(cl);
 	}
 	
@@ -89,9 +89,15 @@ _objc_unique_lock_name_for_object(id object, Class cl)
 	const char *class_name = object_getClassName(object);
 	
 	/* We need a format 0x1234 - 0x == 2 + sizeof(void*)*2 */
-	unsigned int pointer_str_len = (sizeof(void*) * 2) + 2;
-	char pointer_str[pointer_str_len + 1];
-	objc_format_string(pointer_str, "%p", object);
+	unsigned pointer_str_len = ((sizeof(void*) * 2) + 2);
+	char pointer_str[pointer_str_len];
+	
+	/* Interestingly, the preprocessor uses some builtin snprintf, which 
+	 * segfaults, which might be a temporary Clang bug, though...
+	 */
+	int(*fn)(char*,size_t,const char*,...) = objc_format_string;
+	fn(pointer_str, pointer_str_len - 1, "%p", object);
+	
 	pointer_str[pointer_str_len] = '\0'; /* NULL termination */
 	
 	/* Now concat it */
@@ -99,12 +105,14 @@ _objc_unique_lock_name_for_object(id object, Class cl)
 	unsigned int class_name_len = objc_strlen(class_name);
 	unsigned int lock_name_len = name_prefix_len + class_name_len
 	+ pointer_str_len;
+	
 	char *lock_name = objc_alloc(lock_name_len, M_FAKE_CLASS_TYPE);
 	objc_copy_memory(lock_name, name_prefix, name_prefix_len);
 	objc_copy_memory(lock_name + name_prefix_len, class_name,
 					 class_name_len);
 	objc_copy_memory(lock_name + name_prefix_len + class_name_len,
 					 pointer_str, pointer_str_len + 1); /* +1 for NULL-term */
+	
 	return lock_name;
 }
 

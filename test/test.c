@@ -49,8 +49,25 @@ static void list_classes(void){
 	unsigned int count;
 	Class *classes = objc_copyClassList(&count);
 	for (int i = 0; i < count; ++i){
-		print_class(classes[i]);
-		print_class(classes[i]->isa);
+		Class cl = classes[i];
+		print_class(cl);
+		print_class(cl->isa);
+		
+		if (cl->super_class == Nil){
+			objc_assert(cl->isa->isa == cl->isa, "No root class meta class isa"
+				    " loop [%p, %p]!\n", cl->isa->isa, cl->isa);
+			objc_assert(cl->isa->super_class == cl, "The root meta class' "
+				    "superclass[%p] should be the class[%p]!",
+				    cl->isa->super_class, cl);
+		}else{
+			objc_assert(cl->isa->isa == cl->super_class->isa, "The meta class'"
+				    " isa[%p] isn't the metaclass of the class' superclass[%p]!",
+				    cl->isa->isa, cl->super_class->isa);
+			objc_assert(cl->isa->super_class == cl->super_class->isa,
+				    "The meta class' superclass[%p] isn't the metaclass of the"
+				    " class' superclass[%p]!", cl->isa->super_class,
+				    cl->super_class->isa);
+		}
 	}
 	objc_dealloc(classes, M_CLASS_TYPE);
 }

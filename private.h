@@ -34,7 +34,8 @@ PRIVATE IMP   slowMsgLookup(id *receiver, SEL cmd);
  * theoretically use a more sophisticated name, it would still be a void-void
  * function.
  */
-PRIVATE void abort(void);
+/*PRIVATE void abort(void);*/
+// TODO - still true when not using unwind?
 
 PRIVATE void
 objc_load_buffered_categories(void);
