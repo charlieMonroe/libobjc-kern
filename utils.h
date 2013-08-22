@@ -90,7 +90,7 @@ objc_strings_equal(const char *str1, const char *str2)
 /*
  * Hashes string str.
  */
-static inline unsigned int
+static inline uint32_t
 objc_hash_string(const char *str)
 {
 	register uint32_t hash = 0;

@@ -35,7 +35,9 @@ SRCS	= kernel_module.c \
 		test/test.c \
 		test/weak-ref-test.m \
 		test/compiler-test.m \
-		test/exception-test.m 
-		
+		test/exception-test.m \
+		test/forwarding-test.m \
+		test/many-selectors-test.m
+
 .include <bsd.kmod.mk>
 

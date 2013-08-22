@@ -23,10 +23,37 @@
 @end
 
 
+@interface ReturnCase : KKObject
++(void)performTest;
+@end
+@implementation ReturnCase
+
+static BOOL flag;
+
++(void)_throwException{
+	@try{
+		return;
+	}@finally {
+		flag = YES;
+	}
+}
++(void)performTest{
+	[self _throwException];
+	
+	objc_assert(flag == YES, "Flags hasn't been set!\n");
+}
+
+@end
+
+
 /* The requires_exact_match flag says whether the class must be caught in its
  * own catch block, or can be caught by another one.
+ *
+ * The requires_to_be_caught flag indicates that the exception is required to be
+ * caught. The requires_exact_match implicates this flag.
  */
-static void run_exception_test_for_class(Class cl, BOOL requires_exact_match){
+static void run_exception_test_for_class(Class cl, BOOL requires_exact_match,
+										 BOOL requires_to_be_caught){
 	BOOL was_in_try = NO;
 	BOOL was_in_finally = NO;
 	Class caught_for_class = Nil;
@@ -63,24 +90,84 @@ static void run_exception_test_for_class(Class cl, BOOL requires_exact_match){
 					caught_for_class,
 					caught_for_class == Nil ? "null" :
 					class_getName(caught_for_class));
+	}else if (requires_to_be_caught){
+		/* The exception possibly hasn't even been thrown? */
+		objc_assert(cl != Nil, "Something went wrong.\n");
 	}
+}
+
+
+/* Test from GNUstep ObjC Runtime */
+BOOL finallyEntered = NO;
+BOOL idRethrown = NO;
+BOOL catchallRethrown = NO;
+BOOL wrongMatch = NO;
+
+
+static int throw(void)
+{
+	@throw [KKObject new];
+}
+
+static int finally(void)
+{
+	@try { throw(); }
+	@finally  { finallyEntered = YES; }
+	return 0;
+}
+static int rethrow_id(void)
+{
+	@try { finally(); }
+	@catch(id x)
+	{
+		objc_assert(object_getClass(x) == [KKObject class], "Wrong class!\n");
+		idRethrown = YES;
+		@throw;
+	}
+	return 0;
+}
+static int rethrow_catchall(void)
+{
+	@try { rethrow_id(); }
+	@catch(...)
+	{
+		catchallRethrown = YES;
+		@throw;
+	}
+	return 0;
 }
 
 
 void exception_test(void);
 void exception_test(void){
-	//run_exception_test_for_class([ExceptionClass class], YES);
-	run_exception_test_for_class([OtherExceptionClass class], YES);
-	run_exception_test_for_class([ThirdExceptionClass class], NO);
+	run_exception_test_for_class([ExceptionClass class], YES, YES);
+	run_exception_test_for_class([OtherExceptionClass class], YES, YES);
+	run_exception_test_for_class([ThirdExceptionClass class], NO, YES);
 	
 	BOOL caught = NO;
 	@try{
-		run_exception_test_for_class([KKObject class], NO);
+		run_exception_test_for_class([KKObject class], NO, NO);
 	}@catch (...) {
 		caught = YES;
 	}
-	
 	objc_assert(caught, "Wasn't in the catch block!");
+	
+	[ReturnCase performTest];
+	
+	
+	@try
+	{
+		rethrow_catchall();
+	}
+	@catch (id x)
+	{
+		objc_assert(finallyEntered == YES, "Finally not entered!\n");
+		objc_assert(idRethrown == YES, "id not rethrown!\n");
+		objc_assert(catchallRethrown == YES, "catchall not rethrown!\n");
+		objc_assert(wrongMatch == NO, "Wrong match!\n");
+		objc_assert(object_getClass(x) == [KKObject class], "Wrong class!\n");
+		[x release];
+	}
 	
 	objc_log("===================\n");
 	objc_log("Passed exception tests.\n\n");

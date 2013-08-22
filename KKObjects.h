@@ -1,10 +1,14 @@
 
 #include "kernobjc/types.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wobjc-root-class"
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
+#if __has_attribute(objc_root_class)
+__attribute__((objc_root_class))
+#endif
 @interface KKObject {
-#pragma clang diagnostic pop
   id isa;
   int retain_count;
 }

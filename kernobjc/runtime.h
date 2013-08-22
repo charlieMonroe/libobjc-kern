@@ -12,8 +12,7 @@
 #include "protocol.h"
 #include "message.h"
 #include "arc.h"
-
-
+#include "hooks.h"
 
 /*
  * Finds a class registered with the run-time and returns it,

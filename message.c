@@ -165,6 +165,10 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 PRIVATE struct objc_slot *
 objc_get_slot(Class cl, SEL selector)
 {
+	objc_debug_log("Getting slot on class %s [meta=%s; fake=%s]\n",
+				   class_getName(cl),
+				   cl->flags.meta ? "YES" : "NO",
+				   cl->flags.fake ? "YES" : "NO");
 	struct objc_slot *slot = objc_dtable_lookup(cl->dtable, selector);
 	if (slot == NULL){
 		dtable_t dtable = dtable_for_class(cl);
@@ -200,32 +204,18 @@ objc_slot_lookup_super(struct objc_super *super, SEL selector)
 	return sl;
 }
 
-
-#pragma mark -
-#pragma mark Responding to selectors
-
-BOOL
-class_respondsToSelector(Class cl, SEL selector)
-{
+static inline IMP
+_class_getIMPForSelector(Class cl, SEL selector){
 	if (cl == Nil || selector == null_selector){
-		return NO;
+		return NULL;
 	}
 	if (cl->dtable != uninstalled_dtable){
-		objc_debug_log("Trying to get a slot directly [isMeta=%s]\n", cl->flags.meta ? "YES" : "NO");
-		
-		SparseArray *arr = cl->dtable;
-		uint16_t idx = 0;
-		struct objc_slot *slot;
-		while ((slot = SparseArrayNext(arr, &idx))){
-			objc_debug_log("\t %s[%d] -> %p\n", sel_getName(slot->selector), slot->selector, slot->implementation);
-		}
-		
-		return objc_get_slot(cl, selector) != NULL;
+		struct objc_slot *slot = objc_get_slot(cl, selector);
+		return slot == NULL ? NULL : slot->implementation;
 	}else{
-		objc_debug_log("Getting it directly\n");
-		
 		/* Need to find it manually */
 		if (cl->flags.fake) {
+			/* Fake classes only have dtables. */
 			cl = objc_class_get_nonfake_inline(cl);
 		}
 		
@@ -233,14 +223,24 @@ class_respondsToSelector(Class cl, SEL selector)
 		while (method_list != NULL){
 			for (int i = 0; i < method_list->size; ++i){
 				if (method_list->list[i].selector == selector){
-					return YES;
+					return method_list->list[i].implementation;
 				}
 			}
 			method_list = method_list->next;
 		}
 		
-		return class_respondsToSelector(class_getSuperclass(cl), selector);
+		return _class_getIMPForSelector(cl, selector);
 	}
+}
+
+
+#pragma mark -
+#pragma mark Responding to selectors
+
+BOOL
+class_respondsToSelector(Class cl, SEL selector)
+{
+	return _class_getIMPForSelector(cl, selector) != NULL;
 }
 
 #pragma mark -
@@ -253,7 +253,7 @@ class_getMethodImplementation(Class cl, SEL selector)
 	 * No forwarding here! This is simply to lookup
 	 * a method implementation.
 	 */
-	return objc_get_slot(cl, selector)->implementation;
+	return _class_getIMPForSelector(cl, selector);
 }
 
 IMP

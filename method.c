@@ -32,8 +32,8 @@ _add_methods_to_class(Class cl, Method *m, unsigned int count)
 		cl->methods = objc_method_list_append(cl->methods, list);
 	}
 	
-	if (cl->flags.resolved){
-		dtable_add_method_list_to_class(cl, cl->methods);
+	if (cl->dtable != uninstalled_dtable){
+		dtable_add_method_list_to_class(cl, list);
 	}
 }
 
@@ -124,6 +124,8 @@ BOOL
 class_addMethod(Class cls, SEL selector, IMP imp)
 {
 	if (cls == NULL || selector == null_selector || imp == NULL){
+		objc_debug_log("Not adding method to class %p as either IMP %p is NULL,"
+					   " or selector is null_selector [%d]\n", cls, imp, selector);
 		return NO;
 	}
 	

@@ -50,6 +50,7 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
 #define MAP_TABLE_VALUE_TYPE struct objc_selector *
 #define MAP_TABLE_NO_LOCK 1
 #define MAP_MALLOC_TYPE M_SELECTOR_MAP_TYPE
+#define SELECTOR
 
 #include "hashtable.h"
 
@@ -58,12 +59,14 @@ static inline uint32_t _objc_selector_hash(struct objc_selector *sel);
  * String allocator stuff.
  *
  * We allocate a page from which we bite a selector name at a time. We assume
- * 16 pages (~64kB) is enough for all selectors since most of them that get 
- * loaded from binaries are not allocated at all. This is simply for selectors
- * created at runtime.
+ * 512 pages is enough, though they aren't allocated all at once! We just need
+ * to be able to release these pages when the module is unloaded.
+ *
+ * NOTE: This number is based on the many-selectors-test which allocates nearly
+ * 62,000 selectors of length 16, which is way much more than the actual usage
+ * will ever be.
  */
-// TODO more pages necessary. We're actually now copying the memory
-#define STRING_ALLOCATOR_MAX_PAGES 16
+#define STRING_ALLOCATOR_MAX_PAGES 384
 
 /* Points to the next index in string_allocator_pages. */
 static unsigned short string_allocator_next_page_index = 0;
@@ -140,11 +143,13 @@ _objc_selector_allocate_string(size_t size)
 		 */
 		
 		objc_assert(string_allocator_next_page_index
-			    <= STRING_ALLOCATOR_MAX_PAGES,
+			    < STRING_ALLOCATOR_MAX_PAGES,
 			    "Too many custom selectors allocated. Increase the "
 			    "STRING_ALLOCATOR_MAX_PAGES number in selector.c.\n");
 		
-		string_allocator = objc_alloc_page(M_SELECTOR_NAME_TYPE);
+		string_allocator = objc_zero_alloc(PAGE_SIZE, M_SELECTOR_NAME_TYPE);
+		objc_debug_log("Allocated page at address %p\n", string_allocator);
+		
 		string_allocator_bytes_remaining = PAGE_SIZE;
 		string_allocator_pages[string_allocator_next_page_index] =
 														string_allocator;
@@ -352,6 +357,21 @@ sel_getTypes(SEL selector)
 	
 	/* The types are in the same string as name, separated by \0 */
 	return _objc_selector_get_types(sel_struct);
+}
+
+SEL
+sel_getNamed(const char *name)
+{
+	objc_assert(name != NULL, "Cannot get a selector for a NULL name!\n");
+	
+	struct objc_selector *selector;
+	selector = objc_selector_table_get(objc_selector_hashtable, name);
+	
+	if (selector != NULL){
+		return selector->sel_uid;
+	}
+	
+	objc_abort("No selector named %s found!\n", name);
 }
 
 PRIVATE void
