@@ -54,5 +54,4 @@ static moduledata_t libobjc_conf = {
 
 DECLARE_MODULE(libobjc, libobjc_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
 MODULE_VERSION(libobjc, 0);
-MODULE_DEPEND(libobjc, libunwind, 0, INT_MAX, 0);
 
