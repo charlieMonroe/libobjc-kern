@@ -8,7 +8,7 @@
 #import "../dtable.h"
 
 #ifdef _KERNEL
-	#include <sys/stdarg.h>
+	#include <machine/stdarg.h>
 #else
 	#include <stdarg.h>
 #endif
@@ -59,12 +59,12 @@ Class TestCls;
 + (void)printf: (const char*)str, ...
 {
 	va_list ap;
-	char *s;
+	char s[256]; // buffer
 	
 	va_start(ap, str);
-	int (*vasprintf_fn)(char **, const char *, va_list);
-	vasprintf_fn = vasprintf;
-	vasprintf_fn(&s, str, ap);
+	int (*vsnprintf_fn)(char *, size_t size, const char *, va_list);
+	vsnprintf_fn = vsnprintf;
+	vsnprintf_fn(s, 256, str, ap);
 	va_end(ap);
 	
 	assert(objc_strings_equal(s, "Format string 42 \n"));

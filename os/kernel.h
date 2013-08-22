@@ -9,6 +9,8 @@
 #include <sys/osd.h>
 #include <ddb/ddb.h>
 
+#include <machine/setjmp.h>
+
 /* LOGGING */
 #define objc_log db_printf
 
