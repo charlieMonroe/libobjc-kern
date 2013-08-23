@@ -227,10 +227,11 @@ Property class_getProperty(Class cls, const char *name)
 Property *class_copyPropertyList(Class cls, unsigned int *outCount)
 {
 	if (cls == Nil || cls->properties == NULL || cls->properties->size == 0){
-		objc_debug_log("Returning NULL property list since the class [%p;%s] has"
-					   "either no properties (%p) or the list is empty (%d)\n",
-					   cls, class_getName(cls), cls->properties, cls->properties
-					   == 0 ? 0 : cls->properties->size);
+		objc_debug_log("Returning NULL property list since the class [%p;%s%s] has"
+					   " either no properties (%p) or the list is empty (%d)\n",
+					   cls, class_getName(cls), cls->flags.meta ? "[meta]" : "",
+					   cls->properties,
+					   cls->properties == NULL ? 0 : cls->properties->size);
 		*outCount = 0;
 		return NULL;
 	}
