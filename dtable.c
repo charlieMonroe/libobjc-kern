@@ -472,10 +472,10 @@ PRIVATE void objc_send_initialize(id object)
 		// because we will clean it up after this function.
 		initializeSlot->implementation((id)class, objc_initialize_selector);
 		remove_dtable(&meta_buffer);
+		objc_exception_try_exit(&handler);
 	}else{
 		// Catch
 		id _caught = objc_exception_extract(&handler);
-		objc_exception_try_exit(&handler);
 		remove_dtable(&meta_buffer);
 		objc_exception_throw(_caught);
 	}

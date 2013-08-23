@@ -89,9 +89,20 @@
 	mov   %rdx, %rsi                     # move _cmd to where the callee expects it to be
 .endif
 
+# The stack needs to be 16-byte aligned on OS X
+.ifnc "\receiver", "%rdi"
+  pushq 0x0
+.endif
+
 #TODO adjuct the 0xD8 - should be 0x40 (0xd8 - 0x98 == 0x40)
 	.cfi_adjust_cfa_offset 0x40
 	call  CDECL(slowMsgLookup)           # Call the slow lookup function
+
+# The stack needs to be 16-byte aligned on OS X
+.ifnc "\receiver", "%rdi"
+pop %r10
+.endif
+
 	mov   %rax, %r10                     # Load the returned IMP
 
 	pop   %rdx
