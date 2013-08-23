@@ -81,6 +81,9 @@ void compiler_test(void);
 void exception_test(void);
 void forwarding_test(void);
 void message_send_test(void);
+void property_test(void);
+void property_introspection_test1(void);
+void property_introspection_test2(void);
 void many_selectors_test(void);
 
 void run_tests(void);
@@ -96,6 +99,7 @@ void run_tests(void)
 	exception_test();
 	forwarding_test();
 	message_send_test();
+	property_test();
 	
 	// Always last because it allocates a lot of memory
 	many_selectors_test();

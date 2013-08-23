@@ -38,6 +38,9 @@ SRCS	= kernel_module.c \
 		test/exception-test.m \
 		test/forwarding-test.m \
 		test/message-send-test.m \
+		test/property-test.m \
+		test/property-introspection-test.m \
+		test/property-introspection2-test.m \
 		test/many-selectors-test.m
 
 .include <bsd.kmod.mk>
