@@ -392,7 +392,7 @@ PRIVATE void objc_send_initialize(id object)
 	
 	objc_debug_log("sending initialize to class %s - meta[%p]\n", object_getClassName(object), meta);
 	
-	OBJC_LOCK_OBJECT_FOR_SCOPE((id)meta);
+	objc_sync_enter((id)meta);
 	OBJC_LOCK(&initialize_lock);
 	if (class->flags.initialized)
 	{
@@ -464,6 +464,9 @@ PRIVATE void objc_send_initialize(id object)
 	 * to be removed from the temp dtables!
 	 */
 	struct objc_exception_handler handler;
+	id caught_exception = nil;
+	BOOL caught_anything = NO;
+	
 	objc_exception_try_enter(&handler);
 	if (setjmp(handler.jump_buffer) == 0){
 		/* Try */
@@ -471,13 +474,22 @@ PRIVATE void objc_send_initialize(id object)
 		// insert it into a global list, even though it's a temporary variable,
 		// because we will clean it up after this function.
 		initializeSlot->implementation((id)class, objc_initialize_selector);
-		remove_dtable(&meta_buffer);
 		objc_exception_try_exit(&handler);
+		
+		goto finally;
 	}else{
 		// Catch
-		id _caught = objc_exception_extract(&handler);
-		remove_dtable(&meta_buffer);
-		objc_exception_throw(_caught);
+		caught_anything = YES;
+		caught_exception = objc_exception_extract(&handler);
+		
+		goto finally;
+	}
+finally:
+	remove_dtable(&meta_buffer);
+	objc_sync_exit((id)meta);
+	
+	if (caught_anything){
+		objc_exception_throw(caught_exception);
 	}
 }
 
