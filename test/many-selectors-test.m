@@ -25,7 +25,11 @@ void many_selectors_test(void){
 	Class cls = [KKObject class];
 	objc_assert(cls != Nil, "class is Nil!\n");
 	int sel_size = 0;
-	for (uint32_t i=0 ; i<0xf000 ; i++)
+	
+	/* Should really use 0xf000, but it takes too much time and the kernel
+	 * panics in between thinking that there's a deadlock. */
+	
+	for (uint32_t i=0 ; i<0x1000 ; i++)
 	{
 		objc_format_string(selBuffer, 16, "%dselector%d", i, i);
 		nextSel = sel_registerName(selBuffer, "@@:");
