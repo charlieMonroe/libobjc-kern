@@ -9,6 +9,39 @@
 
 objc_tls_key objc_exception_tls_key;
 
+
+/*
+ * Clang enjoys to for whatever reason to add two required symbols to each 
+ * binary that throws / catches exceptions, even though it is strictly said
+ * that the runtime doesn't use libunwind exceptions. Even though both symbols
+ * are declared as weak, the kernel doesn't really do weak...
+ *
+ * I was so far unable to identify which part of clang emits these symbols, but
+ * they both abort in either case, so if they ever get called, we're soon to 
+ * find out.
+ *
+ * - __libkern_personality_v0 - it needs to implement *some* personality. In 
+ *								case I ever get libunwind into the kernel, it's
+ *								a good idea to declare our own personality.
+ *
+ * - _Unwind_Resume - even though I've searched for this symbol through the 
+ *						whole LLVM project and the only possibility is that it
+ *						gets emitted in DwarfEHPrepare.cpp
+ */
+
+void	__libkern_personality_v0(void);
+void	_Unwind_Resume(void);
+
+
+void
+__libkern_personality_v0(void){
+	objc_abort("Called __libkern_personality_v0\n");
+}
+void
+_Unwind_Resume(void){
+	objc_abort("Called _Unwind_Resume\n");
+}
+
 struct objc_exception_handler *
 objc_installed_exception_handler(void)
 {

@@ -156,6 +156,7 @@ namespace {
     static const EHPersonality GNU_C;
     static const EHPersonality GNU_C_SJLJ;
     static const EHPersonality GNU_ObjC;
+  static const EHPersonality ObjCKern;
     static const EHPersonality GNUstep_ObjC;
     static const EHPersonality GNU_ObjCXX;
     static const EHPersonality NeXT_ObjC;
@@ -177,6 +178,11 @@ EHPersonality::GNU_ObjCXX = { "__gnustep_objcxx_personality_v0", 0 };
 const EHPersonality
 EHPersonality::GNUstep_ObjC = { "__gnustep_objc_personality_v0", 0 };
 
+const EHPersonality EHPersonality::ObjCKern = {
+                                                "__libkern_personality_v0",
+                                                NULL
+                                              };
+
 static const EHPersonality &getCPersonality(const LangOptions &L) {
   if (L.SjLjExceptions)
     return EHPersonality::GNU_C_SJLJ;
@@ -186,6 +192,7 @@ static const EHPersonality &getCPersonality(const LangOptions &L) {
 static const EHPersonality &getObjCPersonality(const LangOptions &L) {
   switch (L.ObjCRuntime.getKind()) {
   case ObjCRuntime::KernelObjC: // The kernel ObjC RT doesn't have unwind
+		  return EHPersonality::ObjCKern;
   case ObjCRuntime::FragileMacOSX:
     return getCPersonality(L);
   case ObjCRuntime::MacOSX:
