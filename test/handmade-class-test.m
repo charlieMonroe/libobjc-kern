@@ -41,9 +41,10 @@ void handmade_class_test(void){
 	SEL setIvarSel = sel_registerName("setIvar", "v24@0:8@16");
 	
 	class_addIvar(cl, my_ivar_name, sizeof(id), __alignof(id), "@");
-	class_addMethod(cl, getIvarSel, (IMP)getIvar);
-	class_addMethod(cl, setIvarSel, (IMP)setIvar);
-	class_addMethod(meta_cl, objc_initialize_selector, (IMP)initialize);
+	class_addMethod(cl, getIvarSel, (IMP)getIvar, sel_getTypes(getIvarSel));
+	class_addMethod(cl, setIvarSel, (IMP)setIvar, sel_getTypes(setIvarSel));
+	class_addMethod(meta_cl, objc_initialize_selector, (IMP)initialize,
+					sel_getTypes(objc_initialize_selector));
 	
 	objc_registerClassPair(cl);
 	

@@ -160,7 +160,8 @@ _objc_class_for_object(id object, BOOL create)
 		
 		class_addMethod((Class)cl,
 						objc_cxx_destruct_selector,
-						(IMP)_objc_associated_object_cxx_destruct);
+						(IMP)_objc_associated_object_cxx_destruct,
+						sel_getTypes(objc_cxx_destruct_selector));
 	}
 	return (Class)cl;
 }

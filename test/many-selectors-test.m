@@ -38,7 +38,7 @@ void many_selectors_test(void){
 		
 		sel_size += objc_strlen(selBuffer);
 	}
-	objc_assert(class_addMethod(object_getClass([KKObject class]), nextSel, (IMP)x),
+	objc_assert(class_addMethod(object_getClass([KKObject class]), nextSel, (IMP)x, "@@:"),
 		   "Couldn't add method!");
 	objc_assert(cls == [KKObject class], "Wrong class!\n");
 	

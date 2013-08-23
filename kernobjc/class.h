@@ -77,8 +77,11 @@ void class_setVersion(Class theClass, int version);
  * this doesn't override it. This is due to the method lists being a linked
  * list and the new methods being attached to the end of the list
  * as well as maintaining behavior of other run-times.
+ *
+ * Note that the types are here merely for type checking. If they don't 
+ * correspond to the types of the selector, the runtime aborts.
  */
-BOOL class_addMethod(Class cls, SEL name, IMP imp);
+BOOL class_addMethod(Class cls, SEL name, IMP imp, const char *types);
 
 /*
  * Replaces a method implementation for another one.

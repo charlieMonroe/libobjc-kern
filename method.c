@@ -8,6 +8,7 @@
 #include "class.h"
 #include "private.h"
 #include "runtime.h"
+#include "utils.h"
 
 /*
  * Adds methods from the array 'm' into the method_list. The m array doesn't
@@ -121,13 +122,16 @@ method_setImplementation(Method m, IMP imp)
 #pragma mark Adding methods
 
 BOOL
-class_addMethod(Class cls, SEL selector, IMP imp)
+class_addMethod(Class cls, SEL selector, IMP imp, const char *types)
 {
 	if (cls == NULL || selector == null_selector || imp == NULL){
 		objc_debug_log("Not adding method to class %p as either IMP %p is NULL,"
 					   " or selector is null_selector [%d]\n", cls, imp, selector);
 		return NO;
 	}
+	
+	objc_assert(objc_strings_equal(sel_getTypes(selector), types),
+				"Registering method with incompatible types!\n");
 	
 	Method m = objc_method_create(selector, imp);
 	_add_methods(cls, &m, 1);
