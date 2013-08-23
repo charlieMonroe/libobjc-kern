@@ -511,7 +511,9 @@ objc_sync_enter(id obj)
 		return 0;
 	}
 	struct reference_list *list = _objc_ref_list_for_object(obj, YES);
-	return objc_rw_lock_wlock(&list->lock);
+	// TODO return
+	objc_rw_lock_wlock(&list->lock);
+	return 0;
 }
 
 int
