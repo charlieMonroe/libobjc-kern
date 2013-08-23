@@ -1,6 +1,7 @@
+#import "../kernobjc/runtime.h"
 #import "../os.h"
 #import "../utils.h"
-#import "../kernobjc/runtime.h"
+
 
 #ifdef __has_attribute
 #if __has_attribute(objc_root_class)
@@ -38,5 +39,4 @@ void property_introspection_test1(void){
 		}
 	}
 	objc_assert(0 == property_copyAttributeList(0, &count), "Couldn't copy attlist");
-	return 0;
 }

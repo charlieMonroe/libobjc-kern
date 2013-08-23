@@ -1,6 +1,6 @@
+#include "../kernobjc/runtime.h"
 #include "../os.h"
 #include "../utils.h"
-#include "../kernobjc/runtime.h"
 
 #pragma GCC diagnostic ignored "-Wobjc-property-no-attribute"
 
