@@ -60,6 +60,9 @@ static struct objc_slot* forward(id receiver, SEL selector)
 
 void forwarding_test(void);
 void forwarding_test(void){
+	void *old_proxy = objc_proxy_lookup;
+	void *old_forward = __objc_msg_forward3;
+	
 	objc_proxy_lookup = proxy_lookup;
 	__objc_msg_forward3 = forward;
 	
@@ -77,7 +80,7 @@ void forwarding_test(void){
 	objc_log("===================\n");
 	objc_log("Passed forwarding tests.\n\n");
 	
-	objc_proxy_lookup = NULL;
-	__objc_msg_forward3 = NULL;
+	objc_proxy_lookup = old_proxy;
+	__objc_msg_forward3 = old_forward;
 }
 
