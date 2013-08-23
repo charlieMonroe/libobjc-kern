@@ -435,7 +435,7 @@ static struct YorkshireTeaStruct* structDefault2Getter(id self, SEL _cmd) {
     return (struct YorkshireTeaStruct*)object_getIvar(self, ivar);
 }
 
-void structDefault2Setter(id self, SEL _cmd, struct YorkshireTeaStruct* value) {
+static void structDefault2Setter(id self, SEL _cmd, struct YorkshireTeaStruct* value) {
     Ivar ivar = class_getInstanceVariable(objc_getClass("PropertyTest"), "structDefault");
     object_setIvar(self, ivar, (id)value);
 }
