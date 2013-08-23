@@ -93,7 +93,7 @@ void message_send_test(void) {
 	assert(exceptionThrown && "An exception was thrown");
 	assert((id)0x42 == objc_msgSend(TestCls, @selector(foo)));
 	objc_msgSend(TestCls, @selector(nothing));
-	objc_msgSend(TestCls, @selector(missing));
+	objc_msgSend(TestCls, sel_registerName("missing", "@@:"));
 	assert(0 == objc_msgSend(0, @selector(nothing)));
 	id a = objc_msgSend(objc_getClass("MessageTest"), @selector(foo));
 	assert((id)0x42 == a);
