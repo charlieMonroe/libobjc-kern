@@ -390,6 +390,7 @@ PRIVATE void objc_send_initialize(id object)
 	if (class->flags.initialized)
 	{
 		OBJC_UNLOCK(&initialize_lock);
+		objc_sync_exit((id)meta);
 		return;
 	}
 	
@@ -431,6 +432,7 @@ PRIVATE void objc_send_initialize(id object)
 		class->dtable = class_dtable;
 		checkARCAccessors(class);
 		OBJC_UNLOCK(&initialize_lock);
+		objc_sync_exit((id)meta);
 		return;
 	}
 
