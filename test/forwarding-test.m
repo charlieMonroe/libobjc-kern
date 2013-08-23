@@ -62,6 +62,7 @@ void forwarding_test(void);
 void forwarding_test(void){
 	objc_proxy_lookup = proxy_lookup;
 	__objc_msg_forward3 = forward;
+	
 	target = [ForwardingTarget new];
 	id proxy = [Forward new];
 	[proxy foo: 42];
@@ -75,5 +76,8 @@ void forwarding_test(void){
 	
 	objc_log("===================\n");
 	objc_log("Passed forwarding tests.\n\n");
+	
+	objc_proxy_lookup = NULL;
+	__objc_msg_forward3 = NULL;
 }
 
