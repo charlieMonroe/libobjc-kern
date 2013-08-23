@@ -32,6 +32,8 @@ objc_register_small_object_class(Class cl, uintptr_t mask)
 {
 	if ((mask & OBJC_SMALL_OBJECT_MASK) != mask){
 		/* Wrong mask */
+		objc_debug_log("Trying to register a class with the wrong mask (%lx)",
+					   mask);
 		return NO;
 	}
 	
@@ -41,11 +43,19 @@ objc_register_small_object_class(Class cl, uintptr_t mask)
 			objc_small_object_classes[0] = cl;
 			return YES;
 		}
+		objc_debug_log("Cannot register class with mask (%lx) as there already"
+					   " is a class [%s] registered with this mask.\n",
+					   mask, class_getName(objc_small_object_classes[0]));
 		return NO;
 	}
 	
 	if (objc_small_object_classes[mask] == Nil){
 		objc_small_object_classes[mask] = cl;
+		return YES;
+	}else{
+		objc_debug_log("Cannot register class with mask (%lx) as there already"
+					   " is a class [%s] registered with this mask.\n",
+					   mask, class_getName(objc_small_object_classes[mask]));
 	}
 	return NO;
 }
