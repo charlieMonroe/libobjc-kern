@@ -330,7 +330,13 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	 * to reduce contention.  A hopscotch hash table starts to degrade in
 	 * performance at around 90% capacity, so stay below that.
 	 */
-	if (table->table_used > (0.8 * table->table_size))
+	
+	/* Since we cannot use floats in the kernel, measure the capacity in an int
+	 */
+	unsigned long used = (table->table_used * 100);
+	unsigned long size = table->table_size;
+	unsigned long percentage = used / size;
+	if (percentage >= 80)
 	{
 		PREFIX(_table_resize)(table);
 		MAP_TABLE_UNLOCK(&table->lock);
