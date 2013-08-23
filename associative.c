@@ -333,12 +333,14 @@ _objc_remove_associative_lists_for_object(id object)
 						      spin_lock,
 						      NO);
 		}
+		
+		objc_dealloc((void*)list->lock.name, M_FAKE_CLASS_TYPE);
 		objc_rw_lock_destroy(&list->lock);
 		_objc_remove_associative_list(NULL,
 					      list,
 					      spin_lock,
 					      YES);
-    *extra_space = NULL;
+		*extra_space = NULL;
 	}else{
 		struct objc_assoc_fake_class *cl;
 		cl = (struct objc_assoc_fake_class*)
@@ -455,11 +457,11 @@ objc_set_associated_object(id object, void *key, id value,
 	 * lock. Otherwise, keep it locked and unlock it after all the 
 	 * modification of ref.
 	 */
-  BOOL unlocked = NO;
+	BOOL unlocked = NO;
 	BOOL either_policy_atomic = _objc_is_policy_atomic(policy)
 				    || _objc_is_policy_atomic(ref->policy);
 	if (!either_policy_atomic){
-    unlocked = YES;
+		unlocked = YES;
 		objc_rw_lock_unlock(&list->lock);
 	}
 	
@@ -496,7 +498,7 @@ objc_set_associated_object(id object, void *key, id value,
 		objc_rw_lock_unlock(&list->lock);
 	}
   
-  objc_assert(unlocked,
+	objc_assert(unlocked,
               "The lock associated with object %p wasn't unloacked!\n", object);
 	
 }
@@ -519,6 +521,7 @@ objc_sync_exit(id obj)
 	}
 	struct reference_list *list = _objc_ref_list_for_object(obj, NO);
 	if (list == NULL){
+		objc_abort("Unlocking an object that obviously wasn't locked.\n");
 		return 0;
 	}
 	
