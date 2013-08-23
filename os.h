@@ -62,11 +62,6 @@ void objc_release_lock(void *x)
 	__attribute__((unused)) objc_rw_lock *lock_pointer = lock;	\
 	OBJC_LOCK(lock)
 
-#define OBJC_LOCK_OBJECT_FOR_SCOPE(obj)					\
-	__attribute__((cleanup(objc_release_object_lock)))		\
-	__attribute__((unused)) id lock_object_pointer = obj;		\
-	objc_sync_enter(obj);
-
 
 
 #endif /* !OBJC_OS_H_ */

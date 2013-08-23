@@ -307,13 +307,6 @@ __attribute__((unused)) static void objc_release_object_lock(id *x)
 {
 	objc_sync_exit(*x);
 }
-/*
- * Macro that is equivalent to @synchronize, for use in C code.
- */
-#define LOCK_OBJECT_FOR_SCOPE(obj) \
-	__attribute__((cleanup(objc_release_object_lock)))\
-	__attribute__((unused)) id lock_object_pointer = obj;\
-	objc_sync_enter(obj);
 
 /*
  * Remove a buffer from an entry in the initializing dtables list.  This is

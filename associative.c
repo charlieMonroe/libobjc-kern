@@ -522,6 +522,7 @@ objc_sync_exit(id obj)
 	if (obj == nil || objc_object_is_small_object(obj)){
 		return 0;
 	}
+	
 	struct reference_list *list = _objc_ref_list_for_object(obj, NO);
 	if (list == NULL){
 		objc_abort("Unlocking an object that obviously wasn't locked.\n");
