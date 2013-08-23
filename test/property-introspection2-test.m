@@ -1,6 +1,8 @@
 #include "../kernobjc/runtime.h"
 #include "../os.h"
 #include "../utils.h"
+#include "../private.h"
+#include "../KKObjects.h"
 
 #pragma GCC diagnostic ignored "-Wobjc-property-no-attribute"
 
@@ -10,6 +12,10 @@ typedef struct YorkshireTeaStruct YorkshireTeaStructType;
 
 #ifndef __has_attribute
 #define __has_attribute(x)  0
+#endif
+
+#ifndef __APPLE__
+	#define __APPLE__ 0
 #endif
 
 #if __has_attribute(objc_root_class)
@@ -614,7 +620,7 @@ void property_introspection_test2(void)
 	testPropertyForClass(testClass, "idRetain", "T@,&,V_idOther", ATTRS(ATTR("T", "@"),
                                                                         ATTR("&", ""),
                                                                         ATTR("V", "_idOther")));
-    id testValue = [Test new];
+    id testValue = [KKObject new];
     t.idRetain = testValue;
     assert(t->idRetain == testValue);
     assert(t->_idOther == nil);
@@ -624,7 +630,7 @@ void property_introspection_test2(void)
     method_setImplementation(idRetainSetter, method_getImplementation(idOtherSetter));
     idRetainSetter = class_getInstanceMethod(testClass, @selector(setIdRetain:));
     
-    id testValue2 = [Test new];
+    id testValue2 = [KKObject new];
     t.idRetain = testValue2;
     assert(t->idRetain == testValue);
     assert(t->_idOther == testValue2);
