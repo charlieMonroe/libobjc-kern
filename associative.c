@@ -186,8 +186,15 @@ _objc_ref_list_for_object(id object, BOOL create)
 			list = objc_zero_alloc(sizeof(struct reference_list),
 					       M_REFLIST_TYPE);
 			
+			/*
+			 * The lock names need to be unique, so we're actually allocating the
+			 * name. We have a common prefix, that is suffixed by the object's
+			 * class' name and a hex of the obj pointer.
+			 */
+			
 			objc_rw_lock_init(&list->lock,
-					  "objc_reference_list_lock");
+							  _objc_unique_lock_name_for_object(object, cl));
+//					  "objc_reference_list_lock");
 			
 			*extra_space = list;
 		}

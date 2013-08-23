@@ -407,7 +407,7 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
 {
 	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
 	
-  objc_debug_log("Registering selectors from array[%i]: %p\n", count, selectors);
+	objc_debug_log("Registering selectors from array[%i]: %p\n", count, selectors);
   
 	for (int i = 0; i < count; ++i){
 		struct objc_selector_reference *selector = &selectors[i];
