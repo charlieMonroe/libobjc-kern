@@ -31,14 +31,18 @@ static inline const char *objc_rw_lock_get_name(objc_rw_lock *lock){
 static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
 	sx_init_flags(lock, name, SX_RECURSE);
 }
+#define objc_rw_lock_rlock(lock) sx_slock(lock)
+/*
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
 	sx_slock(lock);
 	return 0;
 }
-static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
+ */
+#define objc_rw_lock_wlock(lock) sx_xlock(lock)
+/*static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
 	sx_xlock(lock);
 	return 0;
-}
+}*/
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	sx_unlock(lock);
 	return 0;
