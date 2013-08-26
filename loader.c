@@ -84,7 +84,7 @@ _objc_load_kernel_module(struct module *module)
 	struct objc_loader_module **end = NULL;
 	int count = 0;
 	
-	linker_file_lookup_set(file, "objc_module_list_set", &start, &stop, &count);
+	linker_file_lookup_set(file, "objc_module_list_set", &begin, &end, &count);
 	
 	if (count == 0){
 		objc_debug_log("Couldn't find any ObjC data for module %s!\n",
