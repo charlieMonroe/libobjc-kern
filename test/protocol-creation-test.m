@@ -10,7 +10,7 @@ void protocol_creation_test(void)
 	Protocol *p = objc_allocateProtocol("Test");
 	
 	/* Mustn't use @selector since no such selector exists. */
-	protocol_addMethodDescription(p, sel_registerName("someMethod", "@:"), "@:", YES, NO);
+	protocol_addMethodDescription(p, sel_registerName("someMethod", "v@:"), "@:", YES, NO);
 	objc_assert(objc_getProtocol("Test2"), "Couldn't get protocol Test2\n");
 	protocol_addProtocol(p, objc_getProtocol("Test2"));
 	objc_property_attribute_t attrs[] = { {"T", "@" }, {"V", "foo"} };
@@ -23,7 +23,7 @@ void protocol_creation_test(void)
 	struct objc_method_description d = protocol_getMethodDescription(p1, @selector(someMethod), YES, NO);
 	
 	objc_assert(objc_strings_equal(sel_getName(d.selector), "someMethod"), "Names not equal!\n");
-	objc_assert(objc_strings_equal((d.selector_types), "@:"), "Types not equal!\n");
+	objc_assert(objc_strings_equal((d.selector_types), "v@:"), "Types not equal!\n");
 	objc_assert(protocol_conformsToProtocol(p1, objc_getProtocol("Test2")), "Protocols do not conform!\n");
 	
 	unsigned int count;
