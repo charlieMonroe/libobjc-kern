@@ -98,6 +98,7 @@ void protocol_creation_test(void);
 void many_selectors_test(void);
 void runtime_test(void);
 void category_test(void);
+void load_test(void);
 
 void run_tests(void);
 void run_tests(void)
@@ -117,6 +118,7 @@ void run_tests(void)
 	protocol_creation_test();
 	runtime_test();
 	category_test();
+	load_test();
 	
 	//property_introspection_test2();
 	

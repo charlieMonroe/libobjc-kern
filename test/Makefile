@@ -23,7 +23,8 @@ SRCS	= ao-test.m \
 		protocol-creation-test.m \
 		runtime-test.m \
 		many-selectors-test.m \
-		category-test.m
+		category-test.m \
+		load-test.m
 
 .include <bsd.kmod.mk>
 

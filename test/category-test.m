@@ -26,5 +26,9 @@ void category_test(void)
 	objc_assert(didSomethingCrazy, "Category method not invoked!\n")
 	
 	[obj release];
+	
+	
+	objc_log("===================\n");
+	objc_log("Passed category test.\n\n");
 }
 

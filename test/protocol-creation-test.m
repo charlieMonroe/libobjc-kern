@@ -27,4 +27,7 @@ void protocol_creation_test(void)
 	
 	objc_assert(count == 1, "Count not zero!\n");
 	objc_assert(objc_strings_equal("T@,Vfoo", property_getAttributes(*props)), "Property attributes do not equal!\n");
+	
+	objc_log("===================\n");
+	objc_log("Passed protocol creation test.\n\n");
 }

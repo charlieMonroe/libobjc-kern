@@ -643,6 +643,14 @@ objc_class_register_classes(Class *cl, unsigned int count)
 	for (int i = 0; i < count; ++i){
 		objc_class_register_class(cl[i]);
 	}
+	
+	for (int i = 0; i < count; ++i){
+		/* Try to immediately resolve classes. */
+		objc_class_resolve(cl[i]);
+	}
+	
+	/* The classes we needed might have been just loaded. */
+	objc_class_resolve_links();
 }
 
 #pragma mark -

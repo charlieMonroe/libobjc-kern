@@ -303,4 +303,9 @@ void runtime_test(void)
   testExceptions();
 
   objc_assert(exitStatus == 0, "Exit status != 0\n");
+	
+	
+	objc_log("===================\n");
+	objc_log("Passed runtime test.\n\n");
+	
 }
