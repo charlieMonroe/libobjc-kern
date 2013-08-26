@@ -11,7 +11,7 @@ void protocol_creation_test(void)
 	
 	/* Mustn't use @selector since no such selector exists. */
 	protocol_addMethodDescription(p, sel_registerName("someMethod", "v@:"), "v@:", YES, NO);
-	objc_assert(objc_getProtocol("Test2"), "Couldn't get protocol Test2\n");
+	objc_assert(objc_getProtocol("Test2") != NULL, "Couldn't get protocol Test2\n");
 	protocol_addProtocol(p, objc_getProtocol("Test2"));
 	objc_property_attribute_t attrs[] = { {"T", "@" }, {"V", "foo"} };
 	protocol_addProperty(p, "foo", attrs, 2, YES, YES);
