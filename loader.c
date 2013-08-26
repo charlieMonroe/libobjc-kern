@@ -34,7 +34,7 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module){
 	objc_register_selector_array(table->selector_references,
 								 table->selector_reference_count);
 	
-#if DEBUG
+#if OBJC_DEBUG_LOG
 	for (int i = 0; i < table->class_count; ++i){
 		objc_debug_log("Should be registering class[%i; %p] %s\n", i,
 					   table->classes[i],
