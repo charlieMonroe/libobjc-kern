@@ -109,6 +109,10 @@ struct objc_protocol {
 	
 	objc_property_list *properties;
 	objc_property_list *optional_properties;
+	
+	struct {
+		BOOL user_created : 1;
+	} flags;
 };
 
 

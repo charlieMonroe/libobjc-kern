@@ -460,6 +460,7 @@ objc_allocateProtocol(const char *name)
 	}
 	Protocol *p = objc_zero_alloc(sizeof(Protocol), M_PROTOCOL_TYPE);
 	p->name = objc_strcpy(name);
+  p->flags.user_created = YES;
 	return p;
 }
 
@@ -568,9 +569,13 @@ objc_protocol_init(void)
 static void
 __objc_protocol_dealloc(Protocol *protocol)
 {
+  if (!protocol->flags.user_created){
+    /* Don't free something that's not created by the user. */
+    return;
+  }
+  
 	objc_debug_log("Deallocating protocol %s\n", protocol->name);
 	
-	// TODO Allocated vs. supplied by loader
 	objc_method_description_list_free(protocol->class_methods);
 	objc_method_description_list_free(protocol->instance_methods);
 	objc_method_description_list_free(protocol->optional_class_methods);

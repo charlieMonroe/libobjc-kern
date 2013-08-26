@@ -748,6 +748,17 @@ namespace {
     /// Returns the variable used to store the offset of an instance variable.
     llvm::GlobalVariable *ObjCIvarOffsetVariable(const ObjCInterfaceDecl *ID,
                                                  const ObjCIvarDecl *Ivar);
+    
+    /// Generates a protocol structure for that particular runtime.
+    virtual llvm::Constant *GenerateProtocolStructure(llvm::Constant *isa,
+                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolList,
+                                                      llvm::Constant *InstanceMethodList,
+                                                      llvm::Constant *ClassMethodList,
+                                                      llvm::Constant *OptionalInstanceMethodList,
+                                                      llvm::Constant *OptionalClassMethodList,
+                                                      llvm::Constant *PropertyList,
+                                                      llvm::Constant *OptionalPropertyList);
   };
   
   
@@ -1851,6 +1862,16 @@ namespace {
                                                    llvm::Constant *IvarOffsets,
                                                    llvm::Constant *Properties,
                                                    bool isMeta=false);
+    
+    virtual llvm::Constant *GenerateProtocolStructure(llvm::Constant *isa,
+                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolList,
+                                                      llvm::Constant *InstanceMethodList,
+                                                      llvm::Constant *ClassMethodList,
+                                                      llvm::Constant *OptionalInstanceMethodList,
+                                                      llvm::Constant *OptionalClassMethodList,
+                                                      llvm::Constant *PropertyList,
+                                                      llvm::Constant *OptionalPropertyList);
     
     virtual llvm::Function *ModuleInitFunction();
     
@@ -3188,6 +3209,33 @@ GenerateProtocol(const ObjCProtocolDecl *PD) {
                                                                   llvm::GlobalValue::InternalLinkage, OptionalPropertyListInit,
                                                                   ".objc_property_list");
   
+  llvm::Constant *isa = llvm::ConstantExpr::getIntToPtr(
+                                                        llvm::ConstantInt::get(Int32Ty, ProtocolVersion), IdTy);
+  llvm::Constant *ProtocolStructure = GenerateProtocolStructure(isa,
+                                                                ProtocolName,
+                                                                ProtocolList,
+                                                                InstanceMethodList,
+                                                                ClassMethodList,
+                                                                OptionalInstanceMethodList,
+                                                                OptionalClassMethodList,
+                                                                PropertyList,
+                                                                OptionalPropertyList);
+  
+  ExistingProtocols[ProtocolName] =
+  llvm::ConstantExpr::getBitCast(ProtocolStructure, IdTy);
+}
+
+template<class SelectorType>
+llvm::Constant *CGObjCNonMacBase<SelectorType>::
+GenerateProtocolStructure(llvm::Constant *isa,
+                          std::string &ProtocolName,
+                          llvm::Constant *ProtocolList,
+                          llvm::Constant *InstanceMethodList,
+                          llvm::Constant *ClassMethodList,
+                          llvm::Constant *OptionalInstanceMethodList,
+                          llvm::Constant *OptionalClassMethodList,
+                          llvm::Constant *PropertyList,
+                          llvm::Constant *OptionalPropertyList) {
   // Protocols are objects containing lists of the methods implemented and
   // protocols adopted.
   llvm::StructType *ProtocolTy = llvm::StructType::get(IdTy,
@@ -3203,8 +3251,7 @@ GenerateProtocol(const ObjCProtocolDecl *PD) {
   std::vector<llvm::Constant*> Elements;
   // The isa pointer must be set to a magic number so the runtime knows it's
   // the correct layout.
-  Elements.push_back(llvm::ConstantExpr::getIntToPtr(
-                                                     llvm::ConstantInt::get(Int32Ty, ProtocolVersion), IdTy));
+  Elements.push_back(isa);
   Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
   Elements.push_back(ProtocolList);
   Elements.push_back(InstanceMethodList);
@@ -3213,9 +3260,59 @@ GenerateProtocol(const ObjCProtocolDecl *PD) {
   Elements.push_back(OptionalClassMethodList);
   Elements.push_back(PropertyList);
   Elements.push_back(OptionalPropertyList);
-  ExistingProtocols[ProtocolName] =
-  llvm::ConstantExpr::getBitCast(MakeGlobal(ProtocolTy, Elements,
-                                            ".objc_protocol"), IdTy);
+  
+  return MakeGlobal(ProtocolTy, Elements, ".objc_protocol");
+}
+
+llvm::Constant *CGObjCKern::GenerateProtocolStructure(llvm::Constant *isa,
+                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolList,
+                                                      llvm::Constant *InstanceMethodList,
+                                                      llvm::Constant *ClassMethodList,
+                                                      llvm::Constant *OptionalInstanceMethodList,
+                                                      llvm::Constant *OptionalClassMethodList,
+                                                      llvm::Constant *PropertyList,
+                                                      llvm::Constant *OptionalPropertyList) {
+  
+  
+  llvm::StructType *ProtocolFlagsStructTy = llvm::StructType::get(
+                                                                  IntegerBit, // user_created
+                                                                  NULL
+                                                                  );
+  
+  // Protocols are objects containing lists of the methods implemented and
+  // protocols adopted.
+  llvm::StructType *ProtocolTy = llvm::StructType::get(IdTy,
+                                                       PtrToInt8Ty,
+                                                       ProtocolList->getType(),
+                                                       InstanceMethodList->getType(),
+                                                       ClassMethodList->getType(),
+                                                       OptionalInstanceMethodList->getType(),
+                                                       OptionalClassMethodList->getType(),
+                                                       PropertyList->getType(),
+                                                       OptionalPropertyList->getType(),
+                                                       ProtocolFlagsStructTy,
+                                                       NULL);
+  std::vector<llvm::Constant*> Elements;
+  // The isa pointer must be set to a magic number so the runtime knows it's
+  // the correct layout.
+  Elements.push_back(isa);
+  Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
+  Elements.push_back(ProtocolList);
+  Elements.push_back(InstanceMethodList);
+  Elements.push_back(ClassMethodList);
+  Elements.push_back(OptionalInstanceMethodList);
+  Elements.push_back(OptionalClassMethodList);
+  Elements.push_back(PropertyList);
+  Elements.push_back(OptionalPropertyList);
+  
+  // .flags
+  std::vector<llvm::Constant*> FlagElements;
+  FlagElements.push_back(llvm::ConstantInt::get(IntegerBit, 0)); // user_created
+  
+  Elements.push_back(llvm::ConstantStruct::get(ProtocolFlagsStructTy, FlagElements));
+  
+  return MakeGlobal(ProtocolTy, Elements, ".objc_protocol");
 }
 
 template<class SelectorType>
