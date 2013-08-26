@@ -205,6 +205,17 @@ objc_getProtocol(const char *name)
 	if (name == NULL){
 		return NULL;
 	}
+	
+	objc_debug_log("Getting protocol %s\n", name);
+	for (unsigned int i = 0; i < objc_protocols->table_size; ++i){
+		if (objc_protocols->table[i].value != NULL){
+			objc_debug_log("\t\t protocol [%02d] --> %p [%s]\n", i,
+						   objc_protocols->table[i].value,
+						   objc_protocols->table[i].value->name);
+		}
+	}
+	
+	
 	return objc_protocol_table_get(objc_protocols, name);
 }
 
