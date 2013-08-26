@@ -115,7 +115,7 @@ static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
 	pthread_setspecific(key, data);
 }
 
-static inline objc_sleep(int secs){
+static inline void objc_sleep(int secs){
 	sleep(secs);
 }
 
