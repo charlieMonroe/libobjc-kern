@@ -185,7 +185,7 @@ static void testInvalidArguments()
   test(stringsEqual("<null selector>", sel_getName((SEL)0)));
   test(YES == sel_isEqual((SEL)0, (SEL)0));
 
-  //test(NULL == property_getName(NULL));
+  test(NULL == property_getName(NULL));
 
   objc_log("testInvalidArguments() ran\n");
 }

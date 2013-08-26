@@ -408,6 +408,10 @@ object_setClass(id obj, Class new_class)
 id
 class_createInstance(Class cl, size_t extraBytes)
 {
+	if (cl == Nil){
+		return nil;
+	}
+	
 	if (!cl->flags.resolved){
 		objc_log("Trying to create an instance of unfinished class"
 			 " (%s).", cl->name);
@@ -616,6 +620,10 @@ class_addIvar(Class cls, const char *name, size_t size,
 Ivar
 class_getInstanceVariable(Class cls, const char *name)
 {
+	if (cls == Nil){
+		return NULL;
+	}
+	
 	cls = objc_class_get_nonfake_inline(cls);
 	return _ivar_named(cls, name);
 }
@@ -623,6 +631,10 @@ class_getInstanceVariable(Class cls, const char *name)
 Ivar *
 class_copyIvarList(Class cl, unsigned int *outCount)
 {
+	if (cl == Nil){
+		return NULL;
+	}
+	
 	cl = objc_class_get_nonfake_inline(cl);
 	unsigned int number_of_ivars = _ivar_count(cl);
 	if (number_of_ivars == 0){

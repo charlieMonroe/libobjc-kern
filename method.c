@@ -84,7 +84,9 @@ objc_method_create(SEL selector, IMP implementation)
 IMP
 method_getImplementation(Method method)
 {
-	objc_assert(method != NULL, "Getting implementation of NULL method!");
+	if (method == NULL){
+		return NULL;
+	}
 	return method->implementation;
 }
 

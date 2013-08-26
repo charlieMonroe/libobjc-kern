@@ -229,10 +229,14 @@ Property *class_copyPropertyList(Class cls, unsigned int *outCount)
 	if (cls == Nil || cls->properties == NULL || cls->properties->size == 0){
 		objc_debug_log("Returning NULL property list since the class [%p;%s%s] has"
 					   " either no properties (%p) or the list is empty (%d)\n",
-					   cls, class_getName(cls), cls->flags.meta ? "[meta]" : "",
-					   cls->properties,
-					   cls->properties == NULL ? 0 : cls->properties->size);
-		*outCount = 0;
+					   cls, class_getName(cls), cls == NULL ? "" :
+					   (cls->flags.meta ? "[meta]" : ""),
+					   cls == NULL ? NULL : cls->properties,
+					   cls == NULL ? 0 : (cls->properties == NULL ? 0 :
+										  cls->properties->size));
+		if (outCount != NULL){
+			*outCount = 0;
+		}
 		return NULL;
 	}
 	return objc_property_list_copy_list(cls->properties, outCount);

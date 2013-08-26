@@ -1,12 +1,15 @@
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#include <sys/module.h>
-#include <sys/param.h>
-#include <sys/module.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
-#include <sys/linker.h>
-#include <sys/limits.h>
+
+#ifdef _KERNEL
+	#include <sys/types.h>
+	#include <sys/cdefs.h>
+	#include <sys/module.h>
+	#include <sys/param.h>
+	#include <sys/module.h>
+	#include <sys/kernel.h>
+	#include <sys/systm.h>
+	#include <sys/linker.h>
+	#include <sys/limits.h>
+#endif
 
 #include "../kernobjc/runtime.h"
 #include "../types.h"
@@ -104,7 +107,8 @@ void run_tests(void);
 void run_tests(void)
 {
 	list_classes();
-	
+
+	/*
 	associated_objects_test();
 	weak_ref_test();
 	ivar_test();
@@ -115,6 +119,7 @@ void run_tests(void)
 	message_send_test();
 	property_test();
 	property_introspection_test1();
+	 */
 	protocol_creation_test();
 	runtime_test();
 	category_test();
@@ -129,6 +134,8 @@ void run_tests(void)
 	printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 }
+
+#ifdef _KERNEL
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -162,4 +169,4 @@ MODULE_DEPEND(libobjc_test, libobjc, 0, 0, 999);
 
 
 
-
+#endif

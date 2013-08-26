@@ -2,7 +2,7 @@
 #ifndef OBJC_PROTOTYPES_H
 #define OBJC_PROTOTYPES_H
 
-#if _KERNEL
+#ifdef _KERNEL
 	#include <sys/types.h>
 	#include <sys/cdefs.h>
 	#include <sys/module.h>
@@ -28,15 +28,21 @@ struct objc_symbol_table {
 	
 	/* Number of classes. */
 	unsigned short                    class_count;
-  
-  /* Actual class list. */
-  struct objc_class                 **classes;
-  
-  /* Number of categories. */
-	unsigned short					category_count;
 	
-  /* Actual list of categories. */
-  struct objc_category    **categories;
+	/* Actual class list. */
+	struct objc_class                 **classes;
+	
+	/* Number of categories. */
+	unsigned short					  category_count;
+	
+	/* Actual list of categories. */
+	struct objc_category			  **categories;
+	
+	/* Number of protocols. */
+	unsigned short					  protocol_count;
+	
+	/* Number of protocols. */
+	struct objc_protocol			  **protocols;
 };
 
 struct objc_loader_module {
@@ -56,8 +62,8 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module);
 PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
                                 struct objc_loader_module **end);
 
-#if _KERNEL
-/* 
+#ifdef _KERNEL
+/*
  * Finds the ObjC modules for the kernel module and loads them. Returns YES
  * if anything was loaded.
  */

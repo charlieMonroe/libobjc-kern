@@ -353,8 +353,8 @@ protocol_copyPropertyList(Protocol *protocol, unsigned int *outCount)
 	objc_property_list *list;
 	objc_property_list *optional_list;
 	
-	list = *_objc_protocol_get_property_list_ptr(protocol, YES, NO);
-	optional_list = *_objc_protocol_get_property_list_ptr(protocol, NO, NO);
+	list = *_objc_protocol_get_property_list_ptr(protocol, YES, YES);
+	optional_list = *_objc_protocol_get_property_list_ptr(protocol, NO, YES);
 	
 	unsigned int list_size = list == NULL ? 0 : list->size;
 	unsigned int optional_list_size = optional_list == NULL ? 0 : list->size;

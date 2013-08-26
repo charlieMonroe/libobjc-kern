@@ -4215,7 +4215,9 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                               PtrToInt8Ty, // Class list
                                               Int16Ty, // Category count
                                               PtrToInt8Ty, // Categories list
-                                              NULL // TODO class and cat defs
+                                              Int16Ty, // Protocol count
+                                              PtrToInt8Ty, // Protocol list
+                                              NULL
                                               );
   PtrToSymbolTableStructTy = llvm::PointerType::getUnqual(SymbolTableStructTy);
   ModuleStructTy = llvm::StructType::get(PtrToInt8Ty, // Module Name
@@ -4281,6 +4283,16 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
                                                    ".objc_class_list");
   Elements.push_back(llvm::ConstantExpr::getBitCast(CategoriesList,
                                                     PtrToInt8Ty));
+  
+  Elements.push_back(llvm::ConstantInt::get(Int16Ty, ExistingProtocols.size()));
+  
+  std::vector<llvm::Constant*> Protocols;
+  for (llvm::StringMap<llvm::Constant*>::iterator i = ExistingProtocols.begin();
+       i != ExistingProtocols.end(); ++i){
+    Protocols.push_back(i->second);
+  }
+  llvm::Constant *ProtocolList = MakeGlobalArray(IdTy, Protocols);
+  Elements.push_back(llvm::ConstantExpr::getBitCast(ProtocolList, PtrToInt8Ty));
   
   llvm::Constant *SymbolTable = MakeGlobal(SymbolTableStructTy, Elements);
   Elements.clear();

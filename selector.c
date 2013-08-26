@@ -318,7 +318,7 @@ const char *
 sel_getName(SEL selector)
 {
 	if (selector == 0){
-		return "((null))";
+		return "<null selector>";
 	}
 	
 	/*
