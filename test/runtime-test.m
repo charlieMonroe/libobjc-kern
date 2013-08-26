@@ -50,9 +50,12 @@ __attribute__((objc_root_class))
 {
 	if (refcount == 0)
 	{
+		refcount--;
 		object_dispose(self);
+	}else{
+		refcount--;
 	}
-	refcount--;
+
 }
 - (id)retain
 {
