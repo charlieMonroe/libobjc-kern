@@ -93,5 +93,6 @@ _objc_load_kernel_module(struct module *module)
 	}
 	
 	_objc_load_modules(begin, end);
+	return YES;
 }
 #endif
