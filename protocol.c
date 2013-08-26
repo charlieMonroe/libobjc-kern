@@ -477,6 +477,10 @@ objc_registerProtocol(Protocol *protocol)
 		return;
 	}
 	
+	if (objc_protocol_class == Nil){
+		objc_protocol_class = (Class)objc_getClass("Protocol");
+	}
+	
 	protocol->isa = objc_protocol_class;
 	objc_protocol_insert(objc_protocols, protocol);
 }

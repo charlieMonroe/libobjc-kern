@@ -9,8 +9,8 @@
 __attribute__((objc_root_class))
 #endif
 @interface KKObject {
-  id isa;
-  int retain_count;
+	id isa;
+	int retain_count;
 }
 
 +(id)alloc;
@@ -32,14 +32,30 @@ __attribute__((objc_root_class))
 
 
 @interface _KKConstString : KKObject {
-  const char *_cString;
-  unsigned int _length;
+	const char *_cString;
+	unsigned int _length;
 }
 
 -(const char*)cString;
 -(unsigned int)length;
 
 @end
+
+
+/**
+ * Definition of the Protocol type.  Protocols are objects, but are rarely used
+ * as such.
+ */
+@interface Protocol : KKObject
+{
+@public
+	OBJC_PROTOCOL_FIELDS;
+}
+
+@end
+
+
+
 
 
 

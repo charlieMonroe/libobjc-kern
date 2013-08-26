@@ -118,3 +118,20 @@
 }
 
 @end
+
+
+@implementation Protocol
+- (BOOL)conformsTo:(Protocol*)p
+{
+	return protocol_conformsToProtocol(self, p);
+}
+- (id)retain
+{
+	return self;
+}
+- (void)release {}
++ (Class)class { return self; }
+- (id)self { return self; }
+@end
+
+

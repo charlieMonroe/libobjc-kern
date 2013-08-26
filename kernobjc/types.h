@@ -96,23 +96,31 @@ typedef struct {
 } objc_property_attribute_t;
 
 
+#define OBJC_PROTOCOL_FIELDS												\
+		const char *name;													\
+																			\
+		objc_protocol_list *protocols; /* other protocols */				\
+		objc_method_description_list *instance_methods;						\
+		objc_method_description_list *class_methods;						\
+																			\
+		objc_method_description_list *optional_instance_methods;			\
+		objc_method_description_list *optional_class_methods;				\
+																			\
+		objc_property_list *properties;										\
+		objc_property_list *optional_properties;							\
+																			\
+		struct {															\
+			BOOL user_created : 1;											\
+		} flags;															
+
+
 struct objc_protocol {
+	/* The fields in KKObject */
 	Class isa;
-	const char *name;
+	int retain_count;
 	
-	objc_protocol_list *protocols; /* other protocols */
-	objc_method_description_list *instance_methods;
-	objc_method_description_list *class_methods;
-	
-	objc_method_description_list *optional_instance_methods;
-	objc_method_description_list *optional_class_methods;
-	
-	objc_property_list *properties;
-	objc_property_list *optional_properties;
-	
-	struct {
-		BOOL user_created : 1;
-	} flags;
+	/* Protocol fields. */
+	OBJC_PROTOCOL_FIELDS;
 };
 
 

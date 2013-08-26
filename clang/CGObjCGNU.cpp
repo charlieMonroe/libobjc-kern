@@ -3283,6 +3283,7 @@ llvm::Constant *CGObjCKern::GenerateProtocolStructure(llvm::Constant *isa,
   // Protocols are objects containing lists of the methods implemented and
   // protocols adopted.
   llvm::StructType *ProtocolTy = llvm::StructType::get(IdTy,
+                                                       IntTy, // KKObject's retain count
                                                        PtrToInt8Ty,
                                                        ProtocolList->getType(),
                                                        InstanceMethodList->getType(),
@@ -3297,6 +3298,7 @@ llvm::Constant *CGObjCKern::GenerateProtocolStructure(llvm::Constant *isa,
   // The isa pointer must be set to a magic number so the runtime knows it's
   // the correct layout.
   Elements.push_back(isa);
+  Elements.push_back(llvm::ConstantInt::get(IntTy, 0)); // retain count
   Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
   Elements.push_back(ProtocolList);
   Elements.push_back(InstanceMethodList);
