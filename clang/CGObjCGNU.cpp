@@ -423,6 +423,11 @@ namespace {
     virtual const char *GetConstantStringClassName(void){
       return "NXConstantString";
     }
+	  
+	  /// Returns the type of linkage for constant string class
+	  virtual llvm::GlobalValue::LinkageTypes GetConstantStringClassLinkage(void){
+		  return llvm::GlobalValue::ExternalWeakLinkage;
+	  }
     
     
   protected:
@@ -1865,6 +1870,10 @@ namespace {
       return "_KKConstString";
     }
     
+    virtual llvm::GlobalValue::LinkageTypes GetConstantStringClassLinkage(void){
+      return llvm::GlobalValue::ExternalLinkage;
+    }
+    
 #pragma mark CGObjCKern Unreachables
     
     virtual llvm::Value * EmitObjCWeakRead(CodeGenFunction &CGF,
@@ -2125,7 +2134,7 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateConstantString(const Str
   
   if (!isa)
     isa = new llvm::GlobalVariable(TheModule, IdTy, /* isConstant */false,
-                                   llvm::GlobalValue::ExternalWeakLinkage, 0, Sym);
+                                   GetConstantStringClassLinkage(), 0, Sym);
   else if (isa->getType() != PtrToIdTy)
     isa = llvm::ConstantExpr::getBitCast(isa, PtrToIdTy);
   

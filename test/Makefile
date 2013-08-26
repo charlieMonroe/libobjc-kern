@@ -22,7 +22,8 @@ SRCS	= ao-test.m \
 		property-introspection2-test.m \
 		protocol-creation-test.m \
 		runtime-test.m \
-		many-selectors-test.m
+		many-selectors-test.m \
+		category-test.m
 
 .include <bsd.kmod.mk>
 

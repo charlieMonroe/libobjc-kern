@@ -1,16 +1,30 @@
+#import "../KKObjects.h"
 
-#define OBJC_HAS_CATEGORIES_EXTENSION 1
-#include "testing.h"
+BOOL didSomethingCrazy = NO;
 
-GENERATE_TEST(category, "MySubclass", {}, DISPATCH_ITERATIONS, {
-	SEL selector = NULL;
-	IMP impl = NULL;
-	OBJC_GET_IMP((id)instance, "incrementViaCategoryMethod", selector, impl);
-	impl((id)instance, selector);
-}, (*((int*)(objc_object_get_variable((id)instance, objc_class_get_ivar(objc_getClass("MySubclass"), "i")))) == DISPATCH_ITERATIONS))
+@interface KKObject (Additions)
 
-int main(int argc, const char * argv[]){
-	register_classes();
-	perform_tests(category_test);
-	return 0;
+-(void)doSomethingCrazy;
+
+@end
+
+@implementation KKObject (Additions)
+
+-(void)doSomethingCrazy{
+	didSomethingCrazy = YES;
 }
+
+@end
+
+
+void category_test(void);
+void category_test(void)
+{
+	KKObject *obj = [KKObject new];
+	
+	[obj doSomethingCrazy];
+	objc_assert(didSomethingCrazy, "Category method not invoked!\n")
+	
+	[obj release];
+}
+
