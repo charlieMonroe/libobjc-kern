@@ -49,14 +49,18 @@ struct objc_ivar {
 
 struct objc_property {
 	const char	*name;
-	const char	*getter_name;
-	const char	*setter_name;
-	
-	const char	*getter_types;
-	const char	*setter_types;
-	
+
 	char        attributes;
 	char        attributes2;
+
+	char		unused1;
+	char		unused2;
+	
+	const char	*getter_name;
+	const char	*getter_types;
+	
+	const char	*setter_name;
+	const char	*setter_types;
 };
 
 

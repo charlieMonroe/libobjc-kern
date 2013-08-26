@@ -374,6 +374,12 @@ sel_getNamed(const char *name)
 	objc_abort("No selector named %s found!\n", name);
 }
 
+BOOL
+sel_isEqual(SEL sel1, SEL sel2)
+{
+	return sel1 == sel2; /* Simple comparison */
+}
+
 PRIVATE void
 objc_register_selectors_from_method_list(objc_method_list *list)
 {

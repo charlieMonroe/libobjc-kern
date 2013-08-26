@@ -14,6 +14,11 @@
 	return class_createInstance((Class)self, 0);
 }
 
++(void)load
+{
+	objc_abort("Loading");
+}
+
 +(id)new
 {
 	return [[self alloc] init];

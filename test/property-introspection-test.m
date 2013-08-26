@@ -34,9 +34,12 @@ void property_introspection_test1(void){
 			case 'C': assert(objc_strings_equal(l[i].value, "")); break;
 			case 'N': assert(objc_strings_equal(l[i].value, "")); break;
 			case 'G': assert(objc_strings_equal(l[i].value, "bar")); break;
-			case 'S': assert(objc_strings_equal(l[i].value, "setBar:")); break;
+			case 'S': objc_assert(objc_strings_equal(l[i].value, "setBar:"), "Found %s\n", l[i].value); break;
 			case 'B': assert(objc_strings_equal(l[i].value, "foo")); break;
 		}
 	}
 	objc_assert(0 == property_copyAttributeList(0, &count), "Couldn't copy attlist");
+    
+    objc_log("===================\n");
+	objc_log("Passed property introspection test 1.\n\n");
 }

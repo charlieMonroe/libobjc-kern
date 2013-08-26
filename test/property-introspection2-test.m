@@ -239,6 +239,8 @@ static void testPropertyForProperty(objc_property_t p,
 									objc_property_attribute_t* list,
 									unsigned int size)
 {
+	objc_debug_log("Testing property %s\n", name);
+	
 	assert(0 != p);
 	assert(objc_strings_equal(name, property_getName(p)));
 	const char *attrs = property_getAttributes(p);
@@ -247,7 +249,7 @@ static void testPropertyForProperty(objc_property_t p,
 	unsigned int attrsCount = 0;
 	objc_property_attribute_t *attrsList = property_copyAttributeList(p, &attrsCount);
 	assert(0 != attrsList);
-    assert(attrsCount == size);
+    objc_assert(attrsCount == size, "%d vs %d\n", attrsCount, size);
     for (unsigned int index=0; index<size; index++) {
         int found = 0;
         for (unsigned int attrsIndex=0; attrsIndex<attrsCount; attrsIndex++) {
@@ -263,7 +265,7 @@ static void testPropertyForProperty(objc_property_t p,
 	assert(0 != attrsList);
 	objc_property_attribute_t *ra;
 	for (attrsCount = 0, ra = attrsList; ra->name != NULL; attrsCount++, ra++) {}
-    assert(attrsCount == size);
+    objc_assert(attrsCount == size, "%d vs %d\n", attrsCount, size);
 	objc_dealloc(attrsList, M_PROPERTY_TYPE);
     for (unsigned int index=0; index<size; index++) {
         const char* value = property_copyAttributeValue(p, list[index].name);
@@ -634,4 +636,7 @@ void property_introspection_test2(void)
     t.idRetain = testValue2;
     assert(t->idRetain == testValue);
     assert(t->_idOther == testValue2);
+    
+    objc_log("===================\n");
+	objc_log("Passed property introspection test 2.\n\n");
 }

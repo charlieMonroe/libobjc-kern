@@ -686,3 +686,21 @@ object_setIvar(id obj, Ivar ivar, id value)
 	*(id*)var_ptr = value;
 }
 
+
+const char *
+ivar_getName(Ivar v)
+{
+	return v == NULL ? NULL : v->name;
+}
+
+ptrdiff_t
+ivar_getOffset(Ivar v)
+{
+	return v == NULL ? 0 : v->offset;
+}
+
+const char *
+ivar_getTypeEncoding(Ivar v)
+{
+	return v == NULL ? NULL : v->type;
+}

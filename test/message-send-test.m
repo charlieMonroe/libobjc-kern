@@ -120,4 +120,7 @@ void message_send_test(void) {
 	}
 	Fake *f = nil;
 	assert(0 == [f izero]);
+    
+    objc_log("===================\n");
+	objc_log("Passed message send tests.\n\n");
 }

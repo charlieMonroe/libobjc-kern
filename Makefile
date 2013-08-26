@@ -41,6 +41,8 @@ SRCS	= kernel_module.c \
 		test/property-test.m \
 		test/property-introspection-test.m \
 		test/property-introspection2-test.m \
+		test/protocol-creation-test.m \
+		test/runtime-test.m \
 		test/many-selectors-test.m
 
 .include <bsd.kmod.mk>

@@ -84,7 +84,9 @@ void message_send_test(void);
 void property_test(void);
 void property_introspection_test1(void);
 void property_introspection_test2(void);
+void protocol_creation_test(void);
 void many_selectors_test(void);
+void runtime_test(void);
 
 void run_tests(void);
 void run_tests(void)
@@ -100,9 +102,14 @@ void run_tests(void)
 	forwarding_test();
 	message_send_test();
 	property_test();
+	property_introspection_test1();
+	protocol_creation_test();
+	runtime_test();
+	
+	//property_introspection_test2();
 	
 	// Always last because it allocates a lot of memory
-	many_selectors_test();
+	//many_selectors_test();
 	
 	printf("Total number of locks created:              %d\n", objc_lock_count);
 	printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);

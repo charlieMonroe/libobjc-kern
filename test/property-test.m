@@ -56,6 +56,9 @@ void property_test(void) {
 		}
 	}
 	objc_assert(found == 1, "Couldn't find the added property!");
+    
+    objc_log("===================\n");
+	objc_log("Passed property test.\n\n");
 }
 
 
