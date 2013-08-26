@@ -751,7 +751,7 @@ namespace {
     
     /// Generates a protocol structure for that particular runtime.
     virtual llvm::Constant *GenerateProtocolStructure(llvm::Constant *isa,
-                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolName,
                                                       llvm::Constant *ProtocolList,
                                                       llvm::Constant *InstanceMethodList,
                                                       llvm::Constant *ClassMethodList,
@@ -1864,7 +1864,7 @@ namespace {
                                                    bool isMeta=false);
     
     virtual llvm::Constant *GenerateProtocolStructure(llvm::Constant *isa,
-                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolName,
                                                       llvm::Constant *ProtocolList,
                                                       llvm::Constant *InstanceMethodList,
                                                       llvm::Constant *ClassMethodList,
@@ -3212,7 +3212,7 @@ GenerateProtocol(const ObjCProtocolDecl *PD) {
   llvm::Constant *isa = llvm::ConstantExpr::getIntToPtr(
                                                         llvm::ConstantInt::get(Int32Ty, ProtocolVersion), IdTy);
   llvm::Constant *ProtocolStructure = GenerateProtocolStructure(isa,
-                                                                ProtocolName,
+                                                                MakeConstantString(ProtocolName, ".objc_protocol_name"),
                                                                 ProtocolList,
                                                                 InstanceMethodList,
                                                                 ClassMethodList,
@@ -3228,7 +3228,7 @@ GenerateProtocol(const ObjCProtocolDecl *PD) {
 template<class SelectorType>
 llvm::Constant *CGObjCNonMacBase<SelectorType>::
 GenerateProtocolStructure(llvm::Constant *isa,
-                          std::string &ProtocolName,
+                          llvm::Constant *ProtocolName,
                           llvm::Constant *ProtocolList,
                           llvm::Constant *InstanceMethodList,
                           llvm::Constant *ClassMethodList,
@@ -3252,7 +3252,7 @@ GenerateProtocolStructure(llvm::Constant *isa,
   // The isa pointer must be set to a magic number so the runtime knows it's
   // the correct layout.
   Elements.push_back(isa);
-  Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
+  Elements.push_back(ProtocolName);
   Elements.push_back(ProtocolList);
   Elements.push_back(InstanceMethodList);
   Elements.push_back(ClassMethodList);
@@ -3265,7 +3265,7 @@ GenerateProtocolStructure(llvm::Constant *isa,
 }
 
 llvm::Constant *CGObjCKern::GenerateProtocolStructure(llvm::Constant *isa,
-                                                      std::string &ProtocolName,
+                                                      llvm::Constant *ProtocolName,
                                                       llvm::Constant *ProtocolList,
                                                       llvm::Constant *InstanceMethodList,
                                                       llvm::Constant *ClassMethodList,
@@ -3299,7 +3299,7 @@ llvm::Constant *CGObjCKern::GenerateProtocolStructure(llvm::Constant *isa,
   // the correct layout.
   Elements.push_back(isa);
   Elements.push_back(llvm::ConstantInt::get(IntTy, 0)); // retain count
-  Elements.push_back(MakeConstantString(ProtocolName, ".objc_protocol_name"));
+  Elements.push_back(ProtocolName);
   Elements.push_back(ProtocolList);
   Elements.push_back(InstanceMethodList);
   Elements.push_back(ClassMethodList);
