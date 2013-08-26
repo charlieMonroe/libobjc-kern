@@ -2,6 +2,18 @@
 #ifndef OBJC_PROTOTYPES_H
 #define OBJC_PROTOTYPES_H
 
+#if _KERNEL
+	#include <sys/types.h>
+	#include <sys/cdefs.h>
+	#include <sys/module.h>
+	#include <sys/param.h>
+	#include <sys/module.h>
+	#include <sys/kernel.h>
+	#include <sys/systm.h>
+	#include <sys/linker.h>
+	#include <sys/limits.h>
+#endif
+
 /* Defined ABI versions. */
 enum objc_abi_version {
 	objc_abi_version_kernel_1 = 0x301
@@ -44,5 +56,12 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module);
 PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
                                 struct objc_loader_module **end);
 
+#if _KERNEL
+/* 
+ * Finds the ObjC modules for the kernel module and loads them. Returns YES
+ * if anything was loaded.
+ */
+PRIVATE BOOL _objc_load_kernel_module(struct module *module);
+#endif
 
 #endif

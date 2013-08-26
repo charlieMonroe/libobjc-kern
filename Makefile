@@ -28,22 +28,7 @@ SRCS	= kernel_module.c \
 		runtime.c \
 		selector.c \
 		sarray2.c \
-		KKObjects.m \
-		test/ao-test.m \
-		test/handmade-class-test.m \
-		test/ivar-test.m \
-		test/test.c \
-		test/weak-ref-test.m \
-		test/compiler-test.m \
-		test/exception-test.m \
-		test/forwarding-test.m \
-		test/message-send-test.m \
-		test/property-test.m \
-		test/property-introspection-test.m \
-		test/property-introspection2-test.m \
-		test/protocol-creation-test.m \
-		test/runtime-test.m \
-		test/many-selectors-test.m
+		KKObjects.m
 
 .include <bsd.kmod.mk>
 

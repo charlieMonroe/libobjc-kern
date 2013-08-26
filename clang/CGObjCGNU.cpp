@@ -420,7 +420,7 @@ namespace {
     void GenerateCategory(const ObjCCategoryImplDecl *CMD);
     
     /// Returns the name of the class used for constant strings
-    virtual std::string GetConstantStringClassName(void){
+    virtual const char *GetConstantStringClassName(void){
       return "NXConstantString";
     }
     
@@ -1861,7 +1861,7 @@ namespace {
     virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
                                                           unsigned int size);
     
-    virtual std::string GetConstantStringClassName(void){
+    virtual const char *GetConstantStringClassName(void){
       return "_KKConstString";
     }
     

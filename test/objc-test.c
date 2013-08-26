@@ -1,3 +1,13 @@
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/module.h>
+#include <sys/param.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/linker.h>
+#include <sys/limits.h>
+
 #include "../kernobjc/runtime.h"
 #include "../types.h"
 #include "../malloc_types.h"
@@ -115,5 +125,37 @@ void run_tests(void)
 	printf("Total number of locks destroyed:            %d\n", objc_lock_destroy_count);
 	printf("Locks were locked n. times:                 %d\n", objc_lock_locked_count);
 }
+
+static int event_handler(struct module *module, int event, void *arg) {
+	int e = 0;
+	switch (event) {
+		case MOD_LOAD:
+			/* Attempt to load this module's classes. */
+			_objc_load_kernel_module(module);
+			
+			run_tests();
+			break;
+		case MOD_UNLOAD:
+			break;
+		default:
+			e = EOPNOTSUPP;
+			break;
+	}
+	return (e);
+}
+
+static moduledata_t libobjc_test_conf = {
+	"libobjc_test", 	/* Module name. */
+	event_handler,  /* Event handler. */
+	NULL 		/* Extra data */
+};
+
+DECLARE_MODULE(libobjc_test, libobjc_test_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
+MODULE_VERSION(libobjc_test, 0);
+
+/* Depend on libobjc */
+MODULE_DEPEND(libobjc_test, libobjc, 0, 0, 999);
+
+
 
 

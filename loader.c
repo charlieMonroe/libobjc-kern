@@ -73,3 +73,25 @@ PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
 	}
 }
 
+#if _KERNEL
+PRIVATE BOOL
+_objc_load_kernel_module(struct module *module)
+{
+	objc_assert(module != NULL, "Cannot load a NULL module!\n");
+	
+	struct linker_file *file = module_file(module);
+	struct objc_loader_module **begin = NULL;
+	struct objc_loader_module **end = NULL;
+	int count = 0;
+	
+	linker_file_lookup_set(file, "objc_module_list_set", &start, &stop, &count);
+	
+	if (count == 0){
+		objc_debug_log("Couldn't find any ObjC data for module %s!\n",
+					   module_getname(module));
+		return NO;
+	}
+	
+	_objc_load_modules(begin, end);
+}
+#endif

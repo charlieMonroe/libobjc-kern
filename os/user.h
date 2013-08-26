@@ -13,9 +13,9 @@
 #define objc_log printf
 
 #define objc_debug_log(...)						\
-		if (OBJC_DEBUG_LOG) {					\
-			objc_log("DEBUG: ");				\
-			objc_log(__VA_ARGS__);				\
+		if (OBJC_DEBUG_LOG) {							\
+			objc_log("DEBUG: ");						\
+			objc_log(__VA_ARGS__);					\
 		}
 
 /* LOCKING */
@@ -94,8 +94,8 @@ static inline void objc_yield(void){
 }
 
 #define objc_abort(reason...)	{					\
-					printf(reason);			\
-					abort();			\
+					printf(reason);							\
+					abort();											\
 				}
 
 typedef pthread_key_t objc_tls_key;
