@@ -419,6 +419,11 @@ namespace {
     
     void GenerateCategory(const ObjCCategoryImplDecl *CMD);
     
+    /// Returns the name of the class used for constant strings
+    virtual std::string GetConstantStringClassName(void){
+      return "NXConstantString";
+    }
+    
     
   protected:
     /// Function called if fast enumeration detects that the collection is
@@ -700,6 +705,12 @@ namespace {
                                          SmallVectorImpl<Selector> &InstanceMethodSels,
                                          SmallVectorImpl<llvm::Constant*> &InstanceMethodTypes);
     
+    /// Generates the property list structure. For some reason, in the GNUstep
+    /// runtime the property list, unlike all the other lists, has the next field
+    /// second, which is needed to be first in the kernel runtime
+    virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
+                                                          unsigned int size) = 0;
+    
     /// Generates an instance variable list structure.  This is a structure
     /// containing a size and an array of structures containing instance variable
     /// metadata.  This is used purely for introspection in the fragile ABI.  In
@@ -836,6 +847,9 @@ namespace {
                                                llvm::Constant *IvarOffset);
     virtual unsigned int GetIvarStructureOffsetIndex(void);
     
+    virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
+                                                          unsigned int size);
+    
     virtual void GenerateClass(const ObjCImplementationDecl *ClassDecl);
     virtual llvm::Constant *GenerateClassStructure(
                                                    llvm::Constant *MetaClass,
@@ -943,7 +957,7 @@ namespace {
         
         StringRef StringClass = CGM.getLangOpts().ObjCConstantStringClass;
         
-        if (StringClass.empty()) StringClass = "NXConstantString";
+        if (StringClass.empty()) StringClass = GetConstantStringClassName();
         
         Elements.push_back(MakeConstantString(StringClass,
                                               ".objc_static_class_name"));
@@ -1844,6 +1858,13 @@ namespace {
                                const ObjCAtThrowStmt &S,
                                bool ClearInsertionPoint);
     
+    virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
+                                                          unsigned int size);
+    
+    virtual std::string GetConstantStringClassName(void){
+      return "_KKConstString";
+    }
+    
 #pragma mark CGObjCKern Unreachables
     
     virtual llvm::Value * EmitObjCWeakRead(CodeGenFunction &CGF,
@@ -2096,7 +2117,7 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateConstantString(const Str
   
   StringRef StringClass = CGM.getLangOpts().ObjCConstantStringClass;
   
-  if (StringClass.empty()) StringClass = "NXConstantString";
+  if (StringClass.empty()) StringClass = GetConstantStringClassName();
   
   std::string Sym = GetClassSymbolName(StringClass, false);
   
@@ -2654,14 +2675,18 @@ GeneratePropertyList(const ObjCImplementationDecl *OID,
   llvm::ArrayType::get(PropertyMetadataTy, Properties.size());
   llvm::Constant *PropertyArray = llvm::ConstantArray::get(PropertyArrayTy,
                                                            Properties);
-  llvm::Constant* PropertyListInitFields[] =
-  {llvm::ConstantInt::get(IntTy, Properties.size()), NULLPtr, PropertyArray};
-  
-  llvm::Constant *PropertyListInit =
-  llvm::ConstantStruct::getAnon(PropertyListInitFields);
+	llvm::Constant *PropertyListInit = GeneratePropertyListStructure(PropertyArray, Properties.size());
   return new llvm::GlobalVariable(TheModule, PropertyListInit->getType(), false,
                                   llvm::GlobalValue::InternalLinkage, PropertyListInit,
                                   ".objc_property_list");
+}
+
+llvm::Constant *CGObjCPointerSelectorBase::
+GeneratePropertyListStructure(llvm::Constant *PropertyArray, unsigned int size){
+	llvm::Constant* PropertyListInitFields[] =
+	{llvm::ConstantInt::get(IntTy, size), NULLPtr, PropertyArray};
+	
+	return llvm::ConstantStruct::getAnon(PropertyListInitFields);
 }
 
 /// Generates an IvarList.  Used in construction of a objc_class.
@@ -4855,6 +4880,15 @@ void CGObjCKern::EmitThrowStmt(CodeGen::CodeGenFunction &CGF,
 	// Clear the insertion point to indicate we are in unreachable code.
 	if (ClearInsertionPoint)
 		CGF.Builder.ClearInsertionPoint();
+}
+
+llvm::Constant *CGObjCKern::
+GeneratePropertyListStructure(llvm::Constant *PropertyArray,
+                              unsigned int size){
+	llvm::Constant* PropertyListInitFields[] =
+	{NULLPtr, llvm::ConstantInt::get(IntTy, size), PropertyArray};
+	
+	return llvm::ConstantStruct::getAnon(PropertyListInitFields);
 }
 
 
