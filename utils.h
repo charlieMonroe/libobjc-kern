@@ -60,8 +60,6 @@ objc_strcpy(const char *str)
 static inline BOOL
 objc_strings_equal(const char *str1, const char *str2)
 {
-    objc_debug_log("Comparing %p and %p\n", str1, str2);
-    objc_debug_log("Comparing %s and %s\n", str1, str2);
 	unsigned int index;
 	
 	if (str1 ==  str2){
