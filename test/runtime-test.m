@@ -272,7 +272,7 @@ static void testExceptions()
 @implementation SlowInit1
 + (void)initialize
 {
-	sleep(1);
+	objc_sleep(1);
 	[SlowInit2 doNothing];
 }
 + (void)doNothing {}
@@ -281,7 +281,7 @@ static int initCount;
 @implementation SlowInit2
 + (void)initialize
 {
-	sleep(1);
+	objc_sleep(1);
 	__sync_fetch_and_add(&initCount, 1);
 }
 + (void)doNothing {}

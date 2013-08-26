@@ -75,6 +75,10 @@ static inline void objc_set_tls_for_key(void *data, objc_tls_key key){
 	osd_thread_set(curthread, key, data);
 }
 
+static inline objc_sleep(int secs){
+	pause("objc_sleep", secs * 100);
+}
+
 /* MEMORY */
 static inline void *objc_malloc(size_t size,
 				struct malloc_type *type,
