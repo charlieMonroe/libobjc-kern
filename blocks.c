@@ -1,6 +1,7 @@
 #include "kernobjc/runtime.h"
 #include "types.h"
 #include "init.h"
+#include "sarray2.h"
 #include "dtable.h"
 #include "runtime.h"
 #include "class_registry.h"
