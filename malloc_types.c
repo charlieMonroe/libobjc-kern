@@ -2,6 +2,7 @@
 
 MALLOC_DEFINE(M_AUTORELEASE_POOL_TYPE, "autorelease pool", "Objective-C "
               "Autorelease Pool");
+MALLOC_DEFINE(M_BLOCKS_TYPE, "blocks", "Blocks");
 MALLOC_DEFINE(M_BUFFER_TYPE, "buffer", "Objective-C Buffer");
 MALLOC_DEFINE(M_CATEGORY_LIST_TYPE, "category list",
               "Objective-C Category List");

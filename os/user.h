@@ -38,12 +38,12 @@ static inline void objc_rw_lock_init(objc_rw_lock *lock, const char *name){
 	pthread_rwlock_init(&lock->lock, NULL);
 }
 static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
-  ++lock->locked;
+	++lock->locked;
 	++objc_lock_locked_count;
 	return pthread_rwlock_rdlock(&lock->lock);
 }
 static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
-  ++lock->locked;
+	++lock->locked;
 	++objc_lock_locked_count;
 	return pthread_rwlock_wrlock(&lock->lock);
 }

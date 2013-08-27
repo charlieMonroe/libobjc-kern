@@ -8,6 +8,7 @@
 #include "class.h"
 #include "associative.h"
 #include "init.h"
+#include "blocks.h"
 
 /*
  * Each autorelease pool ~ a page. We need the previous and top
@@ -65,8 +66,13 @@ _objc_retain(id obj)
 		return obj;
 	}
 	
-	// TODO blocks
-	if (obj->isa->flags.has_custom_arr) {
+	Class cls = obj->isa;
+	if ((Class)&_NSConcreteMallocBlock == cls ||
+	    (Class)&_NSConcreteStackBlock == cls){
+		return _Block_copy(obj);
+	}
+	
+	if (cls->flags.has_custom_arr) {
 		/* The class has custom ARR methods, send the message. */
 		return objc_send_retain_msg(obj);
 	}
@@ -88,8 +94,17 @@ _objc_release(id obj)
 		return;
 	}
 	
-	// TODO blocks
-	if (obj->isa->flags.has_custom_arr) {
+	Class cls = obj->isa;
+	if (cls == &_NSConcreteMallocBlock){
+		_Block_release(obj);
+		return;
+	}
+	if ((cls == &_NSConcreteStackBlock) ||
+	    (cls == &_NSConcreteGlobalBlock)){
+		return;
+	}
+	
+	if (cls->flags.has_custom_arr) {
 		/* The class has custom ARR methods, send the message. */
 		objc_send_release_msg(obj);
 		return;
@@ -341,10 +356,19 @@ objc_storeWeak(id *addr, id obj)
 		return nil;
 	}
 	
-	// TODO blocks
-	
 	Class cl = objc_object_get_class_inline(obj);
-	if (cl->flags.has_custom_arr){
+	if (&_NSConcreteGlobalBlock == cl){
+		// If this is a global block, it's never deallocated, so secretly make
+		// this a strong reference
+		// TODO: We probably also want to do the same for constant strings and
+		// classes.
+		*addr = obj;
+		return obj;
+	}
+	
+	if (&_NSConcreteMallocBlock == cls){
+		obj = block_load_weak(obj);
+	}else if (cl->flags.has_custom_arr){
 		obj = _objc_weak_load(obj);
 	}else{
 		if (((struct object*)obj)->retain_count < 0){

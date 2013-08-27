@@ -491,7 +491,6 @@ objc_selector_init(void)
 static void
 __objc_selector_deallocate(struct objc_selector *selector)
 {
-	// TODO figure out if it's from loading a module or allocated
 	objc_debug_log("\tDestroying selector %s.\n", selector->name);
 	objc_dealloc(selector, M_SELECTOR_TYPE);
 }

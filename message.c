@@ -151,10 +151,11 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 		}
 		
 		switch (types[0]){
-				// TODO runtime error
-				//			case 'D': return &nil_slot_D;
-				//			case 'd': return &nil_slot_d;
-				//			case 'f': return &nil_slot_f;
+			case 'D':
+			case 'd':
+			case 'f':
+				objc_abort("Float or double type in the kernel.\n");
+				break;
 		}
 		return &nil_slot;
 	}
