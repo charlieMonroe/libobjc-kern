@@ -27,6 +27,7 @@ SRCS	= ao-test.m \
 		category-test.m \
 		protocol-as-object-test.m \
 		block-test.m \
+		string-test.m \
 		load-test.m
 
 .include <bsd.kmod.mk>
