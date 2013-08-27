@@ -1,14 +1,14 @@
 
 #ifdef _KERNEL
-	#include <sys/types.h>
-	#include <sys/cdefs.h>
-	#include <sys/module.h>
-	#include <sys/param.h>
-	#include <sys/module.h>
-	#include <sys/kernel.h>
-	#include <sys/systm.h>
-	#include <sys/linker.h>
-	#include <sys/limits.h>
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/module.h>
+#include <sys/param.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/linker.h>
+#include <sys/limits.h>
 #endif
 
 #include "../kernobjc/runtime.h"
@@ -68,18 +68,18 @@ static void list_classes(void){
 		
 		if (cl->super_class == Nil){
 			objc_assert(cl->isa->isa == cl->isa, "No root class meta class isa"
-				    " loop [%p, %p]!\n", cl->isa->isa, cl->isa);
+						" loop [%p, %p]!\n", cl->isa->isa, cl->isa);
 			objc_assert(cl->isa->super_class == cl, "The root meta class' "
-				    "superclass[%p] should be the class[%p]!",
-				    cl->isa->super_class, cl);
+						"superclass[%p] should be the class[%p]!",
+						cl->isa->super_class, cl);
 		}else{
 			objc_assert(cl->isa->isa == cl->super_class->isa, "The meta class'"
-				    " isa[%p] isn't the metaclass of the class' superclass[%p]!",
-				    cl->isa->isa, cl->super_class->isa);
+						" isa[%p] isn't the metaclass of the class' superclass[%p]!",
+						cl->isa->isa, cl->super_class->isa);
 			objc_assert(cl->isa->super_class == cl->super_class->isa,
-				    "The meta class' superclass[%p] isn't the metaclass of the"
-				    " class' superclass[%p]!", cl->isa->super_class,
-				    cl->super_class->isa);
+						"The meta class' superclass[%p] isn't the metaclass of the"
+						" class' superclass[%p]!", cl->isa->super_class,
+						cl->super_class->isa);
 		}
 	}
 	objc_dealloc(classes, M_CLASS_TYPE);
@@ -103,29 +103,31 @@ void runtime_test(void);
 void category_test(void);
 void load_test(void);
 void protocol_as_object_test(void);
+void block_test(void);
 
 void run_tests(void);
 void run_tests(void)
 {
 	list_classes();
-
+	
 	/*
-	associated_objects_test();
-	weak_ref_test();
-	ivar_test();
-	handmade_class_test();
-	compiler_test();
-	exception_test();
-	forwarding_test();
-	message_send_test();
-	property_test();
-	property_introspection_test1();
+	 associated_objects_test();
+	 weak_ref_test();
+	 ivar_test();
+	 handmade_class_test();
+	 compiler_test();
+	 exception_test();
+	 forwarding_test();
+	 message_send_test();
+	 property_test();
+	 property_introspection_test1();
 	 */
 	protocol_creation_test();
 	runtime_test();
 	category_test();
 	load_test();
-  protocol_as_object_test();
+	protocol_as_object_test();
+	block_test();
 	
 	//property_introspection_test2();
 	
