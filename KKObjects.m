@@ -43,6 +43,9 @@
 	// No-op
 }
 
++(id)autorelease{
+	return self;
+}
 +(id)retain
 {
 	return self;
@@ -53,6 +56,9 @@
 	// No-op
 }
 
+-(id)autorelease{
+	return objc_autorelease(self);
+}
 -(void)dealloc
 {
 	object_dispose((id)self);
@@ -65,6 +71,10 @@
 -(id)init
 {
 	return self;
+}
+
+-(BOOL)isEqual:(id)otherObj{
+	return self == otherObj;
 }
 
 -(void)release

@@ -25,8 +25,11 @@ __attribute__((objc_root_class))
 -(Class)class;
 -(id)init;
 
+-(BOOL)isEqual:(id)otherObj;
+
 -(BOOL)respondsToSelector:(SEL)selector;
 
+-(id)autorelease;
 -(void)dealloc;
 -(id)retain;
 -(void)release;
