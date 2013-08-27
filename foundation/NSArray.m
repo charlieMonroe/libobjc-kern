@@ -10,7 +10,6 @@
 	#include <stdarg.h>
 #endif
 
-MALLOC_DECLARE(M_NSARRAY_TYPE);
 MALLOC_DEFINE(M_NSARRAY_TYPE, "NSArray_inner", "NSArray backend");
 
 static NSString *const NSArrayOutOfBoundsException = @"NSArrayOutOfBoundsException";
@@ -109,6 +108,9 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 
 -(void)dealloc{
 	if (_items != NULL){
+		for (NSUInteger i = 0; i < _count; ++i){
+			[_items[i] autorelease];
+		}
 		objc_dealloc(_items, M_NSARRAY_TYPE);
 	}
 	
@@ -155,13 +157,7 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 }
 -(id)initWithArray:(NSArray*)array{
 	objc_assert(array != nil, "Creating array from nil!\n");
-	if ((self = [super init]) != nil){
-		size_t size = sizeof(id) * array->_count;
-		_items = objc_alloc(size, M_NSARRAY_TYPE);
-		memcpy(_items, array->_items, size);
-		_count = array->_count;
-	}
-	return self;
+	return [self initWithObjects:array->_items count:array->_count];
 }
 -(id)initWithObjects:firstObject, ...{
 	NSArrayCreateStackBufferFromArgsAndPerformCode(buffer, {
@@ -178,7 +174,10 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 		size_t size = sizeof(id) * count;
 		
 		_items = objc_alloc(size, M_NSARRAY_TYPE);
-		memcpy(_items, objects, size);
+		
+		for (NSUInteger i = 0; i < count; ++i){
+			_items[i] = [objects[i] retain];
+		}
 		
 		_count = count;
 	}
