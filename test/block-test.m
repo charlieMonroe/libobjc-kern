@@ -1,7 +1,7 @@
 #import "../kernobjc/runtime.h"
 #import "../os.h"
 
-BOOL global_block_test_ran = NO;
+static BOOL global_block_test_ran = NO;
 
 void block_test(void);
 void block_test(void){
