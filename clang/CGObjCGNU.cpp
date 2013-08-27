@@ -569,6 +569,10 @@ namespace {
     virtual llvm::Constant *GetEHType(QualType T);
     
     virtual llvm::Constant *GenerateConstantString(const StringLiteral *);
+    virtual llvm::Constant *GenerateConstantStringStructure(llvm::Constant *StringClass,
+                                                            llvm::Constant *String,
+                                                            unsigned int length);
+    
     virtual void GenerateClass(const ObjCImplementationDecl *ClassDecl) = 0;
     
     
@@ -1887,6 +1891,10 @@ namespace {
     virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
                                                           unsigned int size);
     
+	  virtual llvm::Constant *GenerateConstantStringStructure(llvm::Constant *StringClass,
+                                                            llvm::Constant *String,
+                                                            unsigned int length);
+	  
     virtual const char *GetConstantStringClassName(void){
       return "_KKConstString";
     }
@@ -2159,16 +2167,44 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateConstantString(const Str
   else if (isa->getType() != PtrToIdTy)
     isa = llvm::ConstantExpr::getBitCast(isa, PtrToIdTy);
   
+  llvm::Constant *ObjCStr = GenerateConstantStringStructure(isa,
+                                            MakeConstantString(Str),
+                                            Str.size());
+  
+  ObjCStrings[Str] = ObjCStr;
+  ConstantStrings.push_back(ObjCStr);
+  return ObjCStr;
+}
+
+template<class SelectorType> llvm::Constant *
+CGObjCNonMacBase<SelectorType>::GenerateConstantStringStructure(llvm::Constant *StringClass,
+                                                                llvm::Constant *String,
+                                                                unsigned int length){
   std::vector<llvm::Constant*> Ivars;
-  Ivars.push_back(isa);
-  Ivars.push_back(MakeConstantString(Str));
-  Ivars.push_back(llvm::ConstantInt::get(IntTy, Str.size()));
+  Ivars.push_back(StringClass);
+  Ivars.push_back(String);
+  Ivars.push_back(llvm::ConstantInt::get(IntTy, length));
   llvm::Constant *ObjCStr = MakeGlobal(
                                        llvm::StructType::get(PtrToIdTy, PtrToInt8Ty, IntTy, NULL),
                                        Ivars, ".objc_str");
   ObjCStr = llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty);
-  ObjCStrings[Str] = ObjCStr;
-  ConstantStrings.push_back(ObjCStr);
+  return ObjCStr;
+}
+
+llvm::Constant *CGObjCKern::GenerateConstantStringStructure(llvm::Constant *StringClass,
+                                                            llvm::Constant *String,
+                                                            unsigned int length) {
+  std::vector<llvm::Constant*> Ivars;
+  Ivars.push_back(StringClass);
+  Ivars.push_back(llvm::ConstantInt::get(IntTy, 0)); // Retain count
+  Ivars.push_back(String);
+  Ivars.push_back(llvm::ConstantInt::get(IntTy, length));
+  llvm::Constant *ObjCStr = MakeGlobal(
+                                       llvm::StructType::get(PtrToIdTy, IntTy,
+                                                             PtrToInt8Ty, IntTy,
+                                                             NULL),
+                                       Ivars, ".objc_str");
+  ObjCStr = llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty);
   return ObjCStr;
 }
 
