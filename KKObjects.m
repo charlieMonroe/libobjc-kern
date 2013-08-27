@@ -3,6 +3,7 @@
 #include "private.h"
 #include "types.h"
 #include "init.h"
+#include "utils.h"
 
 #import "KKObjects.h"
 
@@ -73,6 +74,9 @@
 	return self;
 }
 
+-(unsigned long long)hash{
+	return objc_hash_pointer(self);
+}
 -(BOOL)isEqual:(id)otherObj{
 	return self == otherObj;
 }

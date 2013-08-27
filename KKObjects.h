@@ -25,6 +25,7 @@ __attribute__((objc_root_class))
 -(Class)class;
 -(id)init;
 
+-(unsigned long long)hash;
 -(BOOL)isEqual:(id)otherObj;
 
 -(BOOL)respondsToSelector:(SEL)selector;
