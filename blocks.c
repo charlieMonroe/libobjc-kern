@@ -237,10 +237,11 @@ static void createNSBlockSubclass(Class superclass, Class newClass,
 	metaClass->super_class = superclass->isa;
 	metaClass->flags.meta = YES;
 	metaClass->dtable = uninstalled_dtable;
+	metaClass->name = name;
 	
 	// Set up the new class
 	newClass->isa = metaClass;
-	newClass->super_class = (Class)superclass->name;
+	newClass->super_class = superclass;
 	newClass->name = name;
 	newClass->dtable = uninstalled_dtable;
 	
@@ -254,6 +255,9 @@ createNSBlockSubclass(super, &sub, &sub ## Meta, #sub)
 
 static BOOL objc_create_block_classes_as_subclasses_of(Class super)
 {
+	objc_assert(super != Nil, "Trying to initalize block classes with"
+							" a Nil super!\n");
+	
 	if (_NSBlock.super_class != NULL) { return NO; }
 	
 	NEW_CLASS(super, _NSBlock);
