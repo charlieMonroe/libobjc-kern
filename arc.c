@@ -366,7 +366,7 @@ objc_storeWeak(id *addr, id obj)
 		return obj;
 	}
 	
-	if (&_NSConcreteMallocBlock == cls){
+	if (&_NSConcreteMallocBlock == cl){
 		obj = block_load_weak(obj);
 	}else if (cl->flags.has_custom_arr){
 		obj = _objc_weak_load(obj);
