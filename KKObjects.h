@@ -19,6 +19,9 @@ __attribute__((objc_root_class))
 +(Class)class;
 +(BOOL)respondsToSelector:(SEL)selector;
 
++(void)initialize;
++(void)load;
+
 -(Class)class;
 -(id)init;
 

@@ -2,6 +2,7 @@
 #include "os.h"
 #include "private.h"
 #include "types.h"
+#include "init.h"
 
 #import "KKObjects.h"
 
@@ -13,7 +14,6 @@
 {
 	return class_createInstance((Class)self, 0);
 }
-
 +(id)new
 {
 	return [[self alloc] init];
@@ -27,6 +27,16 @@
 {
 	return class_respondsToSelector(self->isa, selector);
 }
++(void)load
+{
+	/* Must fix up the blocks. */
+	objc_blocks_init();
+}
++(void)initialize
+{
+	// No-op right now
+}
+
 
 +(void)dealloc
 {

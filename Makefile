@@ -29,7 +29,7 @@ SRCS	= kernel_module.c \
 		selector.c \
 		sarray2.c \
 		KKObjects.m \
-		NSBlocks.m
+		NSBlocks.c
 
 .include <bsd.kmod.mk>
 

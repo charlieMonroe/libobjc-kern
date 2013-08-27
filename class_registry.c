@@ -613,6 +613,8 @@ objc_class_resolve_links(void)
 PRIVATE void
 objc_class_register_class(Class cl)
 {
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
 			 " Which one will be used is undefined.\n", cl->name);
@@ -621,9 +623,9 @@ objc_class_register_class(Class cl)
 	
 	objc_debug_log("Registering class %s with the runtime.\n", cl->name);
 	
-  _objc_class_fixup_instance_size(cl);
+	_objc_class_fixup_instance_size(cl);
 	_objc_class_fixup_instance_size(cl->isa);
-  
+	
 	objc_class_insert(objc_classes, cl);
 	
 	objc_register_selectors_from_class(cl, cl->isa);
@@ -640,6 +642,8 @@ objc_class_register_class(Class cl)
 void
 objc_class_register_classes(Class *cl, unsigned int count)
 {
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
 	for (int i = 0; i < count; ++i){
 		objc_class_register_class(cl[i]);
 	}
