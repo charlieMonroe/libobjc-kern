@@ -9,6 +9,7 @@
 @interface NSObject : KKObject
 
 -(id)description;
+-(id)performSelector:(SEL)selector withObject:(id)obj;
 -(id)self;
 
 @end

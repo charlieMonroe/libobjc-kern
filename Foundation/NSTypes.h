@@ -7,6 +7,10 @@
 typedef unsigned long long	NSUInteger;
 typedef long long			NSInteger;
 
+/* Adding UTF8 support to the kernel probably doesn't make much sense, so in
+ * the kernel Foundation, unichar is simply a char.
+ */
+typedef char unichar;
 
 typedef struct _NSRange {
 	NSUInteger location;

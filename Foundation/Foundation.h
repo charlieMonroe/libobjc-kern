@@ -9,6 +9,7 @@
 #import "NSNull.h"
 #import "NSObject.h"
 #import "NSSet.h"
+#import "NSString.h"
 #import "NSTypes.h"
 #import "NSValue.h"
 
