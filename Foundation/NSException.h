@@ -28,3 +28,5 @@
 @property (readwrite, retain) id        userInfo;
 
 @end
+
+extern NSString *const NSInternalInconsistencyException;

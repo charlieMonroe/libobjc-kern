@@ -8,6 +8,8 @@
 
 #import "NSException.h"
 
+NSString *const NSInternalInconsistencyException = @"NSInternalInconsistencyException";
+
 @implementation NSException
 
 +(NSException *)exceptionWithName:(NSString *)name reason:(NSString *)reason userInfo:(id)userInfo{

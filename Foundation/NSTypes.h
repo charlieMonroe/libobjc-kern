@@ -13,6 +13,22 @@ typedef struct _NSRange {
 	NSUInteger length;
 } NSRange;
 
+typedef struct _NSPoint {
+	NSInteger x;
+	NSInteger y;
+} NSPoint;
+
+typedef struct _NSSize {
+	NSInteger width;
+	NSInteger height;
+} NSSize;
+
+typedef struct _NSRect {
+	NSPoint origin;
+	NSSize	size;
+} NSRect;
+
+
 static inline NSRange NSMakeRange(NSUInteger location, NSUInteger length){
 	NSRange r;
 	r.location = location;
