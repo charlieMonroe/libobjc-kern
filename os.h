@@ -5,6 +5,8 @@
 /* Constants */
 #define OBJC_DEBUG_LOG 1
 
+#define KERNEL_OBJC 1
+
 /* Compiler attributes and directives. */
 #define UNREACHABLE(x) __builtin_unreachable()
 #define PRIVATE  __attribute__ ((visibility("hidden")))

@@ -81,6 +81,8 @@ generatedWarning: (NSString*)aWarning
 }
 @end
 
+#ifndef KERNEL_OBJC
+
 /**
  * Returns the modification date of a file.
  */
@@ -152,12 +154,14 @@ static BOOL loadAnyLibraryForBundle(NSBundle *bundle, NSDate *modified)
 		[userCache stringByAppendingPathComponent: @"languagekit-cache.so"];
 	return loadLibraryForBundle(userCache, bundle, modified);
 }
+#endif /* !_KERNEL */
 
 int DEBUG_DUMP_MODULES = 0;
 @implementation LKCompiler
 @synthesize transforms;
 + (void) loadBundles
 {
+#ifndef KERNEL_OBJC
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSArray *dirs =
 		NSSearchPathForDirectoriesInDomains(
@@ -188,6 +192,7 @@ int DEBUG_DUMP_MODULES = 0;
 			}
 		}
 	}
+#endif /* !_KERNEL */
 }
 + (void) initialize 
 {
@@ -271,12 +276,12 @@ static void emitParseError(NSException *localException)
 {
 	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKAST *ast;
-	NS_DURING
+	@try{
 		ast = [parser parseString: source];
-	NS_HANDLER
+	}@catch (NSException *localException) {
 		emitParseError(localException);
 		return nil;
-	NS_ENDHANDLER
+	}
 
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
@@ -314,16 +319,16 @@ static void emitParseError(NSException *localException)
 	id parser = AUTORELEASE([[[[self class] parserClass] alloc] init]);
 	LKAST *ast;
 	LKModule *module;
-	NS_DURING
+	@try {
 		ast = [parser parseMethod: source];
 		ast = [LKCategoryDef categoryOnClassNamed: name
 		                                  methods: [NSArray arrayWithObject:ast]];
 		module = [LKModule module];
 		[module addCategory: (LKCategory*)ast];
-	NS_HANDLER
+	}@catch (NSException *localException) {
 		emitParseError(localException);
 		return NO;
-	NS_ENDHANDLER
+	}
 
 	NSMutableDictionary *dict = [[NSThread currentThread] threadDictionary];
 	[dict setObject: self forKey: @"LKCompilerContext"];
@@ -394,6 +399,7 @@ static NSString *loadFramework(NSString *framework)
 	return nil;
 }
 
+#ifndef KERNEL_OBJC
 static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *basePath)
 {
 	NSString *lib = [basePath stringByAppendingPathComponent: aLibrary];
@@ -414,9 +420,11 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return NO;
 
 }
+#endif
 
 + (BOOL) loadLibrary: (NSString*)aLibrary
 {
+#ifndef KERNEL_OBJC
 	// If SourceCodeKit is not loaded, give up
 	if (nil == collection) { return NO; }
 
@@ -453,11 +461,13 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		}
 		// FIXME: Should respect LD_LIBRARY_PATH
 	}
+#endif /* KERNEL */
 	return NO;
 }
 
 + (BOOL) loadHeader: (NSString*)aHeader
 {
+#ifndef KERNEL_OBJC
 	// If SourceCodeKit is not loaded, give up
 	if (nil == collection) { return NO; }
 
@@ -502,6 +512,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 			}
 		}
 	}
+#endif /* !KERNEL */
 	return NO;
 }
 
@@ -517,6 +528,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 
 + (Class) loadLanguageKitBundle:(NSBundle*)bundle
 {
+#ifndef KERNEL_OBJC
 	//TODO: Static compile and cache the result in a .so, and load this on
 	// subsequent runs
 	NSString *plistPath = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
@@ -576,10 +588,12 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	{
 		return NSClassFromString(className);
 	}
+#endif /* !KERNEL  */
 	return Nil;
 }
 + (BOOL) loadAllPlugInsForApplication
 {
+#ifndef KERNEL_OBJC
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
 		NSUserDomainMask, YES);
 	NSString *processName = [[NSProcessInfo processInfo] processName];
@@ -614,6 +628,9 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		}
 	}
 	return success;
+#else
+	return NO;
+#endif /* !KERNEL */
 }
 
 + (BOOL) loadScriptNamed: (NSString*)fileName fromBundle: (NSBundle*)bundle
@@ -625,6 +642,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 }
 - (BOOL) loadScriptNamed: (NSString*)name fromBundle:(NSBundle*)bundle
 {
+#ifndef KERNEL_OBJC
 	NSString *extension = [[self class] fileExtension];
 	NSString *path = [bundle pathForResource:name ofType:extension];
 	if (nil == path)
@@ -633,6 +651,9 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		return NO;
 	}
 	return [self compileString:[NSString stringWithContentsOfFile:path]] != nil;
+#else
+	return NO;
+#endif
 }
 
 + (BOOL) loadApplicationScriptNamed:(NSString*)fileName

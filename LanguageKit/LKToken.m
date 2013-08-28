@@ -72,8 +72,8 @@ typedef unichar(*CIMP)(id, SEL, unsigned);
 }
 - (unichar) characterAtIndex:(NSUInteger)index
 {
-	return charAtIndex(source, @selector(characterAtIndex:), index +
-			(unichar)range.location);
+	return charAtIndex(source, @selector(characterAtIndex:), (unsigned)index +
+			(unsigned)range.location);
 }
 - (NSRange) sourceLocation
 {
