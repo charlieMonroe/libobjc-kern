@@ -438,11 +438,48 @@ struct _NSDictionaryBucket {
 		
 		bucket->count = 0;
 	}else{
+		NSUInteger bucketIndex = NSNotFound;
 		for (NSUInteger o = 0; o < bucket->count; ++o){
 			if ([aKey isEqual:bucket->data.many[o].key]){
-				
+				bucketIndex = o;
+				break;
 			}
 		}
+		
+		if (bucketIndex == NSNotFound){
+			return;
+		}
+		
+		[bucket->data.many[bucketIndex].key release];
+		[bucket->data.many[bucketIndex].object release];
+		
+		for (NSUInteger o = bucketIndex; o < bucket->count - 1; ++o){
+			bucket->data.many[o].key = bucket->data.many[o + 1].key;
+			bucket->data.many[o].object = bucket->data.many[o + 1].object;
+		}
+		
+		/* Two scenarios - just one obj left -> move to data.one, or just 
+		 * realloc 
+		 */
+		
+		if (bucket->count == 1){
+			id key = bucket->data.many[0].key;
+			id obj = bucket->data.many[0].object;
+			
+			objc_dealloc(bucket->data.many, M_NSDICTIONARY_TYPE);
+			
+			bucket->data.one.key = key;
+			bucket->data.one.object = obj;
+			
+			bucket->count = 1;
+		}else{
+			--bucket->count;
+			
+			bucket->data.many = objc_realloc(bucket->data.many,
+						 sizeof(NSDictionaryPair) * bucket->count,
+						 M_NSDICTIONARY_TYPE);
+		}
+		
 	}
 }
 -(void)removeObjectsForKeys:(NSArray*)keyArray{

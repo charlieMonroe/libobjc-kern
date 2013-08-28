@@ -2,7 +2,7 @@
 #import "NSObject.h"
 #import "NSTypes.h"
 
-@class NSArray;
+@class NSArray, NSString;
 
 typedef struct _NSDictionaryBucket NSDictionaryBucket;
 
@@ -44,7 +44,6 @@ typedef struct _NSDictionaryBucket NSDictionaryBucket;
 
 +(id)dictionaryWithCapacity:(NSUInteger)numItems;
 
--(void)addEntriesFromDictionary:(NSDictionary*)otherDictionary;
 -(id)initWithCapacity:(NSUInteger)numItems;
 -(void)removeAllObjects;
 -(void)removeObjectForKey:(id)aKey;

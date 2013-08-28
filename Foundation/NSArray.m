@@ -102,6 +102,10 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	return NO;
 }
 
+-(id)copy{
+	return [[NSArray alloc] initWithArray:self];
+}
+
 -(NSUInteger)count{
 	return _count;
 }

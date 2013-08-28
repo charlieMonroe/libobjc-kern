@@ -139,7 +139,10 @@
 {
 	return self->_cString;
 }
-
+-(id)copy
+{
+	return [self retain];
+}
 -(void)dealloc
 {
 	// No-op
