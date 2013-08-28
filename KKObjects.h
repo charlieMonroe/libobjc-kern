@@ -10,7 +10,7 @@ __attribute__((objc_root_class))
 #endif
 @interface KKObject {
 	id isa;
-	int retain_count;
+	int __retain_count;
 }
 
 +(id)alloc;
@@ -22,7 +22,12 @@ __attribute__((objc_root_class))
 +(void)initialize;
 +(void)load;
 
+
+-(BOOL)isMemberOfClass:(Class)cls;
+-(BOOL)isKindOfClass:(Class)cls;
 -(Class)class;
+
+
 -(id)init;
 
 -(unsigned long long)hash;
@@ -31,6 +36,7 @@ __attribute__((objc_root_class))
 -(BOOL)respondsToSelector:(SEL)selector;
 
 -(id)autorelease;
+-(id)copy;
 -(void)dealloc;
 -(id)retain;
 -(void)release;

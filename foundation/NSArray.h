@@ -20,6 +20,10 @@
 -(BOOL)containsObject:(id)anObject;
 
 -(NSUInteger)count;
+
+/* May be NULL! */
+-(__unsafe_unretained const id*)getDirectObjectArray;
+
 -(NSUInteger)indexOfObject:(id)anObject;
 -(NSUInteger)indexOfObject:(id)anObject inRange:(NSRange)aRange;
 -(NSUInteger)indexOfObjectIdenticalTo:(id)anObject;

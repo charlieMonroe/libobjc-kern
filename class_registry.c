@@ -47,6 +47,12 @@ _objc_handle_load_imp_for_class(IMP load_imp, Class cl)
 	if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
 		load_imp((id)cl, objc_load_selector);
 		objc_load_messages_insert(objc_load_messages, load_imp);
+		
+		/* In the kernel, we force-initialize any class that implements +load.
+		 * Implementing +load really makes a statement that this class is going
+		 * to be used early, or later on, so it's better do so right now.
+		 */
+		objc_send_initialize((id)cl);
 	}
 }
 

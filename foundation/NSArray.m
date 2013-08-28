@@ -117,6 +117,10 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	[super dealloc];
 }
 
+-(__unsafe_unretained const id *)getDirectObjectArray{
+	return _items;
+}
+
 -(NSUInteger)indexOfObject:(id)anObject{
 	return [self indexOfObject:anObject inRange:NSMakeRange(0, _count)];
 }

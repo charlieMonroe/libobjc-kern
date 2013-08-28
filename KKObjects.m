@@ -56,6 +56,10 @@
 {
 	// No-op
 }
++(id)copy
+{
+	return self;
+}
 
 -(id)autorelease{
 	return objc_autorelease(self);
@@ -69,6 +73,20 @@
 {
 	return object_getClass(self);
 }
+-(BOOL)isMemberOfClass:(Class)cls{
+	return [self class] == cls;
+}
+-(BOOL)isKindOfClass:(Class)cls{
+	Class self_cl = [self class];
+	while (self_cl != Nil) {
+		if (self_cl == cls){
+			return YES;
+		}
+		self_cl = class_getSuperclass(self_cl);
+	}
+	return NO;
+}
+
 -(id)init
 {
 	return self;
@@ -81,10 +99,14 @@
 	return self == otherObj;
 }
 
+-(id)copy
+{
+	return object_copy(self, class_getInstanceSize([self class]));
+}
 -(void)release
 {
-	objc_debug_log("Releasing object %p[%i]\n", self, self->retain_count);
-	int retain_cnt = __sync_fetch_and_sub(&self->retain_count, 1);
+	objc_debug_log("Releasing object %p[%i]\n", self, self->__retain_count);
+	int retain_cnt = __sync_fetch_and_sub(&self->__retain_count, 1);
 	if (retain_cnt == 0){
 		/* Dealloc */
 		[self dealloc];
@@ -96,7 +118,7 @@
 -(id)retain
 {
 	objc_debug_log("Retaining an object %p\n", self);
-	__sync_add_and_fetch(&self->retain_count, 1);
+	__sync_add_and_fetch(&self->__retain_count, 1);
 	return self;
 }
 
@@ -125,6 +147,10 @@
 #pragma clang diagnostic ignored "-Wobjc-missing-super-calls"
 }
 #pragma clang diagnostic pop
+
+-(unsigned long long)hash{
+	return objc_hash_string(self->_cString);
+}
 
 -(unsigned int)length
 {
