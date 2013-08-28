@@ -33,6 +33,8 @@ typedef struct _NSDictionaryBucket NSDictionaryBucket;
 -(id)initWithObjects:(const id[])objects forKeys:(const id[])keys count:(NSUInteger)count;
 -(BOOL)isEqualToDictionary:(NSDictionary*)other;
 
+-(id)mutableCopy;
+
 -(id)objectForKey:(id)aKey;
 
 

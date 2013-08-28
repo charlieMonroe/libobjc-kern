@@ -218,6 +218,10 @@ struct _NSDictionaryBucket {
 	return [values autorelease];
 }
 
+-(id)copy{
+	return [[NSDictionary alloc] initWithDictionary:self];
+}
+
 -(NSUInteger)count{
 	return _itemCount;
 }
@@ -353,6 +357,10 @@ struct _NSDictionaryBucket {
 		}
 	}
 	return YES;
+}
+
+-(id)mutableCopy{
+	return [[NSMutableDictionary alloc] initWithDictionary:self];
 }
 
 -(id)objectForKey:(id)aKey{
