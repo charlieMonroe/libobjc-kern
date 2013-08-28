@@ -36,6 +36,18 @@ static inline NSRange NSMakeRange(NSUInteger location, NSUInteger length){
 	return r;
 }
 
+static inline NSUInteger NSMaxRange(NSRange range) {
+    return (range.location + range.length);
+}
+
+static inline BOOL NSLocationInRange(NSUInteger loc, NSRange range) {
+    return (!(loc < range.location) && (loc - range.location) < range.length) ? YES : NO;
+}
+
+static inline BOOL NSEqualRanges(NSRange range1, NSRange range2) {
+    return (range1.location == range2.location && range1.length == range2.length);
+}
+
 #define NSNotFound ((NSUInteger)-1)
 
 #endif
