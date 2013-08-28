@@ -83,7 +83,7 @@
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
 	[aGenerator beginFunction: [signature functionName]
-	         withTypeEncoding: [signature typeEncoding];
+	         withTypeEncoding: [signature typeEncoding]
 	                arguments: [symbols arguments]
 	                   locals: [symbols locals]];
 	for (LKAST *statement in statements)

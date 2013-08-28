@@ -1,19 +1,12 @@
 #import "LanguageKit.h"
-#import "Runtime/BigInt.h"
-#import "Runtime/BoxedFloat.h"
-#import "Runtime/Symbol.h"
-#import "Runtime/LKObject.h"
+#import "BigInt.h"
+#import "BoxedFloat.h"
+#import "Symbol.h"
+#import "LKObject.h"
 #import "LKInterpreterRuntime.h"
 #import "LKInterpreter.h"
 #import "LKTypeHelpers.h"
-#import <EtoileFoundation/runtime.h>
-#ifndef GNU_RUNTIME
-#include <objc/objc-runtime.h>
-#include <objc/objc-arc.h>
-#endif
-#include <string.h>
-#include <ffi.h>
-#include <dlfcn.h>
+#import "../kernobjc/runtime.h"
 
 static id BoxValue(void *value, const char *typestr);
 static void UnboxValue(id value, void *dest, const char *objctype);

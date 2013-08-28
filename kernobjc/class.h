@@ -2,6 +2,10 @@
 #ifndef LIBKERNOBJC_CLASS_H
 #define LIBKERNOBJC_CLASS_H
 
+#define OBJC_SMALL_OBJECT_SHIFT ((sizeof(void*) == 4) ? 1 : 3)
+#define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
+#define OBJC_SMALL_OBJECT_CLASS_COUNT ((sizeof(void*) == 4) ? 1 : 4)
+
 /*
  * Returns the name of the class.
  */

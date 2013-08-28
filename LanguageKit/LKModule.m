@@ -2,8 +2,8 @@
 #import "LKSubclass.h"
 #import "LKCompilerErrors.h"
 #import "../Foundation/Foundation.h"
-#import "Runtime/LKObject.h"
-#import <objc/runtime.h>
+#import "LKObject.h"
+#import "../kernobjc/runtime.h"
 
 /**
  * Maps method names to type encodings, gathered by iterating through all

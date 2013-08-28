@@ -6,8 +6,7 @@
 #ifndef OBJC_CLASS_H_	 
 #define OBJC_CLASS_H_
 
-#define OBJC_SMALL_OBJECT_MASK ((sizeof(void*) == 4) ? 1 : 7)
-#define OBJC_SMALL_OBJECT_CLASS_COUNT ((sizeof(void*) == 4) ? 1 : 4)
+#include "kernobjc/class.h"
 
 extern Class objc_small_object_classes[OBJC_SMALL_OBJECT_CLASS_COUNT];
 
