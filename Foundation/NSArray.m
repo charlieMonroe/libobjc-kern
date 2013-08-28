@@ -12,8 +12,8 @@
 
 MALLOC_DEFINE(M_NSARRAY_TYPE, "NSArray_inner", "NSArray backend");
 
-static NSString *const NSArrayOutOfBoundsException = @"NSArrayOutOfBoundsException";
-static NSString *const NSArrayNoStackMemoryException = @"NSArrayNoStackMemoryException";
+NSString *const NSArrayOutOfBoundsException = @"NSArrayOutOfBoundsException";
+NSString *const NSArrayNoStackMemoryException = @"NSArrayNoStackMemoryException";
 
 
 static inline void NSArrayRaiseNoStackMemoryException(void){

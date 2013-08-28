@@ -16,13 +16,18 @@
 #include <stdarg.h>
 #endif
 
-static NSString *const NSDictionaryNoStackMemoryException = @"NSDictionaryNoStackMemoryException";
-static NSString *const NSDictionaryNilKeyException = @"NSDictionaryNilKeyException";
+NSString *const NSDictionaryNoStackMemoryException = @"NSDictionaryNoStackMemoryException";
+NSString *const NSDictionaryNilKeyException = @"NSDictionaryNilKeyException";
+NSString *const NSDictionaryNilObjectException = @"NSDictionaryNilKeyException";
 
 MALLOC_DEFINE(M_NSDICTIONARY_TYPE, "NSDictionary_inner", "NSDictionary backend");
 
 static inline void NSDictionaryRaiseNilKeyException(void){
 	[[NSException exceptionWithName:NSDictionaryNilKeyException reason:@"" userInfo:nil] raise];
+}
+
+static inline void NSDictionaryRaiseNilObjectException(void){
+	[[NSException exceptionWithName:NSDictionaryNilObjectException reason:@"" userInfo:nil] raise];
 }
 
 static inline void NSDictionaryRaiseNoStackMemoryException(void){
@@ -89,6 +94,65 @@ struct _NSDictionaryBucket {
 	NSDictionaryCreateStackBufferFromArgsAndPerformCode(objects, keys, {
 		return [self dictionaryWithObjects:objects forKeys:keys count:count];
 	});
+}
+
+-(void)_releaseBuckets{
+	if (_buckets != NULL){
+		for (NSUInteger i = 0; i < _bucketCount; ++i){
+			if (_buckets[i].count == 0){
+				continue;
+			}
+			
+			NSDictionaryBucket *bucket = &_buckets[i];
+			if (bucket->count == 1){
+				[bucket->data.one.key release];
+				[bucket->data.one.object release];
+			}else{
+				for (NSUInteger o = 0; o < bucket->count; ++o){
+					[bucket->data.many[o].key release];
+					[bucket->data.many[o].object release];
+				}
+				objc_dealloc(bucket->data.many, M_NSDICTIONARY_TYPE);
+			}
+		}
+		objc_dealloc(_buckets, M_NSDICTIONARY_TYPE);
+	}
+}
+-(void)_insertObject:(id)obj forKey:(id)key{
+	NSUInteger hash = [key hash];
+	NSUInteger bucketIndex = hash % _bucketCount;
+	NSDictionaryBucket *bucket = &_buckets[bucketIndex];
+	
+	if (bucket->count == 0){
+		bucket->data.one.key = [key copy];
+		bucket->data.one.object = [obj retain];
+		bucket->count = 1;
+	}else if (bucket->count == 1 && [key isEqual:bucket->data.one.key]){
+		/* Just replace the obj. */
+		[bucket->data.one.object release];
+		bucket->data.one.object = [obj retain];
+	}else if (bucket->count == 1){
+		/* Need to make more space. */
+		NSDictionaryPair *pairs = objc_alloc(sizeof(NSDictionaryPair) * 2,
+											 M_NSDICTIONARY_TYPE);
+		pairs[0].key = bucket->data.one.key;
+		pairs[0].object = bucket->data.one.object;
+		
+		pairs[1].key = [key copy];
+		pairs[1].object = [obj retain];
+		
+		bucket->data.many = pairs;
+		bucket->count = 2;
+	}else{
+		bucket->data.many = objc_realloc(bucket->data.many,
+										 sizeof(NSDictionaryPair) * bucket->count + 1,
+										 M_NSDICTIONARY_TYPE);
+		
+		bucket->data.many[bucket->count].key = [key copy];
+		bucket->data.many[bucket->count].object = [obj retain];
+		
+		++bucket->count;
+	}
 }
 
 -(NSArray*)allKeys{
@@ -159,26 +223,7 @@ struct _NSDictionaryBucket {
 }
 
 -(void)dealloc{
-	if (_buckets != NULL){
-		for (NSUInteger i = 0; i < _bucketCount; ++i){
-			if (_buckets[i].count == 0){
-				continue;
-			}
-			
-			NSDictionaryBucket *bucket = &_buckets[i];
-			if (bucket->count == 1){
-				[bucket->data.one.key release];
-				[bucket->data.one.object release];
-			}else{
-				for (NSUInteger o = 0; o < bucket->count; ++o){
-					[bucket->data.many[o].key release];
-					[bucket->data.many[o].object release];
-				}
-				objc_dealloc(bucket->data.many, M_NSDICTIONARY_TYPE);
-			}
-		}
-		objc_dealloc(_buckets, M_NSDICTIONARY_TYPE);
-	}
+	[self _releaseBuckets];
 	
 	[super dealloc];
 }
@@ -264,40 +309,7 @@ struct _NSDictionaryBucket {
 			id key = keys[i];
 			id obj = objects[i];
 			
-			NSUInteger hash = [key hash];
-			NSUInteger bucketIndex = hash % _bucketCount;
-			NSDictionaryBucket *bucket = &_buckets[bucketIndex];
-			
-			if (bucket->count == 0){
-				bucket->data.one.key = [key copy];
-				bucket->data.one.object = [obj retain];
-				bucket->count = 1;
-			}else if (bucket->count == 1 && [key isEqual:bucket->data.one.key]){
-				/* Just replace the obj. */
-				[bucket->data.one.object release];
-				bucket->data.one.object = [obj retain];
-			}else if (bucket->count == 1){
-				/* Need to make more space. */
-				NSDictionaryPair *pairs = objc_alloc(sizeof(NSDictionaryPair) * 2,
-													 M_NSDICTIONARY_TYPE);
-				pairs[0].key = bucket->data.one.key;
-				pairs[0].object = bucket->data.one.object;
-		
-				pairs[1].key = [key copy];
-				pairs[1].object = [obj retain];
-				
-				bucket->data.many = pairs;
-				bucket->count = 2;
-			}else{
-				bucket->data.many = objc_realloc(bucket->data.many,
-												 sizeof(NSDictionaryPair) * bucket->count + 1,
-												 M_NSDICTIONARY_TYPE);
-				
-				bucket->data.many[bucket->count].key = [key copy];
-				bucket->data.many[bucket->count].object = [obj retain];
-				
-				++bucket->count;
-			}
+			[self _insertObject:obj forKey:key];
 		}
 	}
 	return self;
@@ -373,3 +385,82 @@ struct _NSDictionaryBucket {
 }
 
 @end
+
+
+@implementation NSMutableDictionary
+
++(id)dictionaryWithCapacity:(NSUInteger)numItems{
+	return [[[self alloc] initWithCapacity:numItems] autorelease];
+}
+
+-(id)initWithCapacity:(NSUInteger)numItems{
+	if ((self = [super init]) != nil){
+		if (numItems == 0){
+			return self;
+		}
+		
+		_bucketCount = numItems;
+		if (_bucketCount % 16 != 0){
+			_bucketCount = ((_bucketCount >> 4) + 1) << 4;
+		}
+		
+		_buckets = objc_zero_alloc(sizeof(NSDictionaryBucket) * _bucketCount,
+								   M_NSDICTIONARY_TYPE);
+	}
+	return self;
+}
+-(void)removeAllObjects{
+	[self _releaseBuckets];
+}
+-(void)removeObjectForKey:(id)aKey{
+	if (aKey == nil){
+		NSDictionaryRaiseNilKeyException();
+	}
+	
+	if (_bucketCount == 0){
+		return;
+	}
+	
+	NSUInteger hash = [aKey hash];
+	NSUInteger bucketIndex = hash % _bucketCount;
+	NSDictionaryBucket *bucket = &_buckets[bucketIndex];
+	
+	if (bucket->count == 0){
+		return;
+	}
+	
+	if (bucket->count == 1 && [aKey isEqual:bucket->data.one.key]){
+		[bucket->data.one.key release];
+		[bucket->data.one.object release];
+		
+		bucket->data.one.key = nil;
+		bucket->data.one.object = nil;
+		
+		bucket->count = 0;
+	}else{
+		for (NSUInteger o = 0; o < bucket->count; ++o){
+			if ([aKey isEqual:bucket->data.many[o].key]){
+				
+			}
+		}
+	}
+}
+-(void)removeObjectsForKeys:(NSArray*)keyArray{
+	for (NSUInteger i = 0; i < [keyArray count]; ++i){
+		[self removeObjectForKey:[keyArray objectAtIndex:i]];
+	}
+}
+-(void)setObject:(id)anObject forKey:(id)aKey{
+	if (aKey == nil){
+		NSDictionaryRaiseNilKeyException();
+	}
+	if (anObject == nil){
+		NSDictionaryRaiseNilObjectException();
+	}
+	
+	[self _insertObject:anObject forKey:aKey];
+}
+
+@end
+
+

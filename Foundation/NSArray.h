@@ -39,3 +39,6 @@
 -(id)objectAtIndex:(NSUInteger)idx;
 
 @end
+
+extern NSString *const NSArrayOutOfBoundsException;
+extern NSString *const NSArrayNoStackMemoryException;

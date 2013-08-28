@@ -37,3 +37,24 @@ typedef struct _NSDictionaryBucket NSDictionaryBucket;
 
 
 @end
+
+
+
+@interface NSMutableDictionary : NSDictionary
+
++(id)dictionaryWithCapacity:(NSUInteger)numItems;
+
+-(void)addEntriesFromDictionary:(NSDictionary*)otherDictionary;
+-(id)initWithCapacity:(NSUInteger)numItems;
+-(void)removeAllObjects;
+-(void)removeObjectForKey:(id)aKey;
+-(void)removeObjectsForKeys:(NSArray*)keyArray;
+-(void)setObject:(id)anObject forKey:(id)aKey;
+
+@end
+
+
+extern NSString *const NSDictionaryNoStackMemoryException;
+extern NSString *const NSDictionaryNilKeyException;
+extern NSString *const NSDictionaryNilObjectException;
+
