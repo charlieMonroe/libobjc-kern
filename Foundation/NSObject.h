@@ -16,7 +16,10 @@
  */
 @interface NSObject : KKObject <NSObject>
 
++(void)subclassResponsibility:(SEL)selector;
+
 -(id)description;
+-(IMP)methodForSelector:(SEL)selector;
 -(id)performSelector:(SEL)selector withObject:(id)obj;
 -(id)self;
 

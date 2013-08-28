@@ -1,12 +1,12 @@
-//
-//  NSException.m
-//  libkernobjc_xcode
-//
-//  Created by Charlie Monroe on 8/27/13.
-//  Copyright (c) 2013 Krystof Vasa. All rights reserved.
-//
 
 #import "NSException.h"
+#import "NSString.h"
+
+#ifdef _KERNEL
+	#include <machine/stdarg.h>
+#else
+	#include <stdarg.h>
+#endif
 
 NSString *const NSInternalInconsistencyException = @"NSInternalInconsistencyException";
 
@@ -14,6 +14,15 @@ NSString *const NSInternalInconsistencyException = @"NSInternalInconsistencyExce
 
 +(NSException *)exceptionWithName:(NSString *)name reason:(NSString *)reason userInfo:(id)userInfo{
 	return [[[self alloc] initWithName:name reason:reason userInfo:userInfo] autorelease];
+}
+
++(void)raise:(NSString*)name format:(NSString*)format, ...{
+	va_list ap;
+	va_start(ap, format);
+	NSString *str = [[[NSString alloc] initWithFormat:format arguments: ap] autorelease];
+	va_end(ap);
+	
+	[[NSException exceptionWithName:name reason:str userInfo:nil] raise];
 }
 
 -(id)initWithName:(NSString *)name reason:(NSString *)reason userInfo:(id)userInfo{

@@ -1,15 +1,15 @@
-//
-//  NSString.m
-//  libkernobjc_xcode
-//
-//  Created by Charlie Monroe on 8/28/13.
-//  Copyright (c) 2013 Krystof Vasa. All rights reserved.
-//
+
 
 #import "NSString.h"
 #import "NSArray.h"
 #import "NSException.h"
 #import "../utils.h"
+
+#ifdef _KERNEL
+	#include <machine/stdarg.h>
+#else
+	#include <stdarg.h>
+#endif
 
 NSString *const NSStringOutOfBoundsException = @"NSStringOutOfBoundsException";
 
@@ -34,8 +34,15 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return [[[self alloc] initWithCString:byteString
 								   length:objc_strlen(byteString)] autorelease];
 }
++(id)stringWithString:(NSString*)string{
+	return [[[self alloc] initWithString:string] autorelease];
+}
 +(id)stringWithFormat:(NSString*)format, ...{
-	
+	va_list ap;
+	va_start(ap, format);
+	NSString *str = [[NSString alloc] initWithFormat:format arguments: ap];
+	va_end(ap);
+	return [str autorelease];
 }
 +(id)stringWithUTF8String:(const unichar*)str{
 	return [self stringWithCString:str];
@@ -88,10 +95,15 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return [self initWithCString:string->_data.immutable];
 }
 -(id)initWithFormat:(NSString*)format, ...{
+	va_list ap;
+	va_start(ap, format);
+	self = [self initWithFormat:format arguments: ap];
+	va_end(ap);
 	
+	return self;
 }
 -(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
-	
+	// TODO
 }
 
 -(NSUInteger)length{
@@ -177,6 +189,10 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 										encoding:0 freeWhenDone:YES] autorelease];
 }
 
+-(id)mutableCopy{
+	return [[NSMutableString alloc] initWithString:self];
+}
+
 -(BOOL)hasPrefix:(NSString*)aString{
 	if ([aString length] > _length){
 		return NO;
@@ -239,6 +255,23 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 @end
 
 @implementation NSMutableString
+
+-(void)appendString:(NSString*)string{
+	objc_assert(string != nil, "Appending nil string!\n");
+	
+	NSUInteger strLen = string->_length;
+	NSUInteger totalLen = _length + strLen;
+	_data.mutable = objc_realloc(_data.mutable, totalLen + 1, M_NSSTRING_TYPE);
+	memcpy(_data.mutable + _length, string->_data.immutable, strLen);
+	_data.mutable[totalLen] = '\0';
+}
+-(void)appendFormat:(NSString*)format, ...{
+	va_list ap;
+	va_start(ap, format);
+	NSString *str = [[NSString alloc] initWithFormat:format arguments: ap];
+	va_end(ap);
+	[self appendString:str];
+}
 
 -(id)copy{
 	return [[NSString alloc] initWithString:self];

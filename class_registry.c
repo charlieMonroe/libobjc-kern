@@ -130,7 +130,7 @@ static Class __objc_class_lookup_default_hook(const char *name) { return Nil; }
  * The basic class lookup hook allowing the app to supply a class.
  */
 Class(*objc_class_lookup_hook)(const char *name) =
-					__objc_class_lookup_default_hook;
+__objc_class_lookup_default_hook;
 
 /*
  * Default load callback.
@@ -195,7 +195,7 @@ _objc_insert_class_into_class_tree(Class cl)
 			class_tree = cl;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
-								   class_tree);
+													   class_tree);
 		}
 	}else{
 		/*
@@ -209,7 +209,7 @@ _objc_insert_class_into_class_tree(Class cl)
 			super_class->subclass_list = cl;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
-						super_class->subclass_list);
+													   super_class->subclass_list);
 		}
 	}
 }
@@ -259,18 +259,18 @@ _objc_class_remove_from_unresolved_list(Class cl)
 	if (cl->unresolved_class_previous == Nil){
 		/* The first class */
 		objc_assert(cl == unresolved_classes, "There are possibly two "
-			    "unresolved class lists? (%p != %p)", cl,
-			    unresolved_classes);
+					"unresolved class lists? (%p != %p)", cl,
+					unresolved_classes);
 		unresolved_classes = cl->unresolved_class_next;
 	}else{
 		cl->unresolved_class_previous->unresolved_class_next =
-						cl->unresolved_class_next;
+		cl->unresolved_class_next;
 	}
 	
 	if (cl->unresolved_class_next != Nil){
 		/* Not the end of the linked list */
 		cl->unresolved_class_next->unresolved_class_previous =
-						cl->unresolved_class_previous;
+		cl->unresolved_class_previous;
 	}
 	
 	cl->unresolved_class_previous = Nil;
@@ -300,13 +300,13 @@ _objc_class_calculate_instance_size(Class cl)
 	if (cl->ivars != NULL){
 		for (int i = 0; i < cl->ivars->size; ++i){
 			Ivar ivar = &cl->ivars->list[i];
-      ivar->size = objc_sizeof_type(ivar->type);
-      ivar->align = objc_alignof_type(ivar->type);
-      
+			ivar->size = objc_sizeof_type(ivar->type);
+			ivar->align = objc_alignof_type(ivar->type);
+			
 			size_t offset = size;
 			if (size % ivar->align != 0){
 				unsigned int padding = _padding_for_ivar(ivar,
-									 offset);
+														 offset);
 				offset += padding;
 			}
 			ivar->offset = (int)offset;
@@ -341,8 +341,8 @@ _objc_class_fixup_instance_size(Class cl)
 	}
 	
 	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n",
-		       cl->name, cl->flags.meta ? " (meta)" : "",
-		       (unsigned int)cl->instance_size);
+				   cl->name, cl->flags.meta ? " (meta)" : "",
+				   (unsigned int)cl->instance_size);
 }
 
 
@@ -354,7 +354,7 @@ objc_updateDtableForClassContainingMethod(Method m)
 	SEL sel = method_getName(m);
 	for (;;) {
 		nextClass = objc_class_next(objc_classes,
-			          (struct objc_class_table_enumerator**)&state);
+									(struct objc_class_table_enumerator**)&state);
 		if (nextClass == Nil){
 			break;
 		}
@@ -381,7 +381,7 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 		 * a variable after the subclass did so?
 		 */
 		objc_abort("Trying to create a subclass of an unresolved "
-			   "class.");
+				   "class.");
 	}
 	
 	if (objc_class_table_get(objc_classes, name) != NULL){
@@ -391,9 +391,9 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 	}
 	
 	Class newClass = (Class)objc_zero_alloc(sizeof(struct objc_class)
-						+ extraBytes, M_CLASS_TYPE);
+											+ extraBytes, M_CLASS_TYPE);
 	Class newMetaClass = (Class)objc_zero_alloc(sizeof(struct objc_class),
-						    M_CLASS_TYPE);
+												M_CLASS_TYPE);
 	newClass->isa = newMetaClass;
 	newClass->super_class = superclass;
 	if (superclass == Nil){
@@ -440,7 +440,7 @@ objc_registerClassPair(Class cl)
 	}
 	
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
-		
+	
 	objc_debug_log("registering class pair %s\n", class_getName(cl));
 	
 	objc_class_insert(objc_classes, cl);
@@ -549,8 +549,8 @@ objc_getClass(const char *name)
 id
 objc_lookup_class(const char *name)
 {
-  objc_debug_log("Class lookup: %s\n", name);
-  return objc_getClass(name);
+	objc_debug_log("Class lookup: %s\n", name);
+	return objc_getClass(name);
 }
 
 id
@@ -623,7 +623,7 @@ objc_class_register_class(Class cl)
 	
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
-			 " Which one will be used is undefined.\n", cl->name);
+				 " Which one will be used is undefined.\n", cl->name);
 		return;
 	}
 	
@@ -675,10 +675,10 @@ objc_class_init(void)
 	objc_debug_log("Initializing classes.\n");
 	
 	objc_classes =
-		objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
+	objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
 	objc_load_messages =
-		objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY,
-						"objc_load_messages");
+	objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY,
+									"objc_load_messages");
 }
 
 static void

@@ -4,7 +4,10 @@
 
 @class NSArray;
 
+/* The encoding typedef and some types are for compatibility reasons only. */
 typedef NSUInteger NSStringEncoding;
+
+#define NSUTF8StringEncoding ((NSStringEncoding)0)
 
 @interface NSString : NSObject {
 	union {
@@ -21,6 +24,7 @@ typedef NSUInteger NSStringEncoding;
 +(id)stringWithCString:(const char*)byteString length:(NSUInteger)length;
 +(id)stringWithCString:(const char*)byteString;
 +(id)stringWithFormat:(NSString*)format,...;
++(id)stringWithString:(NSString*)string;
 +(id)stringWithUTF8String:(const unichar*)str;
 
 -(id)init;
@@ -42,6 +46,8 @@ typedef NSUInteger NSStringEncoding;
 -(void)getCharacters: (unichar*)buffer range:(NSRange)aRange;
 
 -(NSString*)stringByAppendingString:(NSString*)aString;
+
+-(id)mutableCopy;
 
 -(NSArray*)componentsSeparatedByString:(NSString*)separator;
 -(NSString*)substringFromIndex:(NSUInteger)index;
@@ -65,6 +71,9 @@ typedef NSUInteger NSStringEncoding;
 
 
 @interface NSMutableString : NSString
+
+-(void)appendString:(NSString*)string;
+-(void)appendFormat:(NSString*)format, ...;
 
 @end
 

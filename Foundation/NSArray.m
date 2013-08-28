@@ -109,6 +109,16 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 -(NSUInteger)count{
 	return _count;
 }
+-(NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+								 objects:(id [])stackbuf
+								   count:(NSUInteger)len{
+	/* For immutable arrays we can return the contents pointer directly. */
+	NSUInteger count = _count - state->state;
+	state->mutationsPtr = (unsigned long *)self;
+	state->itemsPtr = _items + state->state;
+	state->state += count;
+	return count;
+}
 
 -(void)dealloc{
 	if (_items != NULL){
@@ -248,6 +258,7 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	
 	_items[_count] = [anObject retain];
 	++_count;
+	++_version;
 }
 -(void)addObjectsFromArray:(NSArray *)otherArray{
 	NSUInteger count = [otherArray count];
@@ -259,7 +270,40 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 		
 		_items[_count] = [[otherArray objectAtIndex:i] retain];
 		++_count;
+		++_version;
 	}
+}
+-(NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
+								 objects:(id [])stackbuf
+								   count:(NSUInteger)len{
+	NSInteger count;
+	
+	/* This is cached in the caller at the start and compared at each
+	 * iteration.   If it changes during the iteration then
+	 * objc_enumerationMutation() will be called, throwing an exception.
+	 */
+	state->mutationsPtr = &_version;
+	
+#ifndef NS_MIN
+	#define NS_MIN(A, B) ((A < B) ? A : B)
+#endif
+	
+	count = NS_MIN(len, _count - state->state);
+	
+#undef NS_MIN
+	
+	/* If a mutation has occurred then it's possible that we are being asked to
+	 * get objects from after the end of the array.  Don't pass negative values
+	 * to memcpy.
+	 */
+	if (count > 0){
+		memcpy(stackbuf, _items + state->state, count * sizeof(id));
+		state->state += count;
+    }else{
+		count = 0;
+    }
+	state->itemsPtr = stackbuf;
+	return count;
 }
 -(void)exchangeObjectAtIndex:(NSUInteger)i1 withObjectAtIndex:(NSUInteger)i2{
 	if (i1 >= _count || i2 >= _count){
@@ -314,6 +358,7 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 		previous = p;
 	}
 	++_count;
+	++_version;
 }
 -(void)removeAllObjects{
 	if (_items != NULL){
@@ -335,6 +380,7 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	}
 	
 	--_count;
+	++_version;
 	[_items[_count] autorelease];
 }
 -(void)removeObjectAtIndex:(NSUInteger)index{
@@ -354,6 +400,7 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	}
 	
 	--_count;
+	++_version;
 }
 -(void)removeObject:(id)anObject{
 	[self removeObject:anObject inRange:NSMakeRange(0, [self count])];

@@ -1,4 +1,5 @@
 #import "../Foundation/Foundation.h"
+#import "../kernobjc/runtime.h"
 
 #import "LKAST.h"
 #import "LKCategory.h"
@@ -356,6 +357,7 @@ static void emitParseError(NSException *localException)
 
 static NSString *loadFramework(NSString *framework)
 {
+#ifndef KERNEL_OBJC
 	NSFileManager *fm = [NSFileManager defaultManager];
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
 			NSAllDomainsMask, YES);
@@ -396,6 +398,7 @@ static NSString *loadFramework(NSString *framework)
 		}
 		return [bundle bundlePath];
 	}
+#endif /* !KERNEL_OBJC */
 	return nil;
 }
 
@@ -526,9 +529,9 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return inDevMode;
 }
 
+#ifndef KERNEL_OBJC
 + (Class) loadLanguageKitBundle:(NSBundle*)bundle
 {
-#ifndef KERNEL_OBJC
 	//TODO: Static compile and cache the result in a .so, and load this on
 	// subsequent runs
 	NSString *plistPath = [bundle pathForResource:@"LKInfo" ofType:@"plist"];
@@ -588,12 +591,10 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	{
 		return NSClassFromString(className);
 	}
-#endif /* !KERNEL  */
 	return Nil;
 }
 + (BOOL) loadAllPlugInsForApplication
 {
-#ifndef KERNEL_OBJC
 	NSArray *dirs = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
 		NSUserDomainMask, YES);
 	NSString *processName = [[NSProcessInfo processInfo] processName];
@@ -628,9 +629,6 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		}
 	}
 	return success;
-#else
-	return NO;
-#endif /* !KERNEL */
 }
 
 + (BOOL) loadScriptNamed: (NSString*)fileName fromBundle: (NSBundle*)bundle
@@ -642,7 +640,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 }
 - (BOOL) loadScriptNamed: (NSString*)name fromBundle:(NSBundle*)bundle
 {
-#ifndef KERNEL_OBJC
+
 	NSString *extension = [[self class] fileExtension];
 	NSString *path = [bundle pathForResource:name ofType:extension];
 	if (nil == path)
@@ -651,15 +649,13 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 		return NO;
 	}
 	return [self compileString:[NSString stringWithContentsOfFile:path]] != nil;
-#else
-	return NO;
-#endif
 }
-
 + (BOOL) loadApplicationScriptNamed:(NSString*)fileName
 {
 	return [self loadScriptNamed: fileName fromBundle: [NSBundle mainBundle]];
 }
+#endif
+
 + (NSString*)typesForFunction: (NSString*)functionName
 {
 	return [[[collection functions] objectForKey: functionName] typeEncoding];
@@ -677,10 +673,13 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return [[[[collection enumerations] objectForKey: anEnumeration] values] objectForKey: enumName];
 }
 
+#ifndef KERNEL_OBJC
 - (BOOL) loadApplicationScriptNamed:(NSString*)name
 {
 	return [self loadScriptNamed: name fromBundle: [NSBundle mainBundle]];
 }
+#endif /* !KERNEL_OBJC */
+
 + (void)setDefaultDelegate: (id<LKCompilerDelegate>)aDelegate
 {
 	ASSIGN(DefaultDelegate, aDelegate);
@@ -694,6 +693,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	return delegate;
 }
 
+#ifndef KERNEL_OBJC
 + (BOOL) loadScriptsFromBundle:(NSBundle*) aBundle
 {
 	BOOL success = YES;
@@ -729,6 +729,7 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 {
 	return [self loadScriptsFromBundle:[NSBundle mainBundle]];
 }
+#endif /* !KERNEL_OBJC */
 
 + (NSString*) fileExtension
 {

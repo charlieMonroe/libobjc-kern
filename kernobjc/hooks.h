@@ -20,5 +20,12 @@ extern struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op);
  */
 extern struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender);
 
+/*
+ * Allows supplying classes on the fly.
+ */
+extern Class(*objc_class_lookup_hook)(const char *name);
+
+/* Compatibility reasons. */
+#define _objc_lookup_class objc_class_lookup_hook
 
 #endif /* !OBJC_HOOKS_H */

@@ -1,10 +1,3 @@
-//
-//  NSException.h
-//  libkernobjc_xcode
-//
-//  Created by Charlie Monroe on 8/27/13.
-//  Copyright (c) 2013 Krystof Vasa. All rights reserved.
-//
 
 #import "NSObject.h"
 
@@ -12,9 +5,12 @@
 
 @interface NSException : NSObject
 
-+ (NSException*) exceptionWithName: (NSString*)name
-							reason: (NSString*)reason
-						  userInfo: (id)userInfo;
++(NSException*)exceptionWithName: (NSString*)name
+						  reason: (NSString*)reason
+						userInfo: (id)userInfo;
+
++(void)raise:(NSString*)name format:(NSString*)format, ...;
+	
 
 - (id) initWithName: (NSString*)name
 			 reason: (NSString*)reason

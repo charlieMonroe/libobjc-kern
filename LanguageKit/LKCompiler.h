@@ -142,6 +142,8 @@ generatedWarning: (NSString*)aWarning
 - (BOOL) compileMethod:(NSString*)source
           onClassNamed:(NSString*)name
          withGenerator:(id<LKCodeGenerator>)cg;
+
+#ifndef KERNEL_OBJC
 /**
  * Load a framework with the specified name.
  */
@@ -197,6 +199,9 @@ generatedWarning: (NSString*)aWarning
  * Loads all of the LanguageKit plugins for the current application.
  */
 + (BOOL) loadAllPlugInsForApplication;
+
+#endif /* !KERNEL_OBJC */
+
 /**
  * Attempts to parse a C header.  Returns YES on success, NO on failure.
  * Failure can be caused by an inability to locate the header or by

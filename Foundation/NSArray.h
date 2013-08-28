@@ -4,6 +4,14 @@
 
 @class NSString;
 
+typedef struct
+{
+	unsigned long	state;
+	__unsafe_unretained id		*itemsPtr;
+	unsigned long	*mutationsPtr;
+	unsigned long	extra[5];
+} NSFastEnumerationState;
+
 @interface NSArray : NSObject {
 @protected
 	id			*_items;
@@ -22,6 +30,9 @@
 -(BOOL)containsObject:(id)anObject;
 
 -(NSUInteger)count;
+-(NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState*)state
+								   objects:(__unsafe_unretained id[])stackbuf
+								   count:(NSUInteger)len;
 
 /* May be NULL! */
 -(__unsafe_unretained const id*)getDirectObjectArray;
@@ -48,6 +59,7 @@
 
 @interface NSMutableArray : NSArray {
 	NSUInteger	_capacity;
+	unsigned long  _version;
 }
 
 +(id)arrayWithCapacity:(NSUInteger)numItems;
