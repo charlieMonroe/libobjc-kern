@@ -8,7 +8,7 @@
 
 #import "NSDictionary.h"
 #import "NSException.h"
-#import "NSMutableArray.h"
+#import "NSArray.h"
 
 #ifdef _KERNEL
 #include <machine/stdarg.h>

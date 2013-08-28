@@ -2,7 +2,7 @@
 #import "NSObject.h"
 #import "NSTypes.h"
 
-@class NSArray, NSMutableArray;
+@class NSArray, NSMutableArray, NSString;
 
 @interface NSSet : NSObject {
 	NSMutableArray *_array;
