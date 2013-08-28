@@ -58,4 +58,7 @@ extern Class NSClassFromString(NSString *class);
 	#define D(objs...) [NSDictionary dictionaryWithObjectsAndKeys:objs]
 #endif
 
+#define NSCParameterAssert(condition)			\
+	objc_assert((condition), "Invalid parameter not satisfying: %s\n", #condition)
+
 #endif

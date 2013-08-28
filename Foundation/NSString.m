@@ -103,7 +103,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return self;
 }
 -(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
-	// TODO
+	return [[[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy] autorelease];
 }
 
 -(NSUInteger)length{
@@ -256,14 +256,16 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 
 @implementation NSMutableString
 
+-(void)appendCString:(const unichar *)str length:(NSUInteger)length{
+	NSUInteger totalLen = _length + length;
+	_data.mutable = objc_realloc(_data.mutable, totalLen + 1, M_NSSTRING_TYPE);
+	memcpy(_data.mutable + _length, str, length);
+	_data.mutable[totalLen] = '\0';
+}
 -(void)appendString:(NSString*)string{
 	objc_assert(string != nil, "Appending nil string!\n");
 	
-	NSUInteger strLen = string->_length;
-	NSUInteger totalLen = _length + strLen;
-	_data.mutable = objc_realloc(_data.mutable, totalLen + 1, M_NSSTRING_TYPE);
-	memcpy(_data.mutable + _length, string->_data.immutable, strLen);
-	_data.mutable[totalLen] = '\0';
+	[self appendCString:string->_data.immutable length:string->_length];
 }
 -(void)appendFormat:(NSString*)format, ...{
 	va_list ap;
@@ -275,6 +277,35 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 
 -(id)copy{
 	return [[NSString alloc] initWithString:self];
+}
+-(id)initWithFormat:(NSString *)format arguments:(va_list)argList{
+	if ((self = [super init]) != nil){
+		unichar	fbuf[1024];
+		unichar	*fmt = fbuf;
+		size_t	len;
+		
+		/*
+		 * First we provide an array of unichar characters containing the
+		 * format string.  For performance reasons we try to use an on-stack
+		 * buffer if the format string is small enough ... it almost always
+		 * will be.
+		 */
+		len = [format length];
+		if (len >= 1024)
+		{
+			fmt = objc_alloc((len+1)*sizeof(unichar), M_NSSTRING_TYPE);
+		}
+		[format getCharacters: fmt];
+		fmt[len] = '\0';
+		
+		extern void GSPrivateFormat(NSMutableString *s, const unichar *format, va_list ap);
+		GSPrivateFormat(self, fmt, argList);
+		if (fmt != fbuf)
+		{
+			objc_dealloc(fmt, M_NSSTRING_TYPE);
+		}
+	}
+	return self;
 }
 
 @end

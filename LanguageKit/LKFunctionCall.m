@@ -36,7 +36,7 @@
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator
 {
-	int count = [arguments count];
+	NSUInteger count = [arguments count];
 	void *args[count];
 	int i = 0;
 	for (LKAST *arg in arguments)
@@ -46,7 +46,7 @@
 	return [aGenerator callFunction: functionName
 	                   typeEncoding: typeEncoding
 	                      arguments: args
-	                          count: count];
+	                          count: (int)count];
 }
 - (NSString*)description
 {

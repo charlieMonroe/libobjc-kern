@@ -72,6 +72,7 @@ typedef NSUInteger NSStringEncoding;
 
 @interface NSMutableString : NSString
 
+-(void)appendCString:(const unichar*)str length:(NSUInteger)length;
 -(void)appendString:(NSString*)string;
 -(void)appendFormat:(NSString*)format, ...;
 
