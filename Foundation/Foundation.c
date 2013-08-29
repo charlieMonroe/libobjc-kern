@@ -37,4 +37,5 @@ static moduledata_t foundation_conf = {
 DECLARE_MODULE(objc_foundation, foundation_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
 MODULE_VERSION(objc_foundation, 0);
 
-
+/* Depend on libobjc */
+MODULE_DEPEND(objc_foundation, libobjc, 0, 0, 999);
