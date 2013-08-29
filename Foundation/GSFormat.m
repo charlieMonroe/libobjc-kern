@@ -5,6 +5,9 @@
 #ifdef _KERNEL
 	#include <machine/stdarg.h>
 	#include <sys/limits.h>
+
+	#define	alloca(size)	__alloca(size)
+	#define	__alloca(size)	__builtin_alloca(size)
 #else
 	#include <stdarg.h>
 	#include <limits.h>

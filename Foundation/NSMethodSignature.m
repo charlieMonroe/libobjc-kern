@@ -35,6 +35,8 @@
 
 #ifdef _KERNEL
 	#include <sys/ctype.h>
+	#define	alloca(size)	__alloca(size)
+	#define	__alloca(size)	__builtin_alloca(size)
 #else
 	#include <ctype.h>
 #endif
