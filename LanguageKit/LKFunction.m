@@ -90,7 +90,7 @@
 	{
 		[statement compileWithGenerator: aGenerator];
 	}
-	[aGenerator endFunction];
+	[aGenerator endMethod];
 	return NULL;
 }
 - (void) inheritSymbolTable:(LKSymbolTable*)aSymbolTable

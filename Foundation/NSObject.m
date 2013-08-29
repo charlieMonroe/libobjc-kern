@@ -33,6 +33,9 @@
 	objc_dealloc(classes, M_CLASS_TYPE);
 	return result;
 }
++(IMP)methodForSelector:(SEL)selector{
+	return class_getMethodImplementation(object_getClass(self), selector);
+}
 +(void)subclassResponsibility:(SEL)selector{
 	[[NSException exceptionWithName:@"NSAbstractClassException"
 							 reason:[NSString stringWithUTF8String:sel_getName(selector)]

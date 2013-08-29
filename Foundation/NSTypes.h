@@ -48,6 +48,27 @@ static inline NSRange NSMakeRange(NSUInteger location, NSUInteger length){
 	r.length = length;
 	return r;
 }
+static inline NSPoint NSMakePoint(NSUInteger x, NSUInteger y){
+	NSPoint p;
+	p.x = x;
+	p.y = y;
+	return p;
+}
+static inline NSSize NSMakeSize(NSUInteger width, NSUInteger height){
+	NSSize s;
+	s.width = width;
+	s.height = height;
+	return s;
+}
+static inline NSRect NSMakeRect(NSUInteger x, NSUInteger y, NSUInteger width,
+								 NSUInteger height){
+	NSRect r;
+	r.origin.x = x;
+	r.origin.y = y;
+	r.size.width = width;
+	r.size.height = height;
+	return r;
+}
 
 static inline NSUInteger NSMaxRange(NSRange range) {
     return (range.location + range.length);

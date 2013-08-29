@@ -287,6 +287,12 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return NSMakeRange(NSNotFound, 0);
 }
 
+-(NSString*)stringByReplacingOccurrencesOfString:(NSString*)needle withString:(NSString*)str{
+	NSMutableString *result = [[NSMutableString alloc] initWithString:self];
+	[result replaceOccurrencesOfString:needle withString:str options:0 range:NSMakeRange(0, _length)];
+	return [result autorelease];
+}
+
 @end
 
 @implementation NSMutableString

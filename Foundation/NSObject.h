@@ -21,6 +21,7 @@
 +(id)allocWithZone:(NSZone*)zone;
 +(id)className;
 +(NSArray*)directSubclasses;
++(IMP)methodForSelector:(SEL)selector;
 +(void)subclassResponsibility:(SEL)selector;
 
 -(id)className;

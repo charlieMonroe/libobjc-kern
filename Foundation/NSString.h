@@ -46,6 +46,7 @@ typedef NSUInteger NSStringEncoding;
 -(void)getCharacters: (unichar*)buffer range:(NSRange)aRange;
 
 -(NSString*)stringByAppendingString:(NSString*)aString;
+-(NSString*)stringByReplacingOccurrencesOfString:(NSString*)needle withString:(NSString*)str;
 
 -(id)mutableCopy;
 
