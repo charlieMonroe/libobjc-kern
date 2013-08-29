@@ -1,6 +1,7 @@
 #define class_pointer isa
 #import "BoxedFloat.h"
 #import "LKObject.h"
+#import "../utils.h"
 
 #ifdef _KERNEL
 	#include <sys/limits.h>
@@ -12,16 +13,16 @@
 + (BoxedFloat*) boxedFloatWithCString:(const char*) aString
 {
 	BoxedFloat *b = [[[BoxedFloat alloc] init] autorelease];
-	b->value = strtold(aString, NULL);
+	b->value = objc_string_long_long_value(aString);
 	return b;
 }
-+ (BoxedFloat*) boxedFloatWithDouble:(double)aVal
++ (BoxedFloat*) boxedFloatWithDouble:(NSUInteger)aVal
 {
 	BoxedFloat *b = [[[BoxedFloat alloc] init] autorelease];
 	b->value = aVal;
 	return b;
 }
-+ (BoxedFloat*) boxedFloatWithFloat:(float)aVal
++ (BoxedFloat*) boxedFloatWithFloat:(NSUInteger)aVal
 {
 	BoxedFloat *b = [[[BoxedFloat alloc] init] autorelease];
 	b->value = aVal;
@@ -38,7 +39,7 @@
 	}\
 	else\
 	{\
-		b->value = value op [other doubleValue];\
+		b->value = value op [other unsignedIntegerValue];\
 	}\
 	return LKOBJECT(b);\
 }
@@ -50,7 +51,7 @@
 	{\
 		return value op ((BoxedFloat*)other)->value;\
 	}\
-	return value op [other doubleValue];\
+	return value op [other unsignedIntegerValue];\
 }
 
 op(plus, +)
@@ -91,7 +92,7 @@ cmp(isEqual, ==)
 - (id) timesRepeat:(id) aBlock
 {
 	id result = nil;
-	int max = value;
+	int max = (int)value;
 	if (value > INT_MAX)
 	{
 		max = INT_MAX;
@@ -105,8 +106,8 @@ cmp(isEqual, ==)
 - (id) to: (id) other by: (id) incr do: (id) aBlock
 {
 	id result = nil;
-	double to = [other doubleValue];
-	double by = [incr doubleValue];
+	NSUInteger to = [other unsignedIntegerValue];
+	NSUInteger by = [incr unsignedIntegerValue];
 	for (double i=value ; i<to ; i+=by)
 	{
 		result = [aBlock value];
@@ -144,8 +145,8 @@ CASTMETHOD(long int, longValue)
 CASTMETHOD(unsigned long int, unsignedLongValue)
 CASTMETHOD(long long int, longLongValue)
 CASTMETHOD(unsigned long long int, unsignedLongLongValue)
-CASTMETHOD(float, floatValue)
-CASTMETHOD(double, doubleValue)
+//CASTMETHOD(float, floatValue)
+//CASTMETHOD(double, doubleValue)
 CASTMETHOD(BOOL, boolValue)
 - (id)copy { return [self retain]; }
 - (id)copyWithZone: (NSZone*)unused { return [self retain]; }
