@@ -38,4 +38,7 @@ DECLARE_MODULE(objc_langkit, langkit_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
 MODULE_VERSION(objc_langkit, 0);
 
 /* Depend on libobjc */
+MODULE_DEPEND(objc_foundation, libobjc, 0, 0, 999);
+
+/* Depend on Foundation */
 MODULE_DEPEND(objc_langkit, objc_foundation, 0, 0, 999);
