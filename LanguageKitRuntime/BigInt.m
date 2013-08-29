@@ -188,7 +188,7 @@ CMP(isEqual, ==)
 	}
 	return result;
 }
-- (id) to: (id) other by: (id) incr do: (id) aBlock
+- (id) to: (id) other by: (id) incr do: (id(^)(id)) aBlock
 {
 	id result = nil;
 	if ([other isKindOfClass: object_getClass(self)] && [incr isKindOfClass: object_getClass(self)]){
@@ -248,7 +248,7 @@ CMP(isEqual, ==)
 	}
 	return result;
 }
-- (id) to: (id) other do: (id) aBlock
+- (id) to: (id) other do: (id(^)(id)) aBlock
 {
 	return [self to: other by: [BigInt bigIntWithLongLong: 1] do: aBlock];
 }
