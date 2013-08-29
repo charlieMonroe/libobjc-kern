@@ -250,10 +250,13 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 }
 
 -(int)intValue{
-	return atoi(_data.immutable);
+	return (int)objc_string_long_long_value(_data.immutable);
+}
+-(long)longValue{
+	return (long)objc_string_long_long_value(_data.immutable);
 }
 -(long long)longLongValue{
-	return atoll(_data.immutable);
+	return objc_string_long_long_value(_data.immutable);
 }
 
 

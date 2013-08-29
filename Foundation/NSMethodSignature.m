@@ -236,7 +236,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 			
 		case _C_ARY_B:
 		{
-			int	length = atoi(typePtr);
+			int	length = (int)objc_string_long_long_value(typePtr);
 			
 			while (isdigit(*typePtr))
 			{

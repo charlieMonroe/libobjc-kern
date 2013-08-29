@@ -75,6 +75,7 @@ typedef NSUInteger NSStringEncoding;
 -(const unichar*)UTF8String;
 
 -(int)intValue;
+-(long)longValue;
 -(long long)longLongValue;
 
 @end

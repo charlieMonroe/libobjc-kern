@@ -123,6 +123,29 @@ objc_hash_string(const char *str)
 }
 
 /*
+ * Returns long long value of the string.
+ */
+static inline long long
+objc_string_long_long_value(const char *str)
+{
+	long long result = 0;
+	char c;
+	while (YES){
+		c = *str;
+		if (c < '0' || c > '9'){
+			/* Hit non-alfa char */
+			return result;
+		}
+		
+		result *= 10;
+		result += (c - '0');
+		
+		++str;
+	}
+	return result;
+}
+
+/*
  * Returns YES if ptr1 == ptr2;
  */
 static inline BOOL
