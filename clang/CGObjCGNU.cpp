@@ -4374,7 +4374,12 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
       if (i != Types.begin()){
         // TODO make it an error
         // We only support one type in kernel
-        llvm_unreachable("Same selector with different selectors isn't supported in the kernel runtime.");
+		printf("Trying to register selector %s for the second time with different"
+			   " type. Initial types: %s Types now: %s\n",
+			   iter->first.getAsString().c_str(),
+			   Types.begin()->first.c_str(), i->first.c_str());
+        llvm_unreachable("Same selector with different selectors isn't supported"
+						 " in the kernel runtime.");
       }
       
       if (i->first.empty())
