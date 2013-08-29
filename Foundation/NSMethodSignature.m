@@ -70,9 +70,10 @@ skip_offset(const char *ptr)
 	return ptr;
 }
 
-#define ROUND(V, A) \
-({ typeof(V) __v=(V); typeof(A) __a=(A); \
-__a*((__v+__a-1)/__a); })
+#define ROUND(V, A)		\
+(						\
+	A*((V+A-1)/A)		\
+)
 
 /* Step through method encoding information extracting details.
  * If outTypes is non-nul then we copy the qualified type into
