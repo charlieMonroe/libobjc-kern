@@ -10,7 +10,8 @@
 
 #include "os.h"
 #include "kernobjc/types.h"
-#include "loader.h"
+#include "init.h" /* For objc_runtime_destroy() */
+#include "loader.h" /* For _objc_load_kernel_module() */
 
 
 SET_DECLARE(objc_module_list_set, struct objc_loader_module);
