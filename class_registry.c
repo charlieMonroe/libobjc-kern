@@ -659,14 +659,6 @@ objc_class_register_classes(Class *cl, unsigned int count)
 	for (int i = 0; i < count; ++i){
 		_objc_class_register_class_no_lock(cl[i]);
 	}
-	
-	for (int i = 0; i < count; ++i){
-		/* Try to immediately resolve classes. */
-		objc_class_resolve(cl[i]);
-	}
-	
-	/* The classes we needed might have been just loaded. */
-	objc_class_resolve_links();
 }
 
 #pragma mark -

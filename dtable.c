@@ -352,6 +352,15 @@ PRIVATE void objc_send_initialize(id object)
 	}
 	Class meta = class->isa;
 
+	// FIXME: a clean solution would be making the uninstalled_dtable
+	// an externally visible symbol that would get linked.
+	if (class->dtable == NULL){
+		class->dtable = uninstalled_dtable;
+	}
+	if (meta->dtable == NULL){
+		meta->dtable = uninstalled_dtable;
+	}
+	
 	objc_debug_log("sending initialize to class %s[%p] - meta[%p;%p] x %p\n",
 				   object_getClassName(object), class->dtable, meta, meta->dtable,
 				   uninstalled_dtable);

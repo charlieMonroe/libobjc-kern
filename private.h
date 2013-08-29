@@ -20,14 +20,14 @@ void	*object_getIndexedIvars(id obj);
 #pragma mark Private
 
 PRIVATE BOOL			objc_register_small_object_class(Class cl, uintptr_t mask);
-PRIVATE void  objc_category_try_load(Category category);
+PRIVATE void			objc_category_try_load(Category category);
 PRIVATE struct objc_slot	*objc_get_slot(Class cl, SEL selector);
 PRIVATE BOOL			objc_class_resolve(Class cl);
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);
 PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
 PRIVATE void			objc_init_protocols(objc_protocol_list *protocols);
-PRIVATE IMP   slowMsgLookup(id *receiver, SEL cmd);
-
+PRIVATE IMP				slowMsgLookup(id *receiver, SEL cmd);
+PRIVATE void			objc_class_resolve_links(void);
 
 PRIVATE void
 objc_load_buffered_categories(void);

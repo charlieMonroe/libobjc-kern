@@ -78,6 +78,9 @@ PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
 		objc_debug_log("\t[%i] %p -> %p\n", counter, module_ptr, *module_ptr);
 		_objc_load_module(*module_ptr);
 	}
+	
+	/* Now try to resolve all classes. */
+	objc_class_resolve_links();
 }
 
 #ifdef _KERNEL
