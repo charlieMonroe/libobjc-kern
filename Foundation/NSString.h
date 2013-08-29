@@ -59,6 +59,9 @@ typedef NSUInteger NSStringEncoding;
 -(BOOL)isEqual:(id)anObject;
 -(BOOL)isEqualToString:(NSString*)aString;
 
+-(NSRange)rangeOfString:(NSString*)str;
+-(NSRange)rangeOfString:(NSString*)str inRange:(NSRange)range;
+
 -(NSUInteger)hash;
 
 -(const char*)cString;
@@ -75,6 +78,9 @@ typedef NSUInteger NSStringEncoding;
 -(void)appendCString:(const unichar*)str length:(NSUInteger)length;
 -(void)appendString:(NSString*)string;
 -(void)appendFormat:(NSString*)format, ...;
+
+-(void)replaceCharactersInRange:(NSRange)range withString:(NSString*)str;
+-(void)replaceOccurrencesOfString:(NSString*)needle withString:str options:(NSUInteger)options range:(NSRange)range;
 
 @end
 

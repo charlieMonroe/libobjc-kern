@@ -5,6 +5,7 @@
 #import "NSArray.h"
 #import "NSBundle.h"
 #import "NSDictionary.h"
+#import "NSEnumerator.h"
 #import "NSException.h"
 #import "NSIndexSet.h"
 #import "NSNull.h"
@@ -42,6 +43,14 @@ extern Class NSClassFromString(NSString *class);
 })
 #endif
 
+#ifndef DESTROY
+#define	DESTROY(object) 	({ \
+  id __o = object; \
+  object = nil; \
+  [__o release]; \
+})
+#endif
+
 #ifndef	AUTORELEASE
 #define	AUTORELEASE(object)	[(object) autorelease]
 #endif
@@ -58,7 +67,15 @@ extern Class NSClassFromString(NSString *class);
 	#define D(objs...) [NSDictionary dictionaryWithObjectsAndKeys:objs]
 #endif
 
+#ifndef A
+	#define A(objs...) [NSArray arrayWithObjects:objs]
+#endif
+
+#ifndef NSAssert
+#define NSAssert(condition, format...) objc_assert((condition), "%s",		\
+													[[NSString stringWithFormat:format] UTF8String]);
+#endif
+
 #define NSCParameterAssert(condition)			\
 	objc_assert((condition), "Invalid parameter not satisfying: %s\n", #condition)
-
 #endif

@@ -12,6 +12,15 @@ typedef long long			NSInteger;
  */
 typedef char unichar;
 
+/* Zone is simply void. */
+typedef void NSZone;
+
+typedef enum {
+	NSOrderedAscending = -1,
+	NSOrderedSame,
+	NSOrderedDescending
+} NSComparisonResult;
+
 typedef struct _NSRange {
 	NSUInteger location;
 	NSUInteger length;

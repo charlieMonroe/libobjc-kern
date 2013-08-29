@@ -151,7 +151,7 @@ static NSSet *ARCBannedMessages;
 }
 - (void*) compileWithGenerator: (id<LKCodeGenerator>)aGenerator forTarget:(void*)receiver
 {
-	unsigned int argc = [arguments count];
+	unsigned int argc = (unsigned int)[arguments count];
 	void *argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{

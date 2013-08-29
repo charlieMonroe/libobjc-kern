@@ -2,6 +2,7 @@
 
 #import "NSDictionary.h"
 #import "NSException.h"
+#import "NSEnumerator.h"
 #import "NSArray.h"
 
 #ifdef _KERNEL
@@ -352,7 +353,9 @@ struct _NSDictionaryBucket {
 	}
 	return YES;
 }
-
+-(NSEnumerator *)keyEnumerator{
+	return [NSEnumerator enumeratorWithArray:[self allKeys]];
+}
 -(id)mutableCopy{
 	return [[NSMutableDictionary alloc] initWithDictionary:self];
 }
@@ -384,6 +387,9 @@ struct _NSDictionaryBucket {
 		}
 	}
 	return nil;
+}
+-(NSEnumerator *)objectEnumerator{
+	return [NSEnumerator enumeratorWithArray:[self allValues]];
 }
 
 @end

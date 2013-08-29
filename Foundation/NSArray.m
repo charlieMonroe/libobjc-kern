@@ -1,5 +1,6 @@
 
 #import "NSArray.h"
+#import "NSEnumerator.h"
 #import "NSException.h"
 
 #include "../os.h"
@@ -43,6 +44,51 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 				NSArrayRaiseNoStackMemoryException();						\
 			}																\
 			code;
+
+
+/// Swaps the two provided objects.
+static inline void SwapObjects(id * o1, id * o2){
+	id temp;
+	
+	temp = *o1;
+	*o1 = *o2;
+	*o2 = temp;
+}
+
+/**
+ * Sorts the provided object array's sortRange according to sortDescriptor.
+ */
+// Quicksort algorithm copied from Wikipedia :-).
+// Quicksort algorithm copied from GNUstep :-)
+static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
+								 void *context)
+{
+	if (sortRange.length > 1){
+		id pivot = objects[sortRange.location];
+		NSUInteger left = sortRange.location + 1;
+		NSUInteger right = NSMaxRange(sortRange);
+		
+		while (left < right){
+			NSComparisonResult (*comparator)(id, id, void *) =
+					((NSComparisonResult (*)(id, id, void *))comparisonEntity);
+			NSComparisonResult result = comparator(objects[left], pivot, context);
+			if (result == NSOrderedDescending){
+				SwapObjects(&objects[left], &objects[--right]);
+            }else{
+				left++;
+            }
+        }
+		
+		SwapObjects(&objects[--left], &objects[sortRange.location]);
+		
+		_GSQuickSort(objects,
+					 NSMakeRange(sortRange.location, left - sortRange.location),
+					 comparisonEntity, context);
+		_GSQuickSort(objects,
+					 NSMakeRange(right, NSMaxRange(sortRange) - right),
+					 comparisonEntity, context);
+    }
+}
 
 
 @implementation NSArray
@@ -220,6 +266,10 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 	}else{
 		return _items[idx];
 	}
+}
+
+-(NSEnumerator *)objectEnumerator{
+	return [NSEnumerator enumeratorWithArray:self];
 }
 
 @end
@@ -454,6 +504,9 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 -(void)setArray:(NSArray *)otherArray{
 	[self removeAllObjects];
 	[self addObjectsFromArray:otherArray];
+}
+-(void)sortUsingFunction:(NSComparisonResult (*)(id, id, void *))compare context:(void *)context{
+	_GSQuickSort(_items, NSMakeRange(0, _count), (id)compare, context);
 }
 
 @end

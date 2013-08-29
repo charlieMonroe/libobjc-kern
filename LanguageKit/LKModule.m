@@ -75,7 +75,7 @@ static NSArray* TypesForMethodName(NSString *methodName)
 
 			NSString *name = NSStringFromRuntimeString(sel_getName(method_getName(m)));
 			NSString *type = NSStringFromRuntimeString(method_getTypeEncoding(m));
-			[Types addObject: type forKey: name];
+			[Types setObject: type forKey: name];
 		}
 	}
 	
@@ -101,6 +101,7 @@ static NSArray* TypesForMethodName(NSString *methodName)
 	NSEnumerator *e = [aDict keyEnumerator];
 	for (id key = [e nextObject] ; nil != key ; key = [e nextObject])
 	{
+		/*
 		id value = [NSPropertyListSerialization propertyListFromData: [[aDict objectForKey:key] dataUsingEncoding:NSUTF8StringEncoding]
 		                                            mutabilityOption: NSPropertyListMutableContainersAndLeaves
 		                                                      format: NULL
@@ -114,7 +115,10 @@ static NSArray* TypesForMethodName(NSString *methodName)
 		{
 			NSAssert(NO, @"Code for merging pragmas not yet implemented");
 		}
+		 */
 	}
+	
+	objc_log("********* NO PRAGMAS IMPLEMENTED!\n");
 }
 - (void) addClass:(LKSubclass*)aClass
 {
@@ -142,7 +146,7 @@ static NSArray* TypesForMethodName(NSString *methodName)
 	if ([types count] == 0)
 	{
 		int argCount = 0;
-		for (unsigned i=0, len = [methodName length] ; i<len ; i++)
+		for (NSUInteger i=0, len = [methodName length] ; i<len ; i++)
 		{
 			if ([methodName characterAtIndex:i] == ':')
 			{
@@ -224,9 +228,11 @@ static NSArray* TypesForMethodName(NSString *methodName)
 		[category compileWithGenerator: aGenerator];
 	}
 	[aGenerator endModule];
-	[[NSNotificationCenter defaultCenter]
-	  	postNotificationName: LKCompilerDidCompileNewClassesNotification
-		              object: nil];
+
+//  TODO - do we need this?
+//	[[NSNotificationCenter defaultCenter]
+//	  	postNotificationName: LKCompilerDidCompileNewClassesNotification
+//		              object: nil];
 	return NULL;
 }
 - (void) visitWithVisitor:(id<LKASTVisitor>)aVisitor

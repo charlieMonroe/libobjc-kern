@@ -165,6 +165,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 		/* Found the component. */
 		[array addObject:[self substringInRange:NSMakeRange(start, i - start)]];
 		i += separatorLen;
+		start = i;
 	}
 	
 	if (start == 0){
@@ -252,6 +253,37 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return atoi(_data.immutable);
 }
 
+
+-(NSRange)rangeOfString:(NSString*)str{
+	return [self rangeOfString:str inRange:NSMakeRange(0, _length)];
+}
+-(NSRange)rangeOfString:(NSString*)str inRange:(NSRange)range{
+	NSUInteger strLen = str->_length;
+	const char *strStr = str->_data.immutable;
+	
+	for (NSUInteger i = range.location; i < NSMaxRange(range);){
+		if (i + strLen >= _length){
+			break;
+		}
+		
+		BOOL fail = NO;
+		for (NSUInteger o = 0; o < strLen; ++o){
+			if (_data.immutable[i + o] != strStr[o]){
+				fail = YES;
+				break;
+			}
+		}
+		
+		if (fail){
+			++i;
+			continue;
+		}
+		
+		return NSMakeRange(i, strLen);
+	}
+	return NSMakeRange(NSNotFound, 0);
+}
+
 @end
 
 @implementation NSMutableString
@@ -306,6 +338,62 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 		}
 	}
 	return self;
+}
+
+-(void)replaceCharactersInRange:(NSRange)range withString:(NSString*)str{
+	if (NSMaxRange(range) > _length){
+		NSStringRaiseOutOfBoundsException();
+	}
+	
+	NSUInteger stringLength = [str length];
+	if (stringLength == range.length){
+		/* We're lucky, just replace the chars */
+		for (NSUInteger i = range.location; i < NSMaxRange(range); ++i){
+			_data.mutable[i] = str->_data.immutable[i];
+		}
+		return;
+	}
+	
+	/* We need to do some shifting. */
+	if (stringLength < range.length){
+		/* We need to shift the end of the string more to the front. */
+		NSUInteger shiftBy = range.length - stringLength;
+		for (NSUInteger i = NSMaxRange(range); i < _length; ++i){
+			_data.mutable[i - shiftBy] = _data.immutable[i];
+		}
+		
+		_data.mutable = objc_realloc(_data.mutable, _length - shiftBy + 1, M_NSSTRING_TYPE);
+		_length -= shiftBy;
+		_data.mutable[_length] = '\0';
+	}else{
+		/* Extend and shift towards the end */
+		/* We need to shift the end of the string more to the front. */
+		NSUInteger shiftBy = [str length] - range.length;
+		_data.mutable = objc_realloc(_data.mutable, _length + shiftBy + 1, M_NSSTRING_TYPE);
+		for (NSUInteger i = _length - 1; i >= range.location + stringLength; --i){
+			_data.mutable[i] = _data.immutable[i - shiftBy];
+		}
+		
+		_length += shiftBy;
+		_data.mutable[_length] = '\0';
+	}
+	
+	for (NSUInteger i = range.location; i < stringLength; ++i){
+		_data.mutable[i] = str->_data.immutable[i];
+	}
+}
+-(void)replaceOccurrencesOfString:(NSString *)needle withString:(id)str options:(NSUInteger)options range:(NSRange)range{
+	objc_assert(options == 0, "No support for any searching options!\n");
+	
+	NSRange r;
+	while (YES){
+		r = [self rangeOfString:needle inRange:range];
+		if (r.location == NSNotFound){
+			return;
+		}
+		
+		[self replaceCharactersInRange:r withString:str];
+	}
 }
 
 @end

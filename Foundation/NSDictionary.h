@@ -2,7 +2,7 @@
 #import "NSObject.h"
 #import "NSTypes.h"
 
-@class NSArray, NSString;
+@class NSArray, NSString, NSEnumerator;
 
 typedef struct _NSDictionaryBucket NSDictionaryBucket;
 
@@ -23,6 +23,8 @@ typedef struct _NSDictionaryBucket NSDictionaryBucket;
 -(NSArray*)allKeysForObject:(id)anObject;
 -(NSArray*)allValues;
 
+-(NSEnumerator*)keyEnumerator;
+
 -(NSUInteger)count;
 
 -(id)init;
@@ -36,6 +38,7 @@ typedef struct _NSDictionaryBucket NSDictionaryBucket;
 -(id)mutableCopy;
 
 -(id)objectForKey:(id)aKey;
+-(NSEnumerator*)objectEnumerator;
 
 
 @end

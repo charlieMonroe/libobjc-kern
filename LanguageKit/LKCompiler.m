@@ -670,7 +670,12 @@ static BOOL loadLibraryInPath(NSFileManager *fm, NSString *aLibrary, NSString *b
 	{
 		return [[collection enumerationValues] objectForKey: enumName];
 	}
-	return [[[[collection enumerations] objectForKey: anEnumeration] values] objectForKey: enumName];
+	
+	objc_debug_log("Not returning a value!\n");
+	return nil;
+	
+	// -values should probably be the one of SCKEnumeration in SourceCodeKit
+	//return [[[[collection enumerations] objectForKey: anEnumeration] values] objectForKey: enumName];
 }
 
 #ifndef KERNEL_OBJC

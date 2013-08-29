@@ -1,6 +1,6 @@
 #import "LKBlockExpr.h"
 #import "LKDeclRef.h"
-#import "Runtime/LKObject.h"
+#import "LKObject.h"
 
 @implementation LKBlockExpr
 + (id) blockWithArguments:(NSMutableArray*)arguments locals:(NSMutableArray*)locals statements:(NSMutableArray*)statementList

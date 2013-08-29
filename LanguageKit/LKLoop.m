@@ -229,6 +229,8 @@ __thread void *unlabelledContinueBB;
 	DESTROY(statements);
 	DESTROY(postCondition);
 	DESTROY(updateStatements);
+	
+	[super dealloc];
 }
 @end
 
@@ -291,6 +293,8 @@ __thread void *unlabelledContinueBB;
 - (void) dealloc
 {
 	DESTROY(label);
+	
+	[super dealloc];
 }
 @end
 

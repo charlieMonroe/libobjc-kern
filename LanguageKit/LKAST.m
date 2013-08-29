@@ -1,6 +1,7 @@
 #import "LKAST.h"
 #import "LKDeclRef.h"
 #import "LKModule.h"
+#import "../kernobjc/runtime.h"
 
 static Class DeclRefClass;
 static Class ModuleClass;
@@ -82,7 +83,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 	id old = [dict objectForKey: @"LKCompilerContext"];
 	[dict setObject: errorReporter forKey: @"LKCompilerContext"];
 	BOOL success = [self check];
-	[dict setValue: old forKey: @"LKCompilerContext"];
+	[dict setObject: old forKey: @"LKCompilerContext"];
 
 	return success;
 }
@@ -115,7 +116,7 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 - (void) visitArray:(NSMutableArray*)anArray
         withVisitor:(id<LKASTVisitor>)aVisitor
 {
-	unsigned int count = [anArray count];
+	NSUInteger count = [anArray count];
 	NSMutableIndexSet *remove = [NSMutableIndexSet new];
 	for (int i=0 ; i<count ; i++)
 	{
@@ -138,5 +139,6 @@ static NSMutableDictionary *ASTSubclassAndCategoryNodes = nil;
 }
 - (void)dealloc
 {
+	[super dealloc];
 }
 @end
