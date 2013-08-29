@@ -1,10 +1,10 @@
 #import "../Foundation/Foundation.h"
 #import "BlockClosure.h"
 #import "BlockContext.h"
-#include <string.h>
 
 NSString *LKSmalltalkBlockNonLocalReturnException =
     @"LKSmalltalkBlockNonLocalReturnException";
+
 @interface _NSBlock : NSObject
 -value;
 @end

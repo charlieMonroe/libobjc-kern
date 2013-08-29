@@ -1,10 +1,8 @@
+#import "BlockClosure.h"
+#import "../LanguageKitRuntime/BlockClosure.h"
 #import "../Foundation/Foundation.h"
 
 extern NSString *LKSmalltalkBlockNonLocalReturnException;
-
-@interface _NSBlock : NSObject
-- (id)value;
-@end
 
 @implementation _NSBlock (ExceptionHandling)
 - (id) onException: (NSString*) exceptionName do: (id(^)(id)) handler

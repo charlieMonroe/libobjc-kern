@@ -4,7 +4,7 @@ extern NSString *LKSmalltalkBlockNonLocalReturnException;
 
 @class BlockContext;
 
-@interface BlockClosure : NSObject {
+@interface BlockClosure : KKObject {
 @public
   IMP function;
 @protected

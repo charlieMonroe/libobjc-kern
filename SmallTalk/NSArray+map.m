@@ -1,5 +1,5 @@
 #import "NSArray+map.h"
-#import "BlockClosure.h"
+#import "../LanguageKitRuntime/BlockClosure.h"
 #import "../Foundation/Foundation.h"
 
 #define FOREACHI(target, var) for (id var in target)
