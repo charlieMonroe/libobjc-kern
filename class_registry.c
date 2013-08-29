@@ -43,6 +43,8 @@ _objc_handle_load_imp_for_class(IMP load_imp, Class cl)
 	 * IMPs so that they don't get called twice.
 	 */
 	if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
+		objc_debug_log("Will be sending a load message to class %s\n",
+					   class_getName(cl));
 		load_imp((id)cl, objc_load_selector);
 		objc_load_messages_insert(objc_load_messages, load_imp);
 		
@@ -614,11 +616,8 @@ objc_class_resolve_links(void)
 	} while (resolved_class);
 }
 
-PRIVATE void
-objc_class_register_class(Class cl)
-{
-	OBJC_LOCK_RUNTIME_FOR_SCOPE();
-	
+static inline void
+_objc_class_register_class_no_lock(Class cl){
 	if (objc_class_table_get(objc_classes, cl->name) != Nil){
 		objc_log("Class %s has been defined in multiple modules."
 				 " Which one will be used is undefined.\n", cl->name);
@@ -634,7 +633,8 @@ objc_class_register_class(Class cl)
 	
 	objc_register_selectors_from_class(cl, cl->isa);
 	
-	cl->dtable = cl->isa->dtable = uninstalled_dtable;
+	cl->dtable = uninstalled_dtable;
+	cl->isa->dtable = uninstalled_dtable;
 	
 	if (cl->super_class == Nil){
 		/* Root class */
@@ -643,13 +643,21 @@ objc_class_register_class(Class cl)
 	}
 }
 
+PRIVATE void
+objc_class_register_class(Class cl)
+{
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	_objc_class_register_class_no_lock(cl);
+}
+
 void
 objc_class_register_classes(Class *cl, unsigned int count)
 {
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
 	for (int i = 0; i < count; ++i){
-		objc_class_register_class(cl[i]);
+		_objc_class_register_class_no_lock(cl[i]);
 	}
 	
 	for (int i = 0; i < count; ++i){

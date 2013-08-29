@@ -352,7 +352,10 @@ PRIVATE void objc_send_initialize(id object)
 	}
 	Class meta = class->isa;
 
-
+	objc_debug_log("sending initialize to class %s[%p] - meta[%p;%p] x %p\n",
+				   object_getClassName(object), class->dtable, meta, meta->dtable,
+				   uninstalled_dtable);
+	
 	// Make sure that the class is resolved.
 	objc_class_resolve(class);
 
@@ -383,7 +386,6 @@ PRIVATE void objc_send_initialize(id object)
 	// acquire the runtime lock after acquiring the initialize lock.
 	OBJC_LOCK_RUNTIME();
 	
-	objc_debug_log("sending initialize to class %s - meta[%p]\n", object_getClassName(object), meta);
 	
 	objc_sync_enter((id)meta);
 	OBJC_LOCK(&initialize_lock);
@@ -403,6 +405,8 @@ PRIVATE void objc_send_initialize(id object)
 
 	dtable_t class_dtable = create_dtable_for_class(class, uninstalled_dtable);
 	dtable_t dtable = skipMeta ? 0 : create_dtable_for_class(meta, class_dtable);
+	objc_debug_log("Created dtable %p skipMeta = %i\n", dtable, skipMeta);
+	
 	// Now we've finished doing things that may acquire the runtime lock, so we
 	// can hold onto the initialise lock to make anything doing
 	// dtable_for_class block until we've finished updating temporary dtable
@@ -423,7 +427,8 @@ PRIVATE void objc_send_initialize(id object)
 	{
 		objc_debug_log("Not sending +initialize message to class %s since the"
 					   " +initialize method is implemented on %s\n",
-					   class->name, initializeSlot == NULL ? "null" :
+					   class->name, (initializeSlot == NULL
+									 || initializeSlot->owner == NULL) ? "null" :
 					   initializeSlot->owner->name);
 		if (!skipMeta)
 		{

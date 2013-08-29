@@ -27,13 +27,13 @@ static int stringsEqual(const char *a, const char *b)
 __attribute__((objc_root_class))
 #endif
 #endif
-@interface NSObject <NSCoding>
+@interface __NSObject <NSCoding>
 {
 	id isa;
 	int refcount;
 }
 @end
-@implementation NSObject
+@implementation __NSObject
 - (id)class
 {
 	return object_getClass(self);
@@ -65,7 +65,7 @@ __attribute__((objc_root_class))
 @end
 
 
-@interface FooRT : NSObject
+@interface FooRT : __NSObject
 {
   id a;
 }
@@ -156,7 +156,7 @@ id exceptionObj = @"Exception";
 
 static void testInvalidArguments()
 {
-  test(NO == class_conformsToProtocol([NSObject class], NULL));
+  test(NO == class_conformsToProtocol([__NSObject class], NULL));
   test(NO == class_conformsToProtocol(Nil, NULL));
   test(NO == class_conformsToProtocol(Nil, @protocol(NSCoding)));
   test(NULL == class_copyIvarList(Nil, NULL));
@@ -219,7 +219,7 @@ static void testProtocols()
 static void testClassHierarchy()
 {
   Class nsProxy = objc_getClass("NSProxy");
-  Class nsObject = objc_getClass("NSObject");
+  Class nsObject = objc_getClass("__NSObject");
   Class nsProxyMeta = object_getClass(nsProxy);
   Class nsObjectMeta = object_getClass(nsObject);
 
@@ -236,13 +236,13 @@ static void testClassHierarchy()
 
 static void testAllocateClass()
 {
-  Class newClass = objc_allocateClassPair(objc_lookUpClass("NSObject"), "UserAllocated", 0);
+  Class newClass = objc_allocateClassPair(objc_lookUpClass("__NSObject"), "UserAllocated", 0);
   test(Nil != newClass);
   // class_getSuperclass() will call objc_resolve_class().
   // Although we have not called objc_registerClassPair() yet, this works with
   // the Apple runtime and GNUstep Base relies on this behavior in
   // GSObjCMakeClass().
-  test(objc_lookUpClass("NSObject") == class_getSuperclass(newClass));
+  test(objc_lookUpClass("__NSObject") == class_getSuperclass(newClass));
   objc_log("testAllocateClass() ran\n");
 }
 
@@ -265,10 +265,10 @@ static void testExceptions()
 
 }
 
-@interface SlowInit1 : NSObject
+@interface SlowInit1 : __NSObject
 + (void)doNothing;
 @end
-@interface SlowInit2 : NSObject
+@interface SlowInit2 : __NSObject
 + (void)doNothing;
 @end
 
@@ -300,7 +300,7 @@ void runtime_test(void)
   testProtocols();
   testClassHierarchy();
   testAllocateClass();
-  objc_log("Instance of NSObject: %p\n", class_createInstance([NSObject class], 0));
+  objc_log("Instance of __NSObject: %p\n", class_createInstance([__NSObject class], 0));
 
   testSynchronized();
   testExceptions();
