@@ -53,6 +53,27 @@
 -(NSUInteger)count{
 	return _indexCount;
 }
+-(void)enumerateIndexesUsingBlock:(void (^)(NSUInteger idx, BOOL *stop))block{
+	if (_dataCount == 0){
+		return;
+	}
+	if (_dataCount == 1){
+		NSRange r = [_data rangeValue];
+		BOOL stop = NO;
+		for (NSUInteger i = r.location; (stop == NO) && (i < r.location + r.length); ++i){
+			block(i, &stop);
+		}
+		return;
+	}
+	
+	BOOL stop = NO;
+	for (NSValue *v in _data){
+		NSRange r = [v rangeValue];
+		for (NSUInteger i = r.location; (stop == NO) && (i < r.location + r.length); ++i){
+			block(i, &stop);
+		}
+	}
+}
 -(void)dealloc{
 	[_data release];
 	

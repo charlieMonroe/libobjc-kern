@@ -1,4 +1,4 @@
-#import <Foundation/NSValue.h>
+#import "../Foundation//NSValue.h"
 
 id LKBoxValue(void *bytes, const char *typeEncoding)
 {

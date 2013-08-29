@@ -1,5 +1,6 @@
 
 #import "NSArray.h"
+#import "NSIndexSet.h"
 #import "NSEnumerator.h"
 #import "NSException.h"
 
@@ -500,6 +501,11 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	
 	[_items[index] autorelease];
 	_items[index] = [anObject retain];
+}
+-(void)removeObjectsAtIndexes:(NSIndexSet*)indexSet{
+	[indexSet enumerateIndexesUsingBlock:^(NSUInteger idx, BOOL *stop) {
+		[self removeObjectAtIndex:idx];
+	}];
 }
 -(void)setArray:(NSArray *)otherArray{
 	[self removeAllObjects];

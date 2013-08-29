@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import "../Foundation/Foundation.h"
 #import "BlockClosure.h"
 #import "BlockContext.h"
 #include <string.h>

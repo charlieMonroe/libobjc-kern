@@ -2,6 +2,12 @@
 #import "BoxedFloat.h"
 #import "LKObject.h"
 
+#ifdef _KERNEL
+	#include <sys/limits.h>
+#else
+	#include <limits.h>
+#endif
+
 @implementation BoxedFloat
 + (BoxedFloat*) boxedFloatWithCString:(const char*) aString
 {

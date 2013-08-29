@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "private.h"
 
-#include "encoding.h"
+#include "kernobjc/encoding.h"
 
 size_t objc_alignof_type (const char *type);
 

@@ -1,12 +1,8 @@
-#import <Foundation/NSObject.h>
-#import <Foundation/NSString.h>
-#import <Foundation/NSException.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "dwarf_eh.h"
+#import "../Foundation//NSObject.h"
+#import "../Foundation//NSString.h"
+#import "../Foundation//NSException.h"
+
+#ifdef USES_UNWIND
 
 #define D(chr, byte) ((((uint64_t)chr)<<(64 - (8*byte))))
 static const uint64_t LKEXCEPTION_TYPE = D('E',1) + D('T',2) + D('O',3) +
@@ -224,8 +220,11 @@ void __LanguageKitTestNonLocalReturn(void *context,
 	abort();
 }
 
+#endif
+
 void __LanguageKitInvalidTypeEncoding(id self, SEL cmd)
 {
 	[NSException raise: @"LKTypeInfoException"
-	            format: @"Unable to determine type info for [%@ %@]", self, NSStringFromSelector(cmd)];
+	            format: @"Unable to determine type info for [%@ %@]", self,
+							NSStringFromSelector(cmd)];
 }

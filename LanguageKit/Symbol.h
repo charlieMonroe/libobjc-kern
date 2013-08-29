@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import "../Foundation/Foundation.h"
 
 #ifndef __has_feature      // Optional.
 #define __has_feature(x) 0 // Compatibility with non-clang compilers.

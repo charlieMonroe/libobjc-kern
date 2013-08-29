@@ -1,4 +1,4 @@
-#import <Foundation/Foundation.h>
+#import "../Foundation/Foundation.h"
 
 @implementation NSString (Conversions)
 - (unsigned long long)unsignedLongLongValue

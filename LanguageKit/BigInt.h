@@ -1,4 +1,4 @@
-#import <EtoileFoundation/EtoileFoundation.h>
+#import "../Foundation/Foundation.h"
 #import "LKObject.h"
 #include <gmp.h>
 

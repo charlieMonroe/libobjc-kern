@@ -8,6 +8,7 @@
 #import "NSEnumerator.h"
 #import "NSException.h"
 #import "NSIndexSet.h"
+#import "NSMethodSignature.h"
 #import "NSNull.h"
 #import "NSObject.h"
 #import "NSSet.h"

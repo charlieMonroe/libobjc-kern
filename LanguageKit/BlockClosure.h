@@ -1,5 +1,4 @@
-#import <EtoileFoundation/EtoileFoundation.h>
-#include <setjmp.h>
+#import "../Foundation/Foundation.h"
 
 extern NSString *LKSmalltalkBlockNonLocalReturnException;
 
@@ -27,3 +26,4 @@ extern NSString *LKSmalltalkBlockNonLocalReturnException;
 
 @interface StackBlockClosure : BlockClosure {}
 @end
+

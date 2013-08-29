@@ -12,9 +12,9 @@
 +(id)indexSetWithIndex:(NSUInteger)anIndex;
 +(id)indexSetWithIndexesInRange:(NSRange)aRange;
 
-
 -(BOOL)containsIndex:(NSUInteger)anIndex;
 -(BOOL)containsIndexesInRange:(NSRange)aRange;
+-(void)enumerateIndexesUsingBlock:(void (^)(NSUInteger idx, BOOL *stop))block;
 
 -(NSUInteger)count;
 

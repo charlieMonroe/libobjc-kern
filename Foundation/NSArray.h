@@ -2,7 +2,7 @@
 #import "NSObject.h"
 #import "NSTypes.h"
 
-@class NSEnumerator, NSString;
+@class NSEnumerator, NSIndexSet, NSString;
 
 typedef struct
 {
@@ -87,6 +87,7 @@ typedef struct
 -(void)removeObject:(id)anObject inRange:(NSRange)aRange;
 -(void)removeObjectIdenticalTo:(id)anObject;
 -(void)removeObjectIdenticalTo:(id)anObject inRange:(NSRange)aRange;
+-(void)removeObjectsAtIndexes:(NSIndexSet*)indexSet;
 -(void)removeObjectsInArray:(NSArray*)otherArray;
 -(void)removeObjectsInRange:(NSRange)aRange;
 
