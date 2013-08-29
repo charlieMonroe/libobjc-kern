@@ -1,3 +1,4 @@
+
 #import "Foundation.h"
 #import "NSMallocTypes.h"
 
@@ -8,6 +9,8 @@
 	#include <stdarg.h>
 	#include <limits.h>
 #endif
+
+typedef char objc_wchar_t;
 
 struct printf_info
 {
@@ -277,7 +280,7 @@ struct printf_spec
 union printf_arg
 {
     unsigned char pa_char;
-    wchar_t pa_wchar;
+    objc_wchar_t pa_wchar;
     short int pa_short_int;
     int pa_int;
     long int pa_long_int;
@@ -290,7 +293,7 @@ union printf_arg
     double pa_double;
     long double pa_long_double;
     const char *pa_string;
-    const wchar_t *pa_wstring;
+    const objc_wchar_t *pa_wstring;
     id pa_object;
     void *pa_pointer;
 };
@@ -948,7 +951,7 @@ break
 				T (PA_DOUBLE, pa_double, double);
 				T (PA_DOUBLE|PA_FLAG_LONG_DOUBLE, pa_long_double, long double);
 				T (PA_STRING, pa_string, const char *);
-				T (PA_WSTRING, pa_wstring, const wchar_t *);
+				T (PA_WSTRING, pa_wstring, const objc_wchar_t *);
 				T (PA_OBJECT, pa_object, id);
 				T (PA_POINTER, pa_pointer, void *);
 #undef T
@@ -1637,7 +1640,7 @@ break
 				{
 					size_t len = 0;
 					
-					/* The string argument could in fact be `char *' or `wchar_t *'.
+					/* The string argument could in fact be `char *' or `objc_wchar_t *'.
 					 But this should not make a difference here.  */
 					string = (unichar *) args_value[specs[nspecs_done].data_arg].pa_wstring;
 					
