@@ -1,36 +1,9 @@
-#import <objc/objc-api.h>
-#include <sys/types.h>
-#include <string.h>
-#include <stdint.h>
-#ifdef BROKEN_CTYPE
-/*
- * If we have a libc that provides a (w)ctype implementation that is known not
- * to work with llvm, we link libicu instead and redefine the isw* stuff to
- * libicu functions. The TestIsAlphabetic test case for small case will reveal
- * if this is needed.
- */
-#include <unicode/uchar.h>
-#define iswalnum(val) (u_isUAlphabetic(val) || u_isdigit(val))
-#define iswalpha(val) u_isUAlphabetic(val)
-#define iswdigit(val) u_isdigit(val)
-#define iswspace(val) u_isUWhiteSpace(val)
-#define iswupper(val) u_isUUppercase(val)
-#define iswlower(val) u_isULowercase(val)
-#else
-#include <wctype.h>
-#endif
-typedef intptr_t NSInteger;
-// Redefine a few things so LKObject will work correctly.
-#define NSCAssert(x, msg) if (!(x)) { NSLog(msg); abort(); }
-@class NSString;
-__attribute__((noreturn)) void abort(void);
-void NSLog(NSString*, ...);
-@interface NSNumber
-- (NSInteger)integerValue;
-- (double)doubleValue;
-- (float)floatValue;
-@end
 #include "LKObject.h"
+#ifdef _KERNEL
+	#include <sys/ctype.h>
+#else
+	#include <ctype.h>
+#endif
 
 // Dummy interfaces to make warnings go away
 @interface BigInt {}
@@ -60,18 +33,7 @@ void NSLog(NSString*, ...);
 - (BOOL)isAlphabetic;
 - (id)value;
 @end
-@interface NSString
-{
-	id isa;
-}
-+ (id) stringWithFormat:(NSString*)a, ...;
-@end
-@interface NSConstantString : NSString
-{
-	char *str;
-	int length;
-}
-@end
+
 
 typedef struct
 {
@@ -86,10 +48,13 @@ typedef struct
  * have a selector argument.  Ideally, they are small enough to inline.
  * Replace : with _ in the selector name.
  */
-#define MSG(retTy, name, ...) retTy SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
+#define MSG(retTy, name, ...) \
+retTy SmallIntMsg ## name(void *obj, ## __VA_ARGS__);\
+retTy SmallIntMsg ## name(void *obj, ## __VA_ARGS__)\
 {\
 	intptr_t val = (intptr_t)obj;\
 	val >>= OBJC_SMALL_OBJECT_SHIFT;
+
 /**
  * Small int message with no arguments.
  */
@@ -141,6 +106,7 @@ MSG1(ifFalse_)
 		return block->invoke(block);
 	}
 }
+id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f);
 id SmallIntMsgifTrue_ifFalse_(void* obj, void *t, void *f)
 {
 	uintptr_t val = (uintptr_t)obj;
@@ -165,6 +131,7 @@ MSG1(timesRepeat_)
 	}
 	return ret;
 }
+id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo);
 id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 {
 	intptr_t val = (intptr_t)obj;
@@ -199,12 +166,13 @@ id SmallIntMsgto_by_do_(void* obj, void *to, void *by, void *tdo)
 	}
 	return result;
 }
+id SmallIntMsgto_do_(void* obj, void *to, void *tdo);
 id SmallIntMsgto_do_(void* obj, void *to, void *tdo)
 {
 	return SmallIntMsgto_by_do_(obj, to, (void*)((1<<OBJC_SMALL_OBJECT_SHIFT) | 1), tdo);
 }
 
-
+BOOL SmallIntMsgisEqual_(void *obj, void *other);
 BOOL SmallIntMsgisEqual_(void *obj, void *other)
 {
 	if (obj == other)
@@ -239,6 +207,7 @@ BOOL SmallIntMsgisEqual_(void *obj, void *other)
 	}\
   return (void*)(((x) << OBJC_SMALL_OBJECT_SHIFT) | (uintptr_t)1);
 
+void *SmallIntMsgplus_(void *obj, void *other);
 void *SmallIntMsgplus_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(plus);
@@ -249,6 +218,7 @@ void *SmallIntMsgplus_(void *obj, void *other)
 	// result.
 	return (void*)((intptr_t)obj + val);
 }
+void *SmallIntMsgsub_(void *obj, void *other);
 void *SmallIntMsgsub_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(sub);
@@ -259,6 +229,7 @@ void *SmallIntMsgsub_(void *obj, void *other)
 	// result.
 	return (void*)((intptr_t)obj + val);
 }
+void *SmallIntMsgmul_(void *obj, void *other);
 void *SmallIntMsgmul_(void *obj, void *other)
 {
 	OTHER_OBJECT_CAST(mul)
@@ -272,6 +243,7 @@ void *SmallIntMsgmul_(void *obj, void *other)
 	// when returning a big integer.  This then clears that bit.
 	return (void*)((val * otherval) ^ 1);
 }
+void *SmallIntMsgmin_(void *obj, void *other);
 void *SmallIntMsgmin_(void *obj, void *other)
 {
     OTHER_OBJECT_CAST(min)
@@ -281,6 +253,7 @@ void *SmallIntMsgmin_(void *obj, void *other)
 	else
 	  return other;
 }
+void *SmallIntMsgmax_(void *obj, void *other);
 void *SmallIntMsgmax_(void *obj, void *other)
 {
     OTHER_OBJECT_CAST(max)
@@ -310,8 +283,7 @@ MSG1(bitwiseOr_)
 
 #define BOOLMSG0(name) MSG(BOOL, name)
 #define BOOLMSG1(name) MSG(BOOL, name, void *other)\
-	intptr_t otherval = (intptr_t)other;\
-	otherval >>= OBJC_SMALL_OBJECT_SHIFT;
+	int otherval = (int)(otherval >>= OBJC_SMALL_OBJECT_SHIFT);
 
 MSG1(and_)
 	OTHER_OBJECT(and)
@@ -325,28 +297,29 @@ MSG0(not)
 	RETURN_INT(!val);
 }
 BOOLMSG0(isAlphanumeric)
-	return iswalnum(val) != 0;
+	return isalnum((int)val) != 0;
 }
 BOOLMSG0(isUppercase)
-	return iswupper(val) != 0;
+	return isupper((int)val) != 0;
 }
 BOOLMSG0(isLowercase)
-	return iswlower(val) != 0;
+	return islower((int)val) != 0;
 }
 BOOLMSG0(isDigit)
-	return iswdigit(val) != 0;
+	return isdigit((int)val) != 0;
 }
 BOOLMSG0(isAlphabetic)
-	return iswalpha(val) != 0;
+	return isalpha((int)val) != 0;
 }
 BOOLMSG0(isWhitespace)
-	return iswspace(val) != 0;
+	return isspace((int)val) != 0;
 }
 MSG0(value)
 	return obj;
 }
 
 #define COMPARE(msg, op) \
+BOOL SmallIntMsg ## msg ## _(void *obj, void *other); \
 BOOL SmallIntMsg ## msg ## _(void *obj, void *other) \
 { \
 	OTHER_OBJECT(msg) \
@@ -414,6 +387,7 @@ METHOD0(value)
 @end
 #endif
 
+void *MakeSmallInt(long long val);
 void *MakeSmallInt(long long val) {
 	//fprintf(stderr, "Trying to make %lld into a small int\n", val);
 	intptr_t ptr = val << OBJC_SMALL_OBJECT_SHIFT;
@@ -424,6 +398,7 @@ void *MakeSmallInt(long long val) {
 	return (void*)(ptr | 1);
 }
 
+void *BoxSmallInt(void *obj);
 void *BoxSmallInt(void *obj) {
 	if (obj == NULL) return NULL;
 	intptr_t val = (intptr_t)obj;
@@ -431,6 +406,7 @@ void *BoxSmallInt(void *obj) {
 	//fprintf(stderr, "Boxing %d\n", (int) val);
 	return [BigInt bigIntWithLongLong:(long long)val];
 }
+void *BoxObject(void *obj);
 void *BoxObject(void *obj) {
 	intptr_t val = (intptr_t)obj;
 	if (val == 0 || (val & OBJC_SMALL_OBJECT_MASK) == 0) {
@@ -441,7 +417,8 @@ void *BoxObject(void *obj) {
 }
 
 #define CAST(x) NCAST(x,x)
-#define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>OBJC_SMALL_OBJECT_SHIFT); }
+#define CASTMSG(type, name) type SmallIntMsg##name##Value(void *obj); \
+type SmallIntMsg##name##Value(void *obj) { return (type) ((intptr_t)obj>>OBJC_SMALL_OBJECT_SHIFT); }
 
 CASTMSG(char, char)
 CASTMSG(unsigned char, unsignedChar)
@@ -530,6 +507,7 @@ struct _block_byref_object
 
 // Helper functions called by the block byref copy /destroy functions.
 
+void LKByRefKeep(struct _block_byref_object *dst, struct _block_byref_object*src);
 void LKByRefKeep(struct _block_byref_object *dst, struct _block_byref_object*src)
 {
 	dst->captured = src->captured;
@@ -541,6 +519,7 @@ void LKByRefKeep(struct _block_byref_object *dst, struct _block_byref_object*src
 
 void objc_release(id);
 
+void LKByRefDispose(struct _block_byref_object*src);
 void LKByRefDispose(struct _block_byref_object*src)
 {
 	if ((((intptr_t)src) & OBJC_SMALL_OBJECT_MASK) != 0)

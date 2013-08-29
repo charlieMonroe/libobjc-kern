@@ -1,4 +1,5 @@
 #import "../Foundation//NSValue.h"
+#import "../utils.h"
 
 id LKBoxValue(void *bytes, const char *typeEncoding)
 {
@@ -16,6 +17,6 @@ void LKUnboxValue(id boxed, void *buffer, const char *typeEncoding)
 		NSGetSizeAndAlignment(typeEncoding, &size, &align);
 		memset(buffer, 0, size);
 	}
-	assert(strcmp(typeEncoding, [boxed objCType]) == 0);
+	objc_assert(objc_strings_equal(typeEncoding, [boxed objCType]), "Wrong types\n");
 	return [boxed getValue: buffer];
 }

@@ -252,6 +252,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 -(int)intValue{
 	return atoi(_data.immutable);
 }
+-(long long)longLongValue{
+	return atoll(_data.immutable);
+}
 
 
 -(NSRange)rangeOfString:(NSString*)str{
