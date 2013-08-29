@@ -2,6 +2,12 @@
 #import "NSObject.h"
 #import "NSTypes.h"
 
+#ifdef _KERNEL
+	#include <machine/stdarg.h>
+#else
+	#include <stdarg.h>
+#endif
+
 @class NSArray;
 
 /* The encoding typedef and some types are for compatibility reasons only. */
