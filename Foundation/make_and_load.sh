@@ -1,2 +1,2 @@
-make && fsync * && fsync .git/* && sync && sleep 1 && sudo make load
+make && fsync * && fsync ../.git/* && sync && sleep 1 && sudo make load
 
