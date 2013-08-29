@@ -125,6 +125,13 @@ objc_exception_match(Class exceptionClass, id exception)
 	return 0;
 }
 
+void
+objc_enumerationMutation(id obj)
+{
+	objc_abort("Mutation occurred while enumeration object %p of class %s!\n",
+			   obj, object_getClassName(obj));
+}
+
 
 PRIVATE void
 objc_exceptions_init(void)
