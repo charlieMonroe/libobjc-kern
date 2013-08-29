@@ -283,8 +283,6 @@ CASTMETHOD(unsigned long int, unsignedLongValue, mpz_get_ui)
 //FIXME: GMP doesn't have a function to get a long long int, so these methods aren't too useful.
 CASTMETHOD(long long int, longLongValue, mpz_get_si)
 CASTMETHOD(unsigned long long int, unsignedLongLongValue, mpz_get_ui)
-CASTMETHOD(float, floatValue, mpz_get_d)
-CASTMETHOD(double, doubleValue, mpz_get_d)
 CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 
 - (id)copyWithZone: (NSZone*)aZone
