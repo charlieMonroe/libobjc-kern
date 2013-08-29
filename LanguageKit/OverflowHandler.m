@@ -8,6 +8,8 @@
 static char *ops[] = {"add", "subtract", "multiply"};
 
 long long smalltalk_overflow_handler(long long val, long long otherval, char op,
+									 char width);
+long long smalltalk_overflow_handler(long long val, long long otherval, char op,
 		        char width)
 {
 	switch(op>>1)
@@ -30,10 +32,10 @@ long long smalltalk_overflow_handler(long long val, long long otherval, char op,
 	// Should never be reached.
 	char *opname = ops[(op >>1) - 1];
 	char *sign = op & 1 ? "signed" : "unsigned";
-	fprintf(stderr, "Unexpected integer overflow in Smalltalk code!\n"
+	objc_log("Unexpected integer overflow in Smalltalk code!\n"
 		  	"Op %s %s on %d-bit values, Aborting!\n", 
 			sign, opname, (int)width);
-	abort();
+	objc_abort("__SMALLTALK__::Overflow\n");
 }
 
 long long (*__overflow_handler)(long long a, long long b, char op, char width)

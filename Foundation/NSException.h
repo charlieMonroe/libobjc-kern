@@ -26,3 +26,5 @@
 @end
 
 extern NSString *const NSInternalInconsistencyException;
+extern NSString *const NSInvalidArgumentException;
+

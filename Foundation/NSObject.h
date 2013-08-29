@@ -10,7 +10,7 @@
 
 @end
 
-@class NSArray;
+@class NSArray, NSMethodSignature;
 
 /*
  * Based on KKObject, NSObject implements what KKObject doesn't. KKObject is
@@ -26,8 +26,12 @@
 -(id)className;
 -(id)description;
 -(void)doesNotRecognizeSelector:(SEL)aSelector;
+-(NSMethodSignature*)methodSignatureForSelector:(SEL)selector;
 -(IMP)methodForSelector:(SEL)selector;
 -(id)performSelector:(SEL)selector withObject:(id)obj;
+-(void)subclassResponsibility:(SEL)selector;
 -(id)self;
+
+-(id)value; /* For the LanguageKit. Returns self, overridden by subclasses. */
 
 @end

@@ -9,6 +9,7 @@
 #endif
 
 NSString *const NSInternalInconsistencyException = @"NSInternalInconsistencyException";
+NSString *const NSInvalidArgumentException = @"NSInvalidArgumentException";
 
 @implementation NSException
 

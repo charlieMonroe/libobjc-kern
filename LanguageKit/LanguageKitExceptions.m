@@ -1,6 +1,4 @@
-#import "../Foundation//NSObject.h"
-#import "../Foundation//NSString.h"
-#import "../Foundation//NSException.h"
+#import "../Foundation/Foundation.h"
 
 #ifdef USES_UNWIND
 
@@ -222,6 +220,7 @@ void __LanguageKitTestNonLocalReturn(void *context,
 
 #endif
 
+void __LanguageKitInvalidTypeEncoding(id self, SEL cmd);
 void __LanguageKitInvalidTypeEncoding(id self, SEL cmd)
 {
 	[NSException raise: @"LKTypeInfoException"

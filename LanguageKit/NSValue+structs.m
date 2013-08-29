@@ -1,6 +1,7 @@
-#import "../Foundation//NSValue.h"
+#import "../Foundation/Foundation.h"
 #import "../utils.h"
 
+id LKBoxValue(void *bytes, const char *typeEncoding);
 id LKBoxValue(void *bytes, const char *typeEncoding)
 {
 	if (NULL == bytes)
@@ -9,6 +10,7 @@ id LKBoxValue(void *bytes, const char *typeEncoding)
 	}
 	return [NSValue valueWithBytes:bytes objCType:typeEncoding];
 }
+void LKUnboxValue(id boxed, void *buffer, const char *typeEncoding);
 void LKUnboxValue(id boxed, void *buffer, const char *typeEncoding)
 {
 	if (nil == boxed)

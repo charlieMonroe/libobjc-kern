@@ -19,6 +19,12 @@
 
 extern Class NSClassFromString(NSString *class);
 
+extern NSString *NSStringFromSelector(SEL select);
+extern SEL NSSelectorFromString(NSString *selName);
+
+extern const char *NSGetSizeAndAlignment(const char *typePtr, NSUInteger *sizep,
+										 NSUInteger *alignp);
+
 
 /* Macros from the GNUstep foundation. */
 

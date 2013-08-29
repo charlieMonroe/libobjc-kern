@@ -25,9 +25,13 @@ static NSDictionary *ObjCConstants;
 {
 	if (self != [LKNumberLiteral class]) { return; }
 
+#ifndef KERNEL_OBJC
 	NSString *plist = [[NSBundle bundleForClass:self]
 		pathForResource:@"ObjCConstants" ofType:@"plist"];
 	ObjCConstants = [NSDictionary dictionaryWithContentsOfFile:plist];
+#else
+	ObjCConstants = [[NSDictionary alloc] init];
+#endif
 }
 + (id) literalFromSymbol:(NSString*)aString
 {

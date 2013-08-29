@@ -24,8 +24,11 @@ typedef enum {
 		NSSize				size;
 		NSRect				rect;
 	} _data;
+	const char *_objCType;
 	NSValueType _type;
 }
+
++(NSValue*)valueWithBytes:(void*)bytes objCType:(const char*)type;
 
 +(NSValue*)valueWithNonretainedObject:(id)anObject;
 +(NSValue*)valueWithPoint:(NSPoint)point;
@@ -42,6 +45,8 @@ typedef enum {
 -(NSRect)rectValue;
 -(NSSize)sizeValue;
 -(NSPoint)pointValue;
+
+-(const char*)objCType;
 
 @end
 

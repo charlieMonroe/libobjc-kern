@@ -88,6 +88,27 @@ objc_strings_equal(const char *str1, const char *str2)
 }
 
 /*
+ * Returns YES if str has prefix pr.
+ */
+static inline BOOL
+objc_string_has_prefix(const char *str, const char *pr)
+{
+	int prefix_len = objc_strlen(pr);
+	for (int i = 0; i < prefix_len; ++i){
+		if (pr[i] == '\0'){
+			return YES;
+		}
+		if (str[i] == '\0'){
+			return NO;
+		}
+		if (str[i] != pr[i]){
+			return NO;
+		}
+	}
+	return YES;
+}
+
+/*
  * Hashes string str.
  */
 static inline uint32_t

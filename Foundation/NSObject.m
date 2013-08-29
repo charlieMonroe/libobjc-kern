@@ -3,6 +3,7 @@
 #import "NSException.h"
 #import "NSString.h"
 #import "NSArray.h"
+#import "NSMethodSignature.h"
 #import "../kernobjc/runtime.h"
 
 @implementation NSObject
@@ -52,11 +53,21 @@
 -(IMP)methodForSelector:(SEL)selector{
 	return class_getMethodImplementation([self class], selector);
 }
+-(NSMethodSignature*)methodSignatureForSelector:(SEL)selector{
+	return [NSMethodSignature signatureWithObjCTypes:sel_getTypes(selector)];
+}
 -(id)performSelector:(SEL)selector withObject:(id)obj{
 	return objc_msgSend(self, selector, obj);
 }
 -(id)self{
 	return self;
 }
-
+-(void)subclassResponsibility:(SEL)selector{
+	[[NSException exceptionWithName:@"NSAbstractClassException"
+							 reason:[NSString stringWithUTF8String:sel_getName(selector)]
+						   userInfo:nil] raise];
+}
+-(id)value{
+	return self;
+}
 @end

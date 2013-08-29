@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 	
+	struct _NSArgumentInfo;
+	
 	/**
 	 * <p>Class encapsulating type information for method arguments and return
 	 * value.  It is used as a component of [NSInvocation] to implement message
@@ -48,10 +50,10 @@ extern "C" {
 @interface NSMethodSignature : NSObject
 {
 @private
-	const char		*_methodTypes;
-	NSUInteger		_argFrameLength;
-	NSUInteger		_numArgs;
-	void			*_info;
+	const char				*_methodTypes;
+	NSUInteger				_argFrameLength;
+	NSUInteger				_numArgs;
+	struct _NSArgumentInfo	*_inf;
 }
 
 /**
@@ -99,6 +101,8 @@ extern "C" {
  * <code><em>self</em></code> and <code><em>_cmd</em></code>.
  */
 - (NSUInteger) numberOfArguments;
+
+-(struct _NSArgumentInfo*) methodInfo;
 
 @end
 	

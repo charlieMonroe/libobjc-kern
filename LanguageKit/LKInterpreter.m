@@ -1,11 +1,16 @@
-#import "Foundation/Foundation.h"
-#import "Runtime/BigInt.h"
-#import "Runtime/BoxedFloat.h"
-#import "Runtime/Symbol.h"
+#import "../Foundation/Foundation.h"
+#import "BigInt.h"
+#import "BoxedFloat.h"
+#import "Symbol.h"
 #import "LanguageKit.h"
 #import "LKInterpreter.h"
 #import "LKInterpreterRuntime.h"
-#include <math.h>
+
+#ifdef _KERNEL
+	#include <machine/stdarg.h>
+#else
+	#include <stdarg.h>
+#endif
 
 NSString *LKInterpreterException = @"LKInterpreterException";
 
@@ -18,7 +23,7 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName)
 	LKMethod *ast = nil;
 	do
 	{
-		ast = [LKMethodASTs valueForKey:
+		ast = [LKMethodASTs objectForKey:
 			[NSString stringWithFormat: @"%s%c%@", 
 				class_getName(cls), isClassMethod ? '+' : '-', selectorName]];
 		cls = class_getSuperclass(cls);
@@ -29,7 +34,7 @@ LKMethod *LKASTForMethod(Class cls, NSString *selectorName)
 static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
                               NSString *selectorName, LKMethod *method)
 {
-	[LKMethodASTs setValue: method
+	[LKMethodASTs setObject: method
 	                forKey: [NSString stringWithFormat: @"%@%@%@", 
 	                                         classname,
                                                  isClassMethod ? @"+" : @"-",
@@ -52,7 +57,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 - (id)returnValue
 {
-	return [[self userInfo] valueForKey: @"returnValue"];
+	return [[self userInfo] objectForKey: @"returnValue"];
 }
 @end
 
@@ -112,7 +117,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 @implementation LKArrayExpr (LKInterpreter)
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
-	unsigned int count = [elements count];
+	unsigned int count = (unsigned int)[elements count];
 	id interpretedElements[count];
 	for (unsigned int i=0; i<count; i++)
 	{
@@ -159,7 +164,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 			break;
 		}
 		default:
-			NSAssert1(NO, @"Don't know how to assign to %@", symbolName);
+			NSAssert(NO, @"Don't know how to assign to %@", symbolName);
 			break;
 	}
 	return rvalue;
@@ -190,7 +195,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 }
 - (id)interpretInContext: (LKInterpreterContext*)parentContext
 {
-	int count = [[[self symbols] arguments] count];
+	int count = (int)[[[self symbols] arguments] count];
 	id (^block)(__unsafe_unretained id arg0, ...) = ^(__unsafe_unretained id arg0, ...) {
 		LKInterpreterContext *context = [[LKInterpreterContext alloc]
 		            initWithSymbolTable: [self symbols]
@@ -246,7 +251,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		//FIXME: check the superclass type explicitly
 		const char *type = [[[(LKModule*)[self parent] typesForMethod: methodName] objectAtIndex: 0] UTF8String];
 		Class destClass = isClassMethod ? object_getClass(cls) : cls;
-		class_replaceMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type), type);
+		class_replaceMethod(destClass, sel, LKInterpreterMakeIMP(destClass, type));
 		StoreASTForMethod(classname, isClassMethod, methodName, method);
 	}
 	return nil;
@@ -387,7 +392,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 - (id)interpretInContext: (LKInterpreterContext*)context
 {
 	NSArray *arguments = [self arguments];
-	unsigned int argc = [arguments count];
+	unsigned int argc = (unsigned int)[arguments count];
 	id argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
@@ -420,7 +425,7 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 		}
 		receiverClassName = [(LKSubclass*)ast superclassname];
 	}
-	unsigned int argc = [arguments count];
+	unsigned int argc = (unsigned int)[arguments count];
 	__strong id argv[argc];
 	for (unsigned int i=0 ; i<argc ; i++)
 	{
@@ -577,18 +582,18 @@ static void StoreASTForMethod(NSString *classname, BOOL isClassMethod,
 
 - (void)setValue: (id)value forClassVariable: (NSString*)cvar
 {
-	if (nil == [LKClassVariables valueForKey: [self classname]])
+	if (nil == [LKClassVariables objectForKey: [self classname]])
 	{
-		[LKClassVariables setValue: [NSMutableDictionary dictionary]
+		[LKClassVariables setObject: [NSMutableDictionary dictionary]
 		                    forKey: [self classname]];
 	}
-	[[LKClassVariables valueForKey: [self classname]] setValue: value
+	[[LKClassVariables objectForKey: [self classname]] setObject: value
 	                                                    forKey: cvar];
 }
 
 - (id)valueForClassVariable: (NSString*)cvar
 {
-	return [[LKClassVariables valueForKey: [self classname]] valueForKey: cvar];
+	return [[LKClassVariables objectForKey: [self classname]] objectForKey: cvar];
 }
 
 static uint8_t logBase2(uint8_t x)

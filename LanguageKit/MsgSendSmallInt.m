@@ -434,7 +434,8 @@ CASTMSG(BOOL, bool)
 
 /* We currently only use the fast path for small ints, not doubles, so skip this.
  */
-#if 3 == OBJC_SMALL_OBJECT_SHIFT
+/* We don't allow floats and doubles in the kernel  */
+#if 3 == 0
 /*
  * On 64bit platforms, gnustep-base provides a special case for small doubles or
  * floats, so we redefine CASTMSG to unbox them correctly.
@@ -476,9 +477,10 @@ static inline double unboxRepeatingDouble(uintptr_t boxed)
 	}\
 	return [(NSNumber*)obj name##Value];\
 }
-#endif
+
 CASTMSG(float, float)
 CASTMSG(double, double)
+#endif
 
 enum
 {

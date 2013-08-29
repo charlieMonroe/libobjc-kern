@@ -3,6 +3,7 @@
 
 #ifdef _KERNEL
 	#include <machine/stdarg.h>
+	#include <sys/limits.h>
 #else
 	#include <stdarg.h>
 	#include <limits.h>

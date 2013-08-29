@@ -8,9 +8,16 @@
 #import "LKTypeHelpers.h"
 #import "../kernobjc/runtime.h"
 
+
+#ifdef _KERNEL
+	#include <sys/ctype.h>
+#else
+	#include <ctype.h>
+#endif
+
 static id BoxValue(void *value, const char *typestr);
 static void UnboxValue(id value, void *dest, const char *objctype);
-
+/*
 #ifdef __LP64__
 ffi_type *_ffi_type_nspoint_elements[] = {
 	&ffi_type_double, &ffi_type_double, NULL
@@ -41,6 +48,7 @@ ffi_type *_ffi_type_nsrange_elements[] = {
 ffi_type ffi_type_nsrange = {
 	0, 0, FFI_TYPE_STRUCT, _ffi_type_nsrange_elements
 };
+ */
 
 struct trampoline
 {
@@ -48,6 +56,7 @@ struct trampoline
 	const char *types;
 };
 
+/*
 static ffi_type *FFITypeForObjCType(const char *typestr)
 {
 	LKSkipQualifiers(&typestr);
@@ -120,6 +129,7 @@ static ffi_type *FFITypeForObjCType(const char *typestr)
 	                    *typestr];
 	return NULL;
 }
+ */
 
 static id BoxValue(void *value, const char *typestr)
 {
@@ -227,12 +237,14 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 		case 'Q':
 			*(unsigned long long*)dest = [value unsignedLongLongValue];
 			break;
+#ifndef KERNEL_OBJC
 		case 'f':
 			*(float*)dest = [value floatValue];
 			break;
 		case 'd':
 			*(double*)dest = [value doubleValue];
 			break;
+#endif
 		case 'B':
 			*(BOOL*)dest = [value boolValue];
 			break;
@@ -285,6 +297,7 @@ static void UnboxValue(id value, void *dest, const char *objctype)
 id LKCallFunction(NSString *functionName, NSString *types,
                  unsigned int argc, const id *args)
 {
+	/*
 	NSMethodSignature *sig = [NSMethodSignature signatureWithObjCTypes: [types UTF8String]];
 	void *function = dlsym(RTLD_DEFAULT, [functionName UTF8String]);
 	if (NULL == function)
@@ -324,6 +337,9 @@ id LKCallFunction(NSString *functionName, NSString *types,
 	ffi_call(&cif, function, &msgSendRet, unboxedArguments);
 	
 	return BoxValue(msgSendRet, [sig methodReturnType]);
+	 */
+	// TODO
+	return nil;
 }
 
 static BOOL isInMethodFamily(NSString *selName, NSString *family)
@@ -359,7 +375,7 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		autoreleaseResult = YES;
 	}
 
-	SEL sel = sel_getUid([selName UTF8String]);
+	SEL sel = sel_getNamed([selName UTF8String]);
 	NSMethodSignature *sig = [receiver methodSignatureForSelector: sel];
 	if (nil == sig)
 	{
@@ -389,6 +405,13 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		methodIMP = objc_msg_lookup(receiver, sel);
 	}
 #else
+	
+	id objc_msgSend(id, SEL, ...);
+	void objc_msgSend_stret(id, SEL, ...);
+	
+	id objc_msgSendSuper(void *, SEL, ...);
+	void objc_msgSendSuper_stret(void *, SEL, ...);
+	
 	if (className)
 	{
 		switch (*[sig methodReturnType])
@@ -407,24 +430,27 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 			case '{':
 				methodIMP = objc_msgSend_stret;
 				break;
-#ifdef __i386__
-			case 'f':
-			case 'd':
-			case 'D':
-				methodIMP = objc_msgSend_fpret;
-				break;
+#ifndef KERNEL_OBJC
+	#ifdef __i386__
+				case 'f':
+				case 'd':
+				case 'D':
+					methodIMP = objc_msgSend_fpret;
+					break;
+	#endif
+	#ifdef __x86_64__
+				case 'D':
+					methodIMP = objc_msgSend_fpret;
+					break;
+	#endif
+				default:
+					methodIMP = objc_msgSend;
+	#endif
 #endif
-#ifdef __x86_64__
-			case 'D':
-				methodIMP = objc_msgSend_fpret;
-				break;
-#endif
-			default:
-				methodIMP = objc_msgSend;
 		}
 	}
-#endif
 	
+	/*
 	// Prepare FFI types
 	const char *returnObjCType = [sig methodReturnType];
 	ffi_type *ffi_ret_ty = FFITypeForObjCType(returnObjCType);
@@ -463,6 +489,9 @@ id LKSendMessage(NSString *className, id receiver, NSString *selName,
 		objc_retainAutoreleaseReturnValue(result);
 	}
 	return result;
+	 */
+	// TODO
+	return nil;
 }
 
 
@@ -500,9 +529,12 @@ BOOL LKSetIvar(id receiver, NSString *name, id value)
 	return YES;
 }
 
-static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret, 
+// TODO
+typedef void ffi_cif;
+__attribute__((unused)) static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret, 
                                        void **args, void *user_data)
 {
+	/*
 	struct trampoline *t = user_data;
 	Class cls = t->cls;
 	
@@ -540,10 +572,12 @@ static void LKInterpreterFFITrampoline(ffi_cif *cif, void *ret,
 	}
 	
 	UnboxValue(returnObject, ret, objctype);
+	 */
 }
 
 IMP LKInterpreterMakeIMP(Class cls, const char *objctype)
 {
+	/*
 	struct trampoline *t = malloc(sizeof(struct trampoline));
 	t->cls = cls;
 	t->types = strdup(objctype);
@@ -579,6 +613,8 @@ IMP LKInterpreterMakeIMP(Class cls, const char *objctype)
 		[NSException raise: LKInterpreterException
 		            format: @"Error preparing closure"];
 	}
-	
 	return (IMP)closure_exec;
+	 */
+	// TODO
+	return NULL;
 }

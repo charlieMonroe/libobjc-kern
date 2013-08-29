@@ -222,6 +222,11 @@ static Class NSSmallIntClass;
 	NSNumberInitWithValue(NO);
 }
 
+-(const char *)objCType{
+	/* Everything's long long */
+	return @encode(unsigned long long);
+}
+
 -(BOOL)boolValue{
 	NSNumberReturnValue(BOOL, YES);
 }

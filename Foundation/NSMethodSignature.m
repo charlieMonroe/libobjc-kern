@@ -28,8 +28,10 @@
  */
 
 #import "NSMethodSignature.h"
+#import "Foundation.h"
+#import "../kernobjc/runtime.h"
 #import "../kernobjc/encoding.h"
-#import "../encoding.h"
+#import "../utils.h"
 
 #ifdef _KERNEL
 	#include <sys/ctype.h>
@@ -37,7 +39,15 @@
 	#include <ctype.h>
 #endif
 
-typedef struct	{
+#ifndef MAX
+	#define MAX(A, B) ((A > B) ? A : B)
+#endif
+
+MALLOC_DEFINE(M_NSMETHODSIGNATURE_TYPE,
+			  "NSMethodSignature",
+			  "NSMethodSignature allocations");
+
+typedef struct _NSArgumentInfo {
 	int		offset;
 	unsigned	size;
 	const char	*type;
@@ -239,7 +249,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 		case _C_STRUCT_B:
 		{
 			unsigned int acc_size = 0;
-			unsigned int def_align = objc_alignof_type(typePtr-1);
+			unsigned int def_align = (unsigned int)objc_alignof_type(typePtr-1);
 			unsigned int acc_align = def_align;
 			const char	*ptr = typePtr;
 			
@@ -341,7 +351,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 	 */
 	if (outTypes != 0)
     {
-		unsigned	len = typePtr - info->qtype;
+		unsigned	len = (unsigned)(typePtr - info->qtype);
 		
 		strncpy(outTypes, info->qtype, len);
 		outTypes[len] = '\0';
@@ -411,7 +421,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 		 * we attempt to generate the frame size and offsets in a new copy of
 		 * the types string.
 		 */
-		blen = (strlen(t) + 1) * 16;	// Total buffer length
+		blen = (objc_strlen(t) + 1) * 16;	// Total buffer length
 		ret = alloca(blen);
 		end = ret + blen;
 		
@@ -420,7 +430,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 		 */
 		p = t;
 		p = objc_skip_typespec (p);
-		rlen = p - t;
+		rlen = (int)(p - t);
 		strncpy(ret, t, rlen);
 		ret[rlen] = '\0';
 		ptr = args = ret + rlen + 10;	// Allow room for a decimal integer
@@ -437,7 +447,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 			int	size;
 			
 			_numArgs++;
-			size = objc_promoted_size (p);
+			size = (int)objc_promoted_size (p);
 			p = objc_skip_typespec (p);
 			memcpy(ptr, q, p - q);
 			ptr += (p - q);
@@ -448,10 +458,10 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 			q = p;
 			p = objc_skip_type_qualifiers (p);
 		}
-		alen = ptr - args;
+		alen = (int)(ptr - args);
 		rlen += sprintf(ret + rlen, "%d", (int)_argFrameLength);
 		
-		_methodTypes = NSAllocateCollectable(alen + rlen + 1, 0);
+		_methodTypes = objc_zero_alloc(alen + rlen + 1, M_NSMETHODSIGNATURE_TYPE);
 		strncpy((char*)_methodTypes, ret, rlen);
 		strncpy(((char*)_methodTypes) + rlen, args, alen);
 		((char*)_methodTypes)[alen + rlen] = '\0';
@@ -537,9 +547,9 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 - (void) dealloc
 {
 	if (_methodTypes)
-		NSZoneFree(NSDefaultMallocZone(), (void*)_methodTypes);
+		objc_dealloc((void*)_methodTypes, M_NSMETHODSIGNATURE_TYPE);
 	if (_inf)
-		NSZoneFree(NSDefaultMallocZone(), (void*)_inf);
+		objc_dealloc((void*)_inf, M_NSMETHODSIGNATURE_TYPE);
 	[super dealloc];
 }
 
@@ -565,7 +575,7 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 	else
     {
 		int i, n;
-		n = [self numberOfArguments];
+		n = (int)[self numberOfArguments];
 		for (i = 0; i < n; i++)
         {
 			if ((*[self getArgumentTypeAtIndex:i]
@@ -578,9 +588,6 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 	return isEqual;
 }
 
-@end
-
-@implementation NSMethodSignature(GNUstep)
 - (NSArgumentInfo*) methodInfo
 {
 	if (_inf == 0)
@@ -594,9 +601,9 @@ next_arg(const char *typePtr, NSArgumentInfo *info, char *outTypes)
 		 * the type information for each argument as a nul terminated
 		 * string.
 		 */
-		outTypes = NSZoneMalloc(NSDefaultMallocZone(),
-								sizeof(NSArgumentInfo)*(_numArgs+1) + strlen(types)*2);
-		_info = (void*)outTypes;
+		outTypes = objc_zero_alloc(sizeof(NSArgumentInfo)*(_numArgs+1) + strlen(types)*2,
+								   M_NSMETHODSIGNATURE_TYPE);
+		_inf = (void*)outTypes;
 		outTypes = outTypes + sizeof(NSArgumentInfo)*(_numArgs+1);
 		/* Fill in the full argment information for each arg.
 		 */

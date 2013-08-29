@@ -1,5 +1,5 @@
-#import <EtoileFoundation/EtoileFoundation.h>
-#import <EtoileFoundation/runtime.h>
+#import "../Foundation/Foundation.h"
+#import "../kernobjc/runtime.h"
 #import "Symbol.h"
 
 @implementation Symbol
@@ -9,7 +9,7 @@
 }
 + (id) SymbolForCString:(const char*)aSymbol
 {
-	return [[Symbol alloc] initWithSelector:sel_getUid(aSymbol)];
+	return [[Symbol alloc] initWithSelector:sel_getNamed(aSymbol)];
 }
 + (id) SymbolForSelector:(SEL) aSelector
 {
