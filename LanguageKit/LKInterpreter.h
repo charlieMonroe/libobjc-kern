@@ -1,8 +1,8 @@
-#import "Runtime/BlockClosure.h"
-#import <LanguageKit/LKAST.h>
-#import <LanguageKit/LKBlockExpr.h>
-#import <LanguageKit/LKMethod.h>
-#import <LanguageKit/LKSubclass.h>
+#import "BlockClosure.h"
+#import "LKAST.h"
+#import "LKBlockExpr.h"
+#import "LKMethod.h"
+#import "LKSubclass.h"
 
 extern NSString *LKInterpreterException;
 

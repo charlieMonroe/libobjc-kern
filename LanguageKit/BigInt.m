@@ -1,7 +1,12 @@
 #import "BigInt.h"
 #import "BlockClosure.h"
 
-static mpz_t ZERO;
+#ifdef _KERNEL
+	#include <sys/ctype.h>
+#else
+	#include <ctype.h>
+#endif
+
 Class BigIntClass;
 
 static BigInt *BigIntYES;
@@ -13,7 +18,6 @@ static BigInt *BigIntNO;
 	if ([BigInt class] == self)
 	{
 		BigIntClass = self;
-		mpz_init_set_si(ZERO, 0);
 		BigIntNO = [[BigInt bigIntWithLongLong: 0] retain];
 		BigIntYES = [[BigInt bigIntWithLongLong: 1] retain];
 	}
@@ -21,51 +25,39 @@ static BigInt *BigIntNO;
 + (BigInt*) bigIntWithCString:(const char*) aString
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	mpz_init_set_str(b->v, aString, 10);
+	b->_data.signedIntegralValue = [[NSString stringWithUTF8String:aString] longLongValue];
 	return b;
 }
-// Pretend that big ints are doubls so that the comparison stuff works.
+// Pretend that big ints are long longs
 - (const char*)objCType
 {
-	return "d";
+	return "q";
 }
 + (BigInt*) bigIntWithLongLong:(long long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	//NSLog(@"Big int created for %lld", aVal);
-	if (aVal < LONG_MAX && aVal > -LONG_MAX)
-	{
-		mpz_init_set_si(b->v, (long) aVal);
-	}
-	else
-	{
-		// FIXME: GMP must get code for initialising with 64-bit values soon.
-		// When it does, replace this with something less ugly.
-		uint32_t low = (uint32_t)aVal;
-		int32_t high = (int32_t)(aVal >> 32);
-		mpz_init_set_si(b->v, (long) high);
-		mpz_mul_2exp(b->v, b->v, 32);
-		mpz_add_ui(b->v, b->v, (unsigned long)low);
-	}
+
+	b->_data.signedIntegralValue = aVal;
+
 	return b;
 }
 + (BigInt*) bigIntWithLong:(long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	mpz_init_set_si(b->v, aVal);
+	b->_data.signedIntegralValue = aVal;
 	return b;
 }
 + (BigInt*) bigIntWithUnsignedLong:(unsigned long)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	mpz_init_set_ui(b->v, aVal);
+	b->_data.unsignedIntegralValue = aVal;
 	return b;
 }
 
 + (BigInt*) bigIntWithMP:(mpz_t)aVal
 {
 	BigInt *b = [[[BigInt alloc] init] autorelease];
-	mpz_init_set(b->v, aVal);
+	b->_data.unsignedIntegralValue = aVal;
 	return b;
 }
 
@@ -81,7 +73,7 @@ static inline id LKObjCAutoreleaseReturnValue(id object)
 #endif
 }
 
-#define op2(name, func) \
+#define op2(name, operation) \
 - (LKObject) name:(id)other\
 {\
 	if (nil == other)\
@@ -90,33 +82,17 @@ static inline id LKObjCAutoreleaseReturnValue(id object)
 		            format: @"nil argument to " #name];\
 	}\
 	BigInt *b = [[BigInt alloc] init];\
-	mpz_init(b->v);\
-	if (object_getClass(other) == BigIntClass || [other isKindOfClass: BigIntClass])\
-	{\
-		mpz_## func (b->v, v, ((BigInt*)other)->v);\
-	}\
-	else\
-	{\
-		mpz_t number;\
-		mpz_init_set_si(number, [other intValue]);\
-		mpz_## func (b->v, v, number);\
-		mpz_clear(number);\
-	}\
-	if (mpz_fits_sint_p(b->v))\
-	{\
-		int intValue = mpz_get_si(b->v);\
-		return LKObjectFromNSInteger(intValue);\
-	}\
+	b->_data.unsignedIntegralValue = _data.unsignedIntegralValue operation (((BigInt*)other)->_data.unsignedIntegralValue);\
 	return LKObjectFromObject(LKObjCAutoreleaseReturnValue(b));\
 }
 
 #define op(name) op2(name, name)
 
-op2(plus, add)
-op(sub)
-op(mul)
-op(mod)
-op2(div, tdiv_q)
+op2(plus, +)
+op2(sub, -)
+op2(mul, *)
+op2(mod, %)
+op2(div, /)
 
 #define op_cmp(name, func) \
   - (LKObject) name: (id)other \
@@ -126,28 +102,12 @@ op2(div, tdiv_q)
 		[NSException raise: @"BigIntException"\
 		            format: @"nil argument to min"];\
 	}\
-	BigInt *otherVal;\
 	LKObject returnVal;\
-\
-	if (object_getClass(other) == BigIntClass || [other isKindOfClass: BigIntClass])\
-	{\
-	     if (mpz_cmp(v, ((BigInt*)other)->v) func  0)	\
-			 returnVal = LKObjectFromObject(self);\
-		 else\
-			 returnVal = LKObjectFromObject(other);\
-	}\
-	else\
-	{\
-		BigInt *b = [[BigInt alloc] init];\
-		mpz_t number;\
-		mpz_init_set_si(number, [other intValue]);\
-		if (mpz_cmp(v, number) func  0)\
-		    returnVal = LKObjectFromObject(self);\
-		else\
-   		    returnVal = LKObjectFromObject(other);\
-\
-		mpz_clear(number);\
-	}\
+	\
+	 if (_data.unsignedIntegralValue func (((BigInt*)other)->_data.unsignedIntegralValue))	\
+		 returnVal = LKObjectFromObject(self);\
+	 else\
+		 returnVal = LKObjectFromObject(other);\
 	return returnVal;\
 }\
 
@@ -155,17 +115,17 @@ op_cmp(min, <=)
 op_cmp(max, >=) 
 - (id)and: (id)a
 {
-	return mpz_get_si(v) && [a intValue] ? BigIntYES : BigIntNO;
+	return _data.unsignedIntegralValue && [a intValue] ? BigIntYES : BigIntNO;
 }
 - (id)or: (id)a;
 {
-	return mpz_get_si(v) || [a intValue] ? BigIntYES : BigIntNO;
+	return _data.unsignedIntegralValue || [a intValue] ? BigIntYES : BigIntNO;
 }
-op2(bitwiseAnd, and);
-op2(bitwiseOr, ior);
+op2(bitwiseAnd, &);
+op2(bitwiseOr, |);
 - (id)not
 {
-	if (mpz_cmp(v, ZERO) != 0)
+	if (_data.unsignedIntegralValue != 0)
 	{
 		return BigIntNO;
 	}
@@ -174,13 +134,10 @@ op2(bitwiseOr, ior);
 #define CTYPE(name, op) \
 - (BOOL)name\
 {\
-	if (mpz_fits_sint_p(v))\
-	{\
-		int  max = mpz_get_si(v);\
-		return 0 != op(max);\
-	}\
-	return NO;\
+	int  max = (int)_data.unsignedIntegralValue;\
+	return 0 != op(max);\
 }
+
 CTYPE(isAlphanumeric, isalnum)
 CTYPE(isUppercase, isupper)
 CTYPE(isLowercase, islower)
@@ -191,17 +148,27 @@ CTYPE(isWhitespace, isspace)
 {
 	return self;
 }
+
+static inline int __cmp(unsigned long long l1, unsigned long long l2){
+	if (l1 == l2){
+		return 0;
+	}
+	if (l1 < l2){
+		return -1;
+	}
+	return 1;
+}
 #define CMP(sel, op) \
 - (BOOL) sel:(id)other \
 {\
 	if ([other isKindOfClass: BigIntClass])\
 	{\
 		BigInt *o = other;\
-		return mpz_cmp(v, o->v) op 0;\
+		return __cmp(_data.unsignedIntegralValue, o->_data.unsignedIntegralValue) op 0;\
 	}\
 	if ([other respondsToSelector:@selector(intValue)])\
 	{\
-		return mpz_cmp_si(v, [other intValue]) op 0;\
+		return __cmp(_data.unsignedIntegralValue, [other intValue]) op 0;\
 	}\
 	return NO;\
 }
@@ -213,74 +180,41 @@ CMP(isEqual, ==)
 - (id) timesRepeat:(id) aBlock
 {
 	id result = nil;
-	if (mpz_fits_sint_p(v))
+	for (unsigned long long i = 0 ; i < _data.unsignedIntegralValue ; i++)
 	{
-		int  max = mpz_get_si(v);
-		for (int i=0 ; i<max ; i++)
-		{
-			result = [aBlock value];
-		}
-	}
-	else
-	{
-		//TODO: This is very slow, and can be optimised a lot
-		mpz_t i;
-		mpz_init_set(i, v);
-		while(mpz_sgn(i) > 0)
-		{
-			result = [aBlock value];
-			mpz_sub_ui(i, i, 1);
-		}
+		result = [aBlock value];
 	}
 	return result;
 }
 - (id) to: (id) other by: (id) incr do: (id) aBlock
 {
 	id result = nil;
-	if ([other isKindOfClass: object_getClass(self)] && [incr isKindOfClass: object_getClass(self)])
-	{
-		if (mpz_fits_sint_p(v) 
-			&& mpz_fits_sint_p(((BigInt*)other)->v)
-			&& mpz_fits_sint_p(((BigInt*)incr)->v))
+	if ([other isKindOfClass: object_getClass(self)] && [incr isKindOfClass: object_getClass(self)]){
+		unsigned long long i = _data.unsignedIntegralValue;
+		unsigned long long max = ((BigInt*)other)->_data.unsignedIntegralValue;
+		unsigned long long inc = ((BigInt*)incr)->_data.unsignedIntegralValue;
+		for (;i<=max;i+=inc)
 		{
-			int i = mpz_get_si(v);
-			int max = mpz_get_si(((BigInt*)other)->v);
-			int inc = mpz_get_si(((BigInt*)incr)->v);
-			for (;i<=max;i+=inc)
-			{
-				result = [(BlockClosure*)aBlock value: 
-					   [BigInt bigIntWithLongLong: (long long) i]];
-			}
-		}
-		else
-		{
-			mpz_t i, max, inc;
-			mpz_init_set(i, v);
-			mpz_init_set(max, ((BigInt*)other)->v);
-			mpz_init_set(inc, ((BigInt*)incr)->v);
-			while (mpz_cmp(i, max)<=0)
-			{
-				result = [(BlockClosure*)aBlock value: [BigInt bigIntWithMP: i]];
-				mpz_add(i, i, inc);
-			}
+			result = [(BlockClosure*)aBlock value:
+					  [BigInt bigIntWithLongLong: (long long) i]];
 		}
 	}
 	else
 	{
-		mpz_t i, max, inc;
-		mpz_init_set(i, v);
+		unsigned long long i, max, inc;
+		i = _data.unsignedIntegralValue;
 
 		if ([other isKindOfClass: object_getClass(self)])
 		{
-			mpz_init_set(max, ((BigInt*)other)->v);
+			max = ((BigInt*)other)->_data.unsignedIntegralValue;
 		}
 		else if ([other respondsToSelector: @selector(intValue)])
 		{
-			mpz_init_set_si(max, [other intValue]);
+			max = [other intValue];
 		}
 		else if ([other respondsToSelector: @selector(longValue)])
 		{
-			mpz_init_set_si(max, [other longValue]);
+			max = [other longValue];
 		}
 		else
 		{
@@ -289,28 +223,26 @@ CMP(isEqual, ==)
 
 		if ([incr isKindOfClass: object_getClass(self)])
 		{
-			mpz_init_set(inc, ((BigInt*)incr)->v);
+			inc = ((BigInt*)incr)->_data.unsignedIntegralValue;
 		}
 		else if ([incr respondsToSelector: @selector(intValue)])
 		{
-			mpz_init_set_si(max, [incr intValue]);
+			inc = [incr intValue];
 		}
 		else if ([incr respondsToSelector: @selector(longValue)])
 		{
-			mpz_init_set_si(max, [incr longValue]);
+			inc = [incr longValue];
 		}
 		else
 		{
 			return nil;
 		}
-		while (mpz_cmp(i, max)<=0)
+		
+		for (;i<=max;i+=inc)
 		{
-			result = [(BlockClosure*)aBlock value: [BigInt bigIntWithMP: i]];
-			mpz_add(i, i, inc);
+			result = [(BlockClosure*)aBlock value:
+					  [BigInt bigIntWithLongLong: (long long) i]];
 		}
-		mpz_clear(i);
-		mpz_clear(inc);
-		mpz_clear(max);
 	}
 	return result;
 }
@@ -319,11 +251,9 @@ CMP(isEqual, ==)
 	return [self to: other by: [BigInt bigIntWithLongLong: 1] do: aBlock];
 }
 
-- (NSString*)descriptionWithLocale: (NSLocale*)ignored
+- (NSString*)descriptionWithLocale:(id)locale
 {
-	char * cstr = mpz_get_str(NULL, 10, v);
-	NSString *str = [NSString stringWithUTF8String:cstr];
-	free(cstr);
+	NSString *str = [NSString stringWithFormat:@"%llu", _data.unsignedIntegralValue];
 	return str;
 }
 - (NSString*)description
@@ -335,15 +265,9 @@ CMP(isEqual, ==)
 	return [self descriptionWithLocale: nil];
 }
 
-- (void) dealloc
-{
-	mpz_clear(v);
-	[super dealloc];
-}
-
 #define CASTMETHOD(returnType, name, gmpFunction)\
 - (returnType) name {\
-	return (returnType) gmpFunction(v);\
+	return (returnType) _data.unsignedIntegralValue;\
 }
 
 CASTMETHOD(signed char, charValue, mpz_get_si)
@@ -364,9 +288,13 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 - (id)copyWithZone: (NSZone*)aZone
 {
 	BigInt *new = [object_getClass(self) allocWithZone: aZone];
-	mpz_init_set(new->v, v);
+	new->_data.unsignedIntegralValue = _data.unsignedIntegralValue;
 	return new;
 }
+-(id)copy{
+	return [self copyWithZone:nil];
+}
+
 @end
 
 @implementation NSNumber (LanguageKit)

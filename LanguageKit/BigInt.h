@@ -1,6 +1,7 @@
 #import "../Foundation/Foundation.h"
 #import "LKObject.h"
-#include <gmp.h>
+
+typedef unsigned long long mpz_t;
 
 @interface BigInt : NSNumber {
 @public
@@ -8,7 +9,6 @@
    * Value for this object.  Public so it can be accessed from others to
    * slightly lower the cost of operations on BigInts.
    */
-	mpz_t v;
 }
 + (BigInt*) bigIntWithCString:(const char*) aString;
 + (BigInt*) bigIntWithLongLong:(long long)aVal;
@@ -28,6 +28,6 @@ static inline LKObject LKObjectFromNSInteger(NSInteger integer)
 	}
 	else
 	{
-		return LKObjectFromObject((__bridge id)(void*)((integer << OBJC_SMALL_OBJECT_SHIFT) | 1));
+		return LKObjectFromObject((id)(void*)((integer << OBJC_SMALL_OBJECT_SHIFT) | 1));
 	}
 }
