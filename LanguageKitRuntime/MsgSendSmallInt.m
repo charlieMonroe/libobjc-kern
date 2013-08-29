@@ -1,6 +1,7 @@
 #include "LKObject.h"
 #ifdef _KERNEL
 	#include <sys/ctype.h>
+	#define isalnum(c) (isalpha(c) || isdigit(c))
 #else
 	#include <ctype.h>
 #endif
