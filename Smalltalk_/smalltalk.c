@@ -28,17 +28,20 @@ static int event_handler(struct module *module, int event, void *arg) {
 	return (e);
 }
 
-static moduledata_t langkit_conf = {
-	"LanguageKit Runtime", 	/* Module name. */
+static moduledata_t smalltalk_conf = {
+	"Smalltalk Runtime", 	/* Module name. */
 	event_handler,  /* Event handler. */
 	NULL 		/* Extra data */
 };
 
-DECLARE_MODULE(objc_langkit, langkit_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
-MODULE_VERSION(objc_langkit, 0);
+DECLARE_MODULE(smalltalk_runtime, smalltalk_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
+MODULE_VERSION(smalltalk_runtime, 0);
 
 /* Depend on libobjc */
-MODULE_DEPEND(objc_langkit, libobjc, 0, 0, 999);
+MODULE_DEPEND(smalltalk_runtime, libobjc, 0, 0, 999);
 
 /* Depend on Foundation */
-MODULE_DEPEND(objc_langkit, objc_foundation, 0, 0, 999);
+MODULE_DEPEND(smalltalk_runtime, objc_foundation, 0, 0, 999);
+
+/* Depend on LanguageKit */
+MODULE_DEPEND(smalltalk_runtime, objc_langkit, 0, 0, 999);
