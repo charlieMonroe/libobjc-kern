@@ -6,19 +6,16 @@ CFLAGS	+= -fblocks
 
 LDFLAGS += --print-gc-sections
 
-KMOD	= objc_langkit
+KMOD	= smalltalk_runtime
 
-SRCS	= LanguageKitRuntime.c \
-			BigInt.m \
+SRCS	= smalltalk.c \
 			BlockClosure.m \
-			BlockClosure+debug.m \
-			BoxedFloat.m \
-			LanguageKitExceptions.m \
-			MsgSendSmallInt.m \
-			NSString+conversions.m \
-			NSValue+structs.m \
-			OverflowHandler.m \
-			Symbol.m	 \
+			NSArray+map.m \
+			NSObject+log.m \
+			NSObject+yourself.m \
+			NSString+casting.m \
+			NSString+comma.m \
+			NSValue+structs.m
 
 .include <bsd.kmod.mk>
 
