@@ -35,10 +35,11 @@ static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
 	sx_slock(lock);
 	return 0;
 }
-static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
-	sx_xlock(lock);
-	return 0;
-}
+#define objc_rw_lock_wlock(lock) sx_xlock(lock)
+//static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
+//	sx_xlock(lock);
+//	return 0;
+//}
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	sx_unlock(lock);
 	return 0;
