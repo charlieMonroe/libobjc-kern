@@ -1682,6 +1682,7 @@ namespace {
                                       PtrTy,              // unresolved_class_next
                                       
                                       PtrTy,              // extra_space
+									  PtrTy,			  // kernel_module
                                       
                                       SizeTy,                 // instance_size
                                       
@@ -3994,7 +3995,8 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   Elements.push_back(llvm::ConstantExpr::getBitCast(Properties, PtrToInt8Ty));
   
   // .subclass_list, .sibiling_list, .unresolved_prev, .unresolved_next,
-  // .extra_space
+  // .extra_space, .kernel_module
+  Elements.push_back(NULLPtr);
   Elements.push_back(NULLPtr);
   Elements.push_back(NULLPtr);
   Elements.push_back(NULLPtr);
