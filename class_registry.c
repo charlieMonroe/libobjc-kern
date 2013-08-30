@@ -162,6 +162,10 @@ _objc_class_hash(Class cl)
 static inline void
 _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 {
+	if (cl == sibling){
+		return;
+	}
+	
 	/* Inserting into the linked list */
 	Class last_sibling = sibling->sibling_list;
 	if (last_sibling == Nil){
@@ -172,6 +176,9 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 	
 	while (last_sibling->sibling_list != Nil){
 		last_sibling = last_sibling->sibling_list;
+		if (last_sibling == cl){
+			return;
+		}
 	}
 	
 	/* Add it to the end of the list */
@@ -187,6 +194,11 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 static inline void
 _objc_insert_class_into_class_tree(Class cl)
 {
+	if (cl->subclass_list != Nil || cl->sibling_list != Nil){
+		/* Already there. */
+		return;
+	}
+	
 	/* Insert the class into the tree. */
 	if (cl->super_class == Nil){
 		/* Root class */
@@ -203,6 +215,12 @@ _objc_insert_class_into_class_tree(Class cl)
 		 * subclass list of the superclass as well as into
 		 * the siblings list of the subclasses.
 		 */
+		
+		if (cl->super_class->subclass_list == Nil){
+			/* Need to insert the superclass first. */
+			_objc_insert_class_into_class_tree(cl->super_class);
+		}
+		
 		Class super_class = cl->super_class;
 		if (cl->subclass_list == Nil){
 			/* First subclass */
