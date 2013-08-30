@@ -659,6 +659,12 @@ _objc_class_register_class_no_lock(Class cl){
 		cl->isa->super_class = cl;
 		cl->isa->isa = cl->isa;
 	}
+	
+	if (unresolved_classes != Nil){
+		unresolved_classes->unresolved_class_previous = cl;
+	}
+	cl->unresolved_class_next = unresolved_classes;
+	unresolved_classes = cl;
 }
 
 PRIVATE void
