@@ -169,6 +169,8 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 	/* Inserting into the linked list */
 	Class last_sibling = sibling->sibling_list;
 	if (last_sibling == Nil){
+		objc_debug_log("Adding class %s to the sibling list (%s)", class_getName(cl),
+					   class_getName(sibling));
 		sibling->sibling_list = cl;
 		sibling->isa->sibling_list = cl->isa;
 		return;
@@ -180,6 +182,9 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 			return;
 		}
 	}
+	
+	objc_debug_log("Adding class %s to the sibling list (%s)", class_getName(cl),
+				   class_getName(last_sibling));
 	
 	/* Add it to the end of the list */
 	last_sibling->sibling_list = cl;
@@ -227,6 +232,7 @@ _objc_insert_class_into_class_tree(Class cl)
 		if (cl->subclass_list == Nil){
 			/* First subclass */
 			super_class->subclass_list = cl;
+			super_class->isa->subclass_list = cl->isa;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
 													   super_class->subclass_list);
