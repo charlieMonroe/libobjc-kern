@@ -358,9 +358,9 @@ _objc_class_fixup_instance_size(Class cl)
 		cl->instance_size = _objc_class_calculate_instance_size(cl);
 	}
 	
-	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n",
+/*	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n",
 				   cl->name, cl->flags.meta ? " (meta)" : "",
-				   (unsigned int)cl->instance_size);
+				   (unsigned int)cl->instance_size);*/
 }
 
 

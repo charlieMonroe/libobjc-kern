@@ -228,8 +228,8 @@ sel_registerName_direct(struct objc_selector *selector)
 		return NO;
 	}
 	
-	objc_debug_log("Registering selector %s to sel_uid %d.\n",
-		       selector->name, selector->sel_uid);
+	//objc_debug_log("Registering selector %s to sel_uid %d.\n",
+	//	       selector->name, selector->sel_uid);
 	
 	SparseArrayInsert(objc_selector_sparse, selector->sel_uid, selector);
 	
@@ -413,7 +413,7 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
 {
 	OBJC_LOCK_FOR_SCOPE(&objc_selector_lock);
 	
-	objc_debug_log("Registering selectors from array[%i]: %p\n", count, selectors);
+	// objc_debug_log("Registering selectors from array[%i]: %p\n", count, selectors);
   
 	for (int i = 0; i < count; ++i){
 		struct objc_selector_reference *selector = &selectors[i];
@@ -422,6 +422,7 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
 											 selector->selector_types);
 		*(selector->sel_uid) = sel;
 		
+		/*
 		const char *name = selector->selector_name;
 		const char *types = selector->selector_types;
 		
@@ -430,6 +431,7 @@ objc_register_selector_array(struct objc_selector_reference *selectors,
 		objc_debug_log("\tTypes: %p (%s)\n", types, types);
  		objc_debug_log("Registered as (SEL)%i, updating value at %p\n",
 					   (int)(sel), selector->sel_uid);
+		 */
 	}
 }
 
