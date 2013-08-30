@@ -336,8 +336,7 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	 */
 	_objc_unload_IMPs_from_kernel_module(kernel_module);
 	
-	objc_debug_log("All done unloading module %s.\n",
-				   module_getname(kernel_module));
+	objc_debug_log("All done unloading module %s.\n", module_getname(kernel_module));
 	
 	return YES;
 }
@@ -369,6 +368,9 @@ PRIVATE BOOL
 _objc_unload_kernel_module(struct module *kernel_module){
 	objc_assert(kernel_module != NULL, "Cannot unload a NULL module!\n");
 	
+	/* Locking module lock. */
+	MOD_SLOCK;
+	
 	objc_debug_log("Unloading module %s\n", module_getname(kernel_module));
 	
 	struct linker_file *file = module_file(kernel_module);
@@ -381,10 +383,13 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	if (count == 0){
 		objc_debug_log("Couldn't find any ObjC data for module %s, nothing to "
 					   "unload\n", module_getname(kernel_module));
+		MOD_SUNLOCK;
 		return YES;
 	}
 	
-	return _objc_unload_modules(begin, end, kernel_module);
+	BOOL result = _objc_unload_modules(begin, end, kernel_module);
+	MOD_SUNLOCK;
+	return result;
 }
 
 
