@@ -116,9 +116,11 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 static void
 _objc_unload_classes_in_kernel_module(void *kernel_module)
 {
-	objc_debug_log("\t Unloading classes in module %p\n", kernel_module);
-	
 	Class root = objc_class_get_root_class_list();
+	
+	objc_debug_log("\t Unloading classes in module %p, root class %s\n",
+				   kernel_module, root == Nil ? "(null)" : class_getName(root));
+	
 	for (Class c = root; c != Nil; c = c->sibling_list){
 		_objc_unload_classes_in_branch(c, kernel_module);
 	}
