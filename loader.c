@@ -49,7 +49,7 @@ _objc_dump_class(Class cl){
 	
 	_objc_dump_class(cl->subclass_list);
 	for (Class c = cl->sibling_list; c != Nil; c = c->sibling_list){
-		_objc_dump_class(cl);
+		_objc_dump_class(c);
 	}
 }
 
