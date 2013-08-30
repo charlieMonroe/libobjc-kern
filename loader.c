@@ -33,32 +33,6 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 }
 #endif
 
-static void
-_objc_dump_class(Class cl){
-	if (cl == Nil){
-		return;
-	}
-	
-	objc_log("Class: %s\n", class_getName(cl));
-	objc_log("\t subclass_list: %s\n", class_getName(cl->subclass_list));
-	objc_log("\t siblings: ");
-	for (Class c = cl->sibling_list; c != Nil; c = c->sibling_list){
-		objc_log("%s, ", class_getName(c));
-	}
-	objc_log("\n");
-	
-	_objc_dump_class(cl->subclass_list);
-	for (Class c = cl->sibling_list; c != Nil; c = c->sibling_list){
-		_objc_dump_class(c);
-	}
-}
-
-static void
-_objc_dump_class_tree(void)
-{
-	Class cl = objc_class_get_root_class_list();
-	_objc_dump_class(cl);
-}
 
 static id
 __objc_unloaded_module_implementation_called(id sender, SEL _cmd, ...)
@@ -333,8 +307,6 @@ _objc_unload_modules(struct objc_loader_module **begin,
 								  void *kernel_module)
 {
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
-	
-	_objc_dump_class_tree();
 	
 	struct objc_loader_module **module_ptr;
 	for (module_ptr = begin; module_ptr < end; module_ptr++) {
