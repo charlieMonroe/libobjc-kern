@@ -6,6 +6,7 @@
 #include "runtime.h"
 #include "class_registry.h"
 #include "blocks.h"
+#include "private.h"
 
 static void *_HeapBlockByRef = (void*)1;
 
@@ -245,7 +246,6 @@ static void createNSBlockSubclass(Class superclass, Class newClass,
 	newClass->name = name;
 	newClass->dtable = uninstalled_dtable;
 	
-	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	objc_class_register_class(newClass);
 	
 }
@@ -264,6 +264,9 @@ static BOOL objc_create_block_classes_as_subclasses_of(Class super)
 	NEW_CLASS(&_NSBlock, _NSConcreteStackBlock);
 	NEW_CLASS(&_NSBlock, _NSConcreteGlobalBlock);
 	NEW_CLASS(&_NSBlock, _NSConcreteMallocBlock);
+	
+	/* Inserts the block classes to the class tree. */
+	objc_class_resolve_links();
 	return YES;
 }
 

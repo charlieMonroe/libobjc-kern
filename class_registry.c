@@ -630,6 +630,8 @@ objc_class_resolve_links(void)
 			
 			cl = next;
 		}
+		
+		cl = unresolved_classes;
 	} while (resolved_class);
 }
 
