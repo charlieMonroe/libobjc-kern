@@ -24,6 +24,13 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 	return (IMP >= module_get_start(module))
 			&& (IMP < module_get_start(module) + module_get_size(module));
 }
+#else
+static inline BOOL module_contains_IMP(void *module, void *IMP){
+	struct module *kernel_module = (struct module*)module;
+	struct linker_file *file = module_getfile(kernel_module);
+	return (IMP >= file->address)
+			&& (IMP < file->address + file->size);
+}
 #endif
 
 static id
