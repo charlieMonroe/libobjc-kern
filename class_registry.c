@@ -641,7 +641,7 @@ _objc_class_register_class_no_lock(Class cl){
 		return;
 	}
 	
-	objc_debug_log("Registering class %s with the runtime.\n", cl->name);
+	objc_log("Registering class %s with the runtime.\n", cl->name);
 	
 	_objc_class_fixup_instance_size(cl);
 	_objc_class_fixup_instance_size(cl->isa);
