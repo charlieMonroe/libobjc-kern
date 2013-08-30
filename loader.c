@@ -105,8 +105,10 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 		_objc_unload_classes_in_branch(c, kernel_module);
 	}
 	
-	objc_debug_log("\t Checking class %s - module %p\n", class_getName(branch),
-				   branch->kernel_module);
+	objc_debug_log("\t Checking class %s - module %p, sibling %p (%s)\n",
+				   class_getName(branch), branch->kernel_module,
+				   branch->sibling_list, branch->sibling_list == Nil ? "(null)" :
+				   class_getName(branch->sibling_list));
 	if (branch->kernel_module == kernel_module){
 		/* Remove this node. */
 		objc_unload_class(branch);
