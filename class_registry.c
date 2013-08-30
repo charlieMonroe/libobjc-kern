@@ -194,6 +194,8 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 static inline void
 _objc_insert_class_into_class_tree(Class cl)
 {
+	objc_debug_log("Adding class %s to class tree\n", class_getName(cl));
+	
 	if (cl->subclass_list != Nil || cl->sibling_list != Nil){
 		/* Already there. */
 		return;
