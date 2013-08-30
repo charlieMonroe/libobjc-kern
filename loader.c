@@ -301,17 +301,25 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	
 	struct objc_loader_module **module_ptr;
 	for (module_ptr = begin; module_ptr < end; module_ptr++) {
+		objc_debug_log("Checking module dependencies for %s\n",
+					   (*module_ptr)->name);
 		if (!_objc_module_check_dependencies_for_unloading(*module_ptr,
 														   kernel_module)){
+			objc_debug_log("Failed checking module dependencies for %s\n",
+						   (*module_ptr)->name);
 			return NO;
 		}
 	}
+	
+	objc_debug_log("No dependencies, unloading classes...\n");
 	
 	/* 
 	 * At this point, we can be certain that it is safe to unload all the
 	 * classes and protocols.
 	 */
 	_objc_unload_classes_in_kernel_module(kernel_module);
+	
+	objc_debug_log("Unloading protocols...\n");
 	
 	for (module_ptr = begin; module_ptr < end; module_ptr++) {
 		struct objc_loader_module *module = *module_ptr;
@@ -320,10 +328,16 @@ _objc_unload_modules(struct objc_loader_module **begin,
 		}
 	}
 	
+	
+	objc_debug_log("Unloading IMPs...\n");
+	
 	/*
 	 * Now for the fun part. Go through all the IMPs...
 	 */
 	_objc_unload_IMPs_from_kernel_module(kernel_module);
+	
+	objc_debug_log("All done unloading module %s.\n",
+				   module_getname(kernel_module));
 	
 	return YES;
 }
@@ -354,6 +368,8 @@ _objc_load_kernel_module(struct module *kernel_module)
 PRIVATE BOOL
 _objc_unload_kernel_module(struct module *kernel_module){
 	objc_assert(kernel_module != NULL, "Cannot unload a NULL module!\n");
+	
+	objc_debug_log("Unloading module %s\n", module_getname(kernel_module));
 	
 	struct linker_file *file = module_file(kernel_module);
 	struct objc_loader_module **begin = NULL;
