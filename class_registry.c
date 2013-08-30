@@ -211,6 +211,7 @@ _objc_insert_class_into_class_tree(Class cl)
 		/* Root class */
 		if (class_tree == Nil){
 			/* The first one, yay! */
+			objc_debug_log("Adding class %s to to the class tree (root)", class_getName(cl));
 			class_tree = cl;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
@@ -229,7 +230,7 @@ _objc_insert_class_into_class_tree(Class cl)
 		}
 		
 		Class super_class = cl->super_class;
-		if (cl->subclass_list == Nil){
+		if (super_class->subclass_list == Nil){
 			/* First subclass */
 			super_class->subclass_list = cl;
 			super_class->isa->subclass_list = cl->isa;
