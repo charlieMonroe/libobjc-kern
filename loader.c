@@ -27,9 +27,9 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 #else
 static inline BOOL module_contains_IMP(void *module, void *IMP){
 	struct module *kernel_module = (struct module*)module;
-	struct linker_file *file = module_getfile(kernel_module);
-	return (IMP >= file->address)
-			&& (IMP < file->address + file->size);
+	struct linker_file *file = module_file(kernel_module);
+	return ((char*)IMP >= file->address)
+			&& ((char*)IMP < file->address + file->size);
 }
 #endif
 
