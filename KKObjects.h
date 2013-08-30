@@ -54,6 +54,20 @@ __attribute__((objc_root_class))
 
 @end
 
+/* 
+ * When a kernel module is unloaded, the memory containing the code gets unloaded
+ * as well. To prevent page faults in kernel, the runtime replaces all IMPs
+ * from that particular module with an IMP that throws this exception.
+ */
+@interface __KKUnloadedModuleException : KKObject
+
++(void)raiseUnloadedModuleException:(id)obj selector:(SEL)selector;
+
+@property (readwrite, retain) id object;
+@property (readwrite, assign) SEL selector;
+
+@end
+
 
 /**
  * Definition of the Protocol type.  Protocols are objects, but are rarely used

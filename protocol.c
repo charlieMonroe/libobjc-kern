@@ -606,6 +606,14 @@ __objc_protocol_dealloc(Protocol *protocol)
 }
 
 PRIVATE void
+objc_protocol_unload(Protocol *protocol)
+{
+	objc_protocol_remove(objc_protocols, (void*)protocol->name);
+	__objc_protocol_dealloc(protocol);
+}
+
+
+PRIVATE void
 objc_protocol_destroy(void)
 {
 	objc_debug_log("Destroying protocols.\n");

@@ -172,6 +172,23 @@
 
 @end
 
+@implementation __KKUnloadedModuleException
+
++(void)raiseUnloadedModuleException:(id)obj selector:(SEL)selector{
+	__KKUnloadedModuleException *exc = [[[self alloc] init] autorelease];
+	[exc setObject:obj];
+	[exc setSelector:selector];
+	@throw exc;
+}
+
+-(void)dealloc{
+	[self setObject:nil];
+	
+	[super dealloc];
+}
+
+@end
+
 
 @implementation Protocol
 - (BOOL)conformsTo:(Protocol*)p

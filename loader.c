@@ -1,14 +1,216 @@
 #include "os.h"
-#include "kernobjc/types.h"
-#include "kernobjc/protocol.h"
+#include "kernobjc/runtime.h"
 #include "types.h"
+#include "sarray2.h"
+#include "dtable.h"
+#include "runtime.h"
 #include "loader.h"
 #include "selector.h"
 #include "init.h"
 #include "class_registry.h"
 #include "private.h"
 
-PRIVATE void _objc_load_module(struct objc_loader_module *module){
+#ifndef _KERNEL
+static inline const char *module_getname(void *module){
+	return "USERLAND";
+}
+static inline void *module_get_start(void *module){
+	return (void*)-1;
+}
+static inline size_t module_get_size(void *module){
+	return 0;
+}
+static inline BOOL module_contains_IMP(void *module, void *IMP){
+	return (IMP >= module_get_start(module))
+			&& (IMP < module_get_start(module) + module_get_size(module));
+}
+#endif
+
+static id
+__objc_unloaded_module_implementation_called(id sender, SEL _cmd, ...)
+{
+	objc_msgSend(objc_getClass("__KKUnloadedModuleException"),
+				 sel_getNamed("raiseUnloadedModuleException:selector:"),
+				 sender,
+				 _cmd);
+	return nil;
+}
+
+static void
+_objc_unload_IMPs_in_class(Class cl, void *kernel_module){
+	if (cl->methods == NULL){
+		return;
+	}
+	
+	for (objc_method_list *list = cl->methods; list != NULL; list = list->next){
+		for (int i = 0; i < list->size; ++i){
+			Method m = &list->list[i];
+			if (module_contains_IMP(kernel_module, m->implementation)){
+				IMP old_imp = m->implementation;
+				m->implementation = __objc_unloaded_module_implementation_called;
+				
+				/* Update the dtable! */
+				if (cl->dtable != NULL && cl->dtable != uninstalled_dtable){
+					SparseArray *arr = (SparseArray*)cl->dtable;
+					struct objc_slot *slot = SparseArrayLookup(arr, m->selector);
+					if (slot->implementation == old_imp){
+						slot->implementation = m->implementation;
+						++slot->version;
+					}
+				}
+			}
+		}
+	}
+}
+
+static void
+_objc_unload_IMPs_in_branch(Class branch, void *kernel_module)
+{
+	if (branch == Nil){
+		return;
+	}
+	
+	for (Class c = branch->subclass_list; c != Nil; c = c->sibling_list){
+		_objc_unload_IMPs_in_branch(c, kernel_module);
+	}
+	
+	_objc_unload_IMPs_in_class(branch, kernel_module);
+	_objc_unload_IMPs_in_class(branch->isa, kernel_module);
+}
+
+static void
+_objc_unload_IMPs_from_kernel_module(void *kernel_module)
+{
+	Class root = objc_class_get_root_class_list();
+	for (Class c = root; c != Nil; c = c->sibling_list){
+		_objc_unload_IMPs_in_branch(c, kernel_module);
+	}
+}
+
+static void
+_objc_unload_classes_in_branch(Class branch, void *kernel_module)
+{
+	if (branch == Nil){
+		return;
+	}
+	
+	for (Class c = branch->subclass_list; c != Nil; c = c->sibling_list){
+		_objc_unload_classes_in_branch(c, kernel_module);
+	}
+	
+	if (branch->kernel_module == kernel_module){
+		/* Remove this node. */
+		objc_unload_class(branch);
+	}
+}
+
+static void
+_objc_unload_classes_in_kernel_module(void *kernel_module)
+{
+	Class root = objc_class_get_root_class_list();
+	for (Class c = root; c != Nil; c = c->sibling_list){
+		_objc_unload_classes_in_branch(c, kernel_module);
+	}
+}
+
+static BOOL
+_objc_can_unload_class(Class cl, void *kernel_module)
+{
+	for (Class c = cl; c != Nil; c = c->sibling_list){
+		if (c->kernel_module != kernel_module){
+			objc_log("Cannot unload class %s since it is declared in module %s"
+					 " and is a subclass of a class declared in this module.\n",
+					 class_getName(c), module_getname(kernel_module));
+			return NO;
+		}
+		
+		if (c->subclass_list != Nil
+			&& !_objc_can_unload_class(c->subclass_list, kernel_module)){
+			return NO;
+		}
+	}
+	return YES;
+}
+
+static BOOL
+_objc_can_unload_protocol(Protocol *p, Class root_class, void *kernel_module)
+{
+	for (Class c = root_class; c != Nil; c = c->sibling_list){
+		if (c->kernel_module == kernel_module){
+			/* 
+			 * We can safely assume that if the class is from this module,
+			 * it doesn't matter if the protocol is adopted on this class
+			 * or its subclasses since we've already run the class check.
+			 */
+			continue;
+		}
+		
+		objc_protocol_list *protocol_list = c->protocols;
+		if (protocol_list != NULL){
+			while (protocol_list != NULL) {
+				for (int i = 0; i < protocol_list->size; ++i){
+					if (protocol_list->list[i] == p){
+						objc_log("Cannot unload protocol %s since it is used in"
+								 " class %s and this class is declared in module"
+								 " %s which is still loaded.\n",
+								 p->name,
+								 class_getName(c),
+								 c->kernel_module == NULL ? "(null)" :
+								 module_getname(c->kernel_module));
+						return NO;
+					}
+				}
+				protocol_list = protocol_list->next;
+			}
+		}
+		
+		if (c->subclass_list != Nil){
+			if (!_objc_can_unload_protocol(p, c->subclass_list, kernel_module)){
+				return NO;
+			}
+		}
+	}
+	
+	return YES;
+}
+
+static inline BOOL
+_objc_module_check_dependencies_for_unloading(struct objc_loader_module *module,
+											  void *kernel_module)
+{
+	/* First, check classes */
+	for (int i = 0; i < module->symbol_table->class_count; ++i){
+		Class cl = module->symbol_table->classes[i];
+		if (cl->subclass_list == Nil){
+			continue;
+		}
+		
+		if (!_objc_can_unload_class(cl->subclass_list, kernel_module)){
+			return NO;
+		}
+	}
+	
+	/* 
+	 * Now try protocols. These are a little bit harder. We need to go through
+	 * all the classes and see if any of the classes adopts the protocol since
+	 * protocol adoption can be done at run-time.
+	 */
+	Class root = objc_class_get_root_class_list();
+	for (int i = 0; i < module->symbol_table->protocol_count; ++i){
+		Protocol *p = module->symbol_table->protocols[i];
+		if (!_objc_can_unload_protocol(p, root, kernel_module)){
+			return NO;
+		}
+	}
+	
+	return YES;
+}
+
+
+PRIVATE void
+_objc_load_module(struct objc_loader_module *module,
+							   void *kernel_module)
+{
 	if (!objc_runtime_initialized){
 		objc_runtime_init();
 	}
@@ -34,8 +236,10 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module){
 	objc_register_selector_array(table->selector_references,
 								 table->selector_reference_count);
 	
-#if OBJC_DEBUG_LOG
 	for (int i = 0; i < table->class_count; ++i){
+		/* Mark the class as owned by the kernel module. */
+		table->classes[i]->kernel_module = kernel_module;
+		
 		objc_debug_log("Should be registering class[%i; %p] %s\n", i,
 					   table->classes[i],
 					   table->classes[i]->name);
@@ -45,7 +249,6 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module){
 					   super_class,
 					   super_class == NULL ? "" : super_class->name);
 	}
-#endif
 	
 	objc_class_register_classes(table->classes, table->class_count);
 	
@@ -66,30 +269,65 @@ PRIVATE void _objc_load_module(struct objc_loader_module *module){
 
 
 PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
-                                struct objc_loader_module **end)
+                                struct objc_loader_module **end,
+								void *kernel_module)
 {
 	objc_debug_log("Should be loading modules from array bounded by [%p, %p)\n",
 				   begin, end);
 	objc_debug_log("Module count: %i\n", (int)(end - begin));
 	
 	struct objc_loader_module **module_ptr;
-	int counter = 0;
 	for (module_ptr = begin; module_ptr < end; module_ptr++) {
-		objc_debug_log("\t[%i] %p -> %p\n", counter, module_ptr, *module_ptr);
-		_objc_load_module(*module_ptr);
+		_objc_load_module(*module_ptr, kernel_module);
 	}
 	
 	/* Now try to resolve all classes. */
 	objc_class_resolve_links();
 }
 
+PRIVATE BOOL
+_objc_unload_modules(struct objc_loader_module **begin,
+								  struct objc_loader_module **end,
+								  void *kernel_module)
+{
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	struct objc_loader_module **module_ptr;
+	for (module_ptr = begin; module_ptr < end; module_ptr++) {
+		if (!_objc_module_check_dependencies_for_unloading(*module_ptr,
+														   kernel_module)){
+			return NO;
+		}
+	}
+	
+	/* 
+	 * At this point, we can be certain that it is safe to unload all the
+	 * classes and protocols.
+	 */
+	_objc_unload_classes_in_kernel_module(kernel_module);
+	
+	for (module_ptr = begin; module_ptr < end; module_ptr++) {
+		struct objc_loader_module *module = *module_ptr;
+		for (int i = 0; i < module->symbol_table->protocol_count; ++i){
+			objc_protocol_unload(module->symbol_table->protocols[i]);
+		}
+	}
+	
+	/*
+	 * Now for the fun part. Go through all the IMPs...
+	 */
+	_objc_unload_IMPs_from_kernel_module(kernel_module);
+	
+	return YES;
+}
+
 #ifdef _KERNEL
 PRIVATE BOOL
-_objc_load_kernel_module(struct module *module)
+_objc_load_kernel_module(struct module *kernel_module)
 {
-	objc_assert(module != NULL, "Cannot load a NULL module!\n");
+	objc_assert(kernel_module != NULL, "Cannot load a NULL module!\n");
 	
-	struct linker_file *file = module_file(module);
+	struct linker_file *file = module_file(kernel_module);
 	struct objc_loader_module **begin = NULL;
 	struct objc_loader_module **end = NULL;
 	int count = 0;
@@ -98,11 +336,35 @@ _objc_load_kernel_module(struct module *module)
 	
 	if (count == 0){
 		objc_debug_log("Couldn't find any ObjC data for module %s!\n",
-					   module_getname(module));
+					   module_getname(kernel_module));
 		return NO;
 	}
 	
-	_objc_load_modules(begin, end);
+	_objc_load_modules(begin, end, kernel_module);
 	return YES;
 }
+
+PRIVATE BOOL
+_objc_unload_kernel_module(struct module *kernel_module){
+	objc_assert(kernel_module != NULL, "Cannot unload a NULL module!\n");
+	
+	struct linker_file *file = module_file(kernel_module);
+	struct objc_loader_module **begin = NULL;
+	struct objc_loader_module **end = NULL;
+	int count = 0;
+	
+	linker_file_lookup_set(file, "objc_module_list_set", &begin, &end, &count);
+	
+	if (count == 0){
+		objc_debug_log("Couldn't find any ObjC data for module %s, nothing to "
+					   "unload\n", module_getname(kernel_module));
+		return YES;
+	}
+	
+	return _objc_unload_modules(begin, end, kernel_module);
+}
+
+
 #endif
+
+

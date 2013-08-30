@@ -661,6 +661,12 @@ objc_class_register_classes(Class *cl, unsigned int count)
 	}
 }
 
+PRIVATE Class
+objc_class_get_root_class_list(void)
+{
+	return class_tree;
+}
+
 #pragma mark -
 #pragma mark Initializator-related
 
@@ -694,6 +700,16 @@ __objc_class_deallocate(Class cl)
 	}else{
 		_objc_deallocate_class_fields(cl);
 	}
+}
+
+PRIVATE void
+objc_unload_class(Class cl)
+{
+	/* Assumes the runtime lock is held. */
+	_objc_class_remove_from_class_tree(cl);
+	objc_class_remove(objc_classes, (void*)cl->name);
+	
+	__objc_class_deallocate(cl);
 }
 
 void

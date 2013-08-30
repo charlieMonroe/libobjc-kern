@@ -129,6 +129,9 @@ struct objc_class {
 	 */
 	void                *extra_space;
 	
+	/* The kernel module that this class is declared in. */
+	void				*kernel_module;
+	
 	size_t              instance_size;
 	int                 version; /* Right now 0. */
 };

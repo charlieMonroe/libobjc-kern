@@ -19,7 +19,9 @@ static int event_handler(struct module *module, int event, void *arg) {
 			_objc_load_kernel_module(module);
 			break;
 		case MOD_UNLOAD:
-			/* Nothing really - maybe some cleanup in the future. */
+			if (!_objc_unload_kernel_module(module)){
+				e = EOPNOTSUPP;
+			}
 			break;
 		default:
 			e = EOPNOTSUPP;
