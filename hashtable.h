@@ -424,7 +424,10 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 {
 	MAP_TABLE_WLOCK(&table->lock);
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
-	if (NULL == cell) { return; }
+	if (NULL == cell) {
+		MAP_TABLE_UNLOCK(&table->lock);
+		return;
+	}
 	// If the cell contains a value, set it to the placeholder and shuffle up
 	// everything
 	if (0 == cell->secondMaps)
