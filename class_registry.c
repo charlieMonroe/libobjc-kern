@@ -488,6 +488,10 @@ _objc_deallocate_class_fields(Class cls)
 static void
 _objc_deallocate_method_list(objc_method_list *list)
 {
+	if (list == NULL){
+		return;
+	}
+	
 	if (list->next == NULL){
 		/* It's the last one - don't deallocate that one! */
 		return;
