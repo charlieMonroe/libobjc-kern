@@ -376,6 +376,14 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	
 	objc_debug_log("All done unloading module %s.\n", module_getname(kernel_module));
 	
+	objc_log("Remaining classes:\n");
+	unsigned int count;
+	Class *classes = objc_copyClassList(&count);
+	for (int i = 0; i < count; ++i){
+		objc_log("\t [%02i] %s\n", i, class_getName(classes[i]));
+	}
+	objc_dealloc(classes, M_CLASS_TYPE);
+	
 	return YES;
 }
 
