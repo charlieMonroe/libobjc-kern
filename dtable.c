@@ -38,7 +38,7 @@ static BOOL ownsMethod(Class cls, SEL sel)
 
 static inline BOOL _objc_check_class_for_custom_arr_method(Class cls, SEL sel){
 	struct objc_slot *slot = objc_get_slot(cls, sel);
-	if (NULL != slot){
+	if (NULL != slot && slot->owner == cls){
 		cls->flags.has_custom_arr = YES;
 		return YES;
 	}
