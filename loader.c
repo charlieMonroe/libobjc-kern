@@ -53,10 +53,14 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 		return;
 	}
 	
+	objc_debug_log("Unloading IMPs in class %s\n", class_getName(cl));
+
 	for (objc_method_list *list = cl->methods; list != NULL; list = list->next){
+		objc_debug_log("\t [%p]\n", list);
 		for (int i = 0; i < list->size; ++i){
 			Method m = &list->list[i];
 			if (module_contains_IMP(kernel_module, m->implementation)){
+				objc_debug_log("\t\t [%02i] - %s\n", i, sel_getName(m->selector));
 				IMP old_imp = m->implementation;
 				m->implementation = objc_unloaded_module_method;
 				

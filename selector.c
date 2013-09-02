@@ -332,7 +332,8 @@ sel_getName(SEL selector)
 			SparseArrayLookup(objc_selector_sparse, selector);
 	
 	objc_assert(sel_struct != NULL,
-		    "Trying to get name from an unregistered selector.");
+		    "Trying to get name from an unregistered selector (%d).",
+		    selector);
 	return sel_struct->name;
 }
 
