@@ -784,6 +784,20 @@ void XYZ(void){
 	for (int i = 0; i < objc_classes->table_size; ++i){
 		if (objc_classes->table[i].secondMaps != 0){
 			objc_debug_log("===%s\n", class_getName(objc_classes->table[i].value));
+				
+			uint32_t hash = objc_hash_string(class_getName(objc_classes->table[i].value));
+			uint32_t jump = objc_classes->table[i].secondMaps;
+			// Look at each offset defined by the jump table to find the displaced location.
+			for (int hop = __builtin_ffs(jump) ; hop > 0 ; hop = __builtin_ffs(jump))
+			{
+				objc_class_table_cell hopCell = objc_class_table_lookup(objc_classes, hash + hop);
+				
+				// Clear the most significant bit and try again.
+				jump &= ~(1 << (hop-1));
+				
+				objc_debug_log("\t===%s\n", class_getName(hopCell->value));
+			}
+			
 		}
 	}
 }
