@@ -258,6 +258,9 @@ _objc_class_remove_from_class_tree(Class cl)
 			sibling = sibling->sibling_list;
 		}
 	}
+	
+	cl->sibling_list = Nil;
+	cl->subclass_list = Nil;
 }
 
 /*
@@ -759,6 +762,8 @@ objc_unload_class(Class cl)
 {
 	/* Assumes the runtime lock is held. */
 	_objc_class_remove_from_class_tree(cl);
+	_objc_class_remove_from_class_tree(cl->isa);
+	
 	objc_class_remove(objc_classes, (void*)cl->name);
 	
 	/* It handles the meta class as well. */
