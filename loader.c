@@ -72,11 +72,14 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 				m->selector_types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
 				
 				/* Update the dtable! */
-				if (cl->dtable != NULL && cl->dtable != uninstalled_dtable){
-					SparseArray *arr = (SparseArray*)cl->dtable;
+				SparseArray *arr = (SparseArray*)cl->dtable;
+				if (arr != NULL && arr != uninstalled_dtable){
 					struct objc_slot *slot = SparseArrayLookup(arr, m->selector);
 					if (slot != NULL && slot->implementation == old_imp){
 						slot->implementation = m->implementation;
+						
+						slot->types = m->selector_types;
+						
 						++slot->version;
 					}
 				}

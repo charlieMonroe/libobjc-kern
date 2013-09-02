@@ -480,6 +480,23 @@ _objc_deallocate_class_fields(Class cls)
 	}
 }
 
+/*
+ * Since loading categories copies the method list as well as adding methods
+ * manually, we deallocate the method lists except for the last one, which is
+ * the initial method list that was loaded with the class.
+ */
+static void
+_objc_deallocate_method_list(objc_method_list *list)
+{
+	if (list->next == NULL){
+		/* It's the last one - don't deallocate that one! */
+		return;
+	}
+	
+	_objc_deallocate_method_list(list->next);
+	objc_dealloc(list, M_METHOD_LIST_TYPE);
+}
+
 void
 objc_disposeClassPair(Class cls)
 {
@@ -716,6 +733,7 @@ __objc_class_deallocate(Class cl)
 	objc_debug_log("Deallocating class %s.\n", cl->name);
 	if (cl->flags.user_created) {
 		if (cl->flags.fake) {
+			/* TODO: We shouldn't really be here at all! */
 			SparseArrayDestroy((dtable_t*)&cl->dtable);
 			objc_dealloc(cl, M_FAKE_CLASS_TYPE);
 		}else{
@@ -723,6 +741,7 @@ __objc_class_deallocate(Class cl)
 			objc_disposeClassPair(cl);
 		}
 	}else{
+		_objc_deallocate_method_list(cl->methods);
 		_objc_deallocate_class_fields(cl);
 	}
 }
@@ -734,6 +753,7 @@ objc_unload_class(Class cl)
 	_objc_class_remove_from_class_tree(cl);
 	objc_class_remove(objc_classes, (void*)cl->name);
 	
+	/* It handles the meta class as well. */
 	__objc_class_deallocate(cl);
 }
 

@@ -19,14 +19,29 @@
 static void
 _objc_register_methods(Class cls, objc_method_list *list)
 {
-	if (NULL == list) { return; }
+	if (NULL == list || list->size == 0) { return; }
+	
+	/*
+	 * We need to create a copy of the method list. See the unload test. When
+	 * a module implements a category on a class that's implemented on another
+	 * module, then the module gets unloaded, unloading the other module will
+	 * end up in a kernel panic as the memory of this list had been unloaded.
+	 *
+	 * We don't need to copy the strings, etc. as they get updated on the module
+	 * unload.
+	 */
+	
+	size_t size = sizeof(objc_method_list) +
+							(list->size * sizeof(struct objc_method));
+	objc_method_list *copied_list = objc_alloc(size, M_METHOD_LIST_TYPE);
+	memcpy(copied_list, list, size);
 	
 	/* Replace the method names with selectors. */
-	objc_register_selectors_from_method_list(list);
+	objc_register_selectors_from_method_list(copied_list);
 	
 	/* Add the method list at the head of the list of lists. */
-	list->next = cls->methods;
-	cls->methods = list;
+	copied_list->next = cls->methods;
+	cls->methods = copied_list;
 	
 	/*
 	 * Update the dtable to catch the new methods, if the dtable has been
@@ -34,7 +49,7 @@ _objc_register_methods(Class cls, objc_method_list *list)
 	 * are loaded if the class hasn't received any messages yet.
 	 */
 	if (classHasDtable(cls)){
-		dtable_add_method_list_to_class(cls, list);
+		dtable_add_method_list_to_class(cls, copied_list);
 	}
 }
 
