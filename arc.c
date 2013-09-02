@@ -111,9 +111,8 @@ _objc_release(id obj)
 	}
 	
 	/*
-	 * The kernel objc run-time assumes
-	 * that the objects actually have the retain count variable
-	 * directly after the isa pointer.
+	 * The kernel objc run-time assumes that the objects actually have the
+	 * retain count variable directly after the isa pointer.
 	 */
 	struct object *object = (struct object *)obj;
 	if (__sync_sub_and_fetch(&(object->retain_count), 1) < 0) {

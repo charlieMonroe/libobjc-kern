@@ -35,7 +35,11 @@
 }
 +(void)initialize
 {
-	// No-op right now
+	/* 
+	 * This is a relatively ugly hack that prevents the -autorelease message
+	 * from becoming recursive.
+	 */
+	self->flags.has_custom_arr = NO;
 }
 
 
