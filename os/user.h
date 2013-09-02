@@ -120,3 +120,8 @@ static inline void objc_sleep(int secs){
 }
 
 
+/* MODULE */
+static inline void *objc_module_for_pointer(void *ptr){
+	return NULL;
+}
+

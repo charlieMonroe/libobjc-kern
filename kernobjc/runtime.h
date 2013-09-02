@@ -50,9 +50,16 @@ Protocol*__unsafe_unretained* objc_copyProtocolList(Protocol *protocol, unsigned
  * you need to use the objc_registerPair function.
  *
  * Memory management note: the name is copied.
+ *
+ * The regular version guesses the module by looking at the caller function 
+ * pointer and trying to find the correct module. This, however, won't work if
+ * you are using some other module's function for class creation - hence the
+ * "InModule" alternative.
  */
 Class objc_allocateClassPair(Class superclass, const char *name,
 			     size_t extraBytes);
+Class objc_allocateClassPairInModule(Class superclass, const char *name,
+									 size_t extraBytes, void *module);
 
 /*
  * This function marks the class as finished (i.e. resolved, not in construction).

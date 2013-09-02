@@ -386,9 +386,9 @@ objc_updateDtableForClassContainingMethod(Method m)
 	}
 }
 
-
 Class
-objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
+objc_allocateClassPairInModule(Class superclass, const char *name,
+									 size_t extraBytes, void *module)
 {
 	if (name == NULL || *name == '\0'){
 		objc_abort("Trying to create a class with NULL or empty name.");
@@ -446,16 +446,28 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 	
 	newClass->dtable = newMetaClass->dtable = uninstalled_dtable;
 	
-	/* 
-	 * Make sure that the kernel_module is inherited, so that it can be unloaded
-	 * when the superclass' module gets unloaded.
-	 */
-	newClass->kernel_module = superclass->kernel_module;
-	newMetaClass->kernel_module = superclass->isa->kernel_module;
+
+	newClass->kernel_module = module;
+	newMetaClass->kernel_module = module;
+	
 	
 	/* It is inserted into the class tree and hash table on class_finish */
 	
 	return newClass;
+}
+
+Class
+objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
+{
+	/*
+	 * We need to populate the module fields, however, requiring the user to
+	 * specify the module is not very clean solution, so we instead use this
+	 * hackery: get the caller function and determine which module it belongs
+	 * to.
+	 */
+	void *caller_function = __builtin_return_address(1);
+	void *module = objc_module_for_pointer(caller_function);
+	return objc_allocateClassPairInModule(superclass, name, extraBytes, module);
 }
 
 void

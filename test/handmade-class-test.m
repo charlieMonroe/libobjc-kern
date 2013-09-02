@@ -29,10 +29,10 @@ static void setIvar(MyClass *self, SEL _cmd, id value){
 
 void handmade_class_test(void);
 void handmade_class_test(void){
-  typedef struct {
-    Class isa;
-    int retain_count;
-  } Object;
+	typedef struct {
+		Class isa;
+		int retain_count;
+	} Object;
   
 	Class cl = objc_allocateClassPair([KKObject class], my_class_name, 0);
 	Class meta_cl = object_getClass((id)cl);
@@ -49,7 +49,7 @@ void handmade_class_test(void){
 	objc_registerClassPair(cl);
 	
 	
-  id instance = [[cl alloc] init];
+	id instance = [[cl alloc] init];
 	
 	objc_assert(gotInitialized, "The class did not get initialized!\n");
 	

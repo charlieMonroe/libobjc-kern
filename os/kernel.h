@@ -6,6 +6,8 @@
 #include <sys/sx.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
+#include <sys/module.h>
+#include <sys/linker.h>
 #include <sys/osd.h>
 #include <ddb/ddb.h>
 
@@ -35,11 +37,10 @@ static inline int objc_rw_lock_rlock(objc_rw_lock *lock){
 	sx_slock(lock);
 	return 0;
 }
-#define objc_rw_lock_wlock(lock) sx_xlock(lock)
-//static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
-//	sx_xlock(lock);
-//	return 0;
-//}
+static inline int objc_rw_lock_wlock(objc_rw_lock *lock){
+	sx_xlock(lock);
+	return 0;
+}
 static inline int objc_rw_lock_unlock(objc_rw_lock *lock){
 	sx_unlock(lock);
 	return 0;
@@ -105,6 +106,36 @@ static inline void *objc_alloc_page(struct malloc_type *type){
 }
 static inline void objc_dealloc(void *mem, struct malloc_type *type){
 	free(mem, type);
+}
+
+/* MODULE */
+
+struct ___linker_result {
+	module_t module;
+	caddr_t address;
+};
+
+static inline int ___linker_foreach_impl(linker_file_t file, void *ctx){
+	struct ___linker_result *result = ctx;
+	if (result->address >= file->address
+		&& result->address < (file->address + file->size)){
+		/* Found the linker file, return the module. */
+		result->module = TAILQ_FIRST(file->modules);
+		return 1;
+	}
+	return 0;
+}
+
+static inline void *objc_module_for_pointer(void *ptr){
+	struct ___linker_result result;
+	result.address = (caddr_t)ptr;
+	result.module = NULL;
+	
+	sx_slock(modules_sx);
+	linker_file_foreach(___linker_foreach_impl, &result);
+	sx_unlock(modules_sx);
+	
+	return result.module;
 }
 
 
