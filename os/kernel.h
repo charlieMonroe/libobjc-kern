@@ -131,9 +131,9 @@ static inline void *objc_module_for_pointer(void *ptr){
 	result.address = (caddr_t)ptr;
 	result.module = NULL;
 	
-	sx_slock(modules_sx);
+	sx_slock(&modules_sx);
 	linker_file_foreach(___linker_foreach_impl, &result);
-	sx_unlock(modules_sx);
+	sx_unlock(&modules_sx);
 	
 	return result.module;
 }
