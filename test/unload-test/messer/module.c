@@ -43,4 +43,4 @@ MODULE_VERSION(messer, 0);
 MODULE_DEPEND(messer, libobjc, 0, 0, 999);
 
 /* Depend on myclass */
-MODULE_DEPEND(messer, myclass, 0, 0, 999);
+MODULE_DEPEND(messer, my_class, 0, 0, 999);

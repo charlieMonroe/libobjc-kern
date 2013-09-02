@@ -46,4 +46,4 @@ MODULE_VERSION(messee, 0);
 MODULE_DEPEND(messee, libobjc, 0, 0, 999);
 
 /* Depend on myclass */
-MODULE_DEPEND(messee, myclass, 0, 0, 999);
+MODULE_DEPEND(messee, my_class, 0, 0, 999);
