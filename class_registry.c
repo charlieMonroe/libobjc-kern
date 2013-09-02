@@ -76,7 +76,7 @@ objc_class_send_load_messages(Class cl)
 
 
 /* Forward declarations */
-static inline BOOL _objc_class_name_is_equal_to(void *key, Class cl);
+static inline BOOL _objc_class_name_is_equal_to(const char *key, Class cl);
 static inline uint32_t _objc_class_hash(Class cl);
 static void _objc_class_fixup_instance_size(Class cl);
 
@@ -145,7 +145,7 @@ void(*objc_class_load_callback)(Class cl) = __objc_class_default_load_callback;
 
 
 static inline BOOL
-_objc_class_name_is_equal_to(void *key, Class cl)
+_objc_class_name_is_equal_to(const char *key, Class cl)
 {
 	return objc_strings_equal(cl->name, (const char*)key);
 }
