@@ -376,6 +376,7 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	
 	objc_debug_log("All done unloading module %s.\n", module_getname(kernel_module));
 	
+	objc_debug_log("SlowInit2: %p\n", objc_getClass("SlowInit2"));
 	objc_log("Remaining classes:\n");
 	unsigned int count;
 	Class *classes = objc_copyClassList(&count);
