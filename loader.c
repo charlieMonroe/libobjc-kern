@@ -119,8 +119,16 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 		return;
 	}
 	
-	for (Class c = branch->subclass_list; c != Nil; c = c->sibling_list){
+	/* It is important to save the next pointer before calling ourselves 
+	 * recursively since it is possible the class will be already deallocated
+	 * when we return back to this function.
+	 */
+	Class c = branch->subclass_list;
+	while (c != Nil){
+		Class next_class = c->sibling_list;
 		_objc_unload_classes_in_branch(c, kernel_module);
+		
+		c = next_class;
 	}
 	
 	objc_debug_log("\t Checking class %s - module %p, sibling %p (%s)\n",
@@ -141,8 +149,12 @@ _objc_unload_classes_in_kernel_module(void *kernel_module)
 	objc_debug_log("\t Unloading classes in module %p, root class %s\n",
 				   kernel_module, root == Nil ? "(null)" : class_getName(root));
 	
-	for (Class c = root; c != Nil; c = c->sibling_list){
+	Class c = root;
+	while (c != Nil){
+		Class next_class = c->sibling_list;
 		_objc_unload_classes_in_branch(c, kernel_module);
+		
+		c = next_class;
 	}
 }
 
