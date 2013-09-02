@@ -3,4 +3,8 @@
 
 @implementation MyClass
 
++(void)load{
+	/* Force initialization */
+}
+
 @end
