@@ -63,6 +63,9 @@ static void list_classes(void){
 	Class *classes = objc_copyClassList(&count);
 	for (int i = 0; i < count; ++i){
 		Class cl = classes[i];
+		objc_assert(cl == (Class)objc_getClass(class_getName(cl)),
+					"Cannot get a class by its name!\n");
+		
 		print_class(cl);
 		print_class(cl->isa);
 		
