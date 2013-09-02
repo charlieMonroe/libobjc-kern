@@ -253,6 +253,9 @@ _objc_class_remove_from_class_tree(Class cl)
 		while (sibling != Nil) {
 			if (sibling->sibling_list == cl){
 				sibling->sibling_list = cl->sibling_list;
+				
+				cl->sibling_list = Nil;
+				cl->subclass_list = Nil;
 				return;
 			}
 			sibling = sibling->sibling_list;
