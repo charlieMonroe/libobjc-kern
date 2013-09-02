@@ -102,6 +102,8 @@ objc_dispatch_tables_destroy(void)
 	
 	objc_rw_lock_destroy(&initialize_lock);
 	SparseArrayDestroy(&uninstalled_dtable);
+	
+	slot_pool_free();
 }
 
 static BOOL installMethodInDtable(Class class,

@@ -443,6 +443,13 @@ objc_allocateClassPair(Class superclass, const char *name, size_t extraBytes)
 	
 	newClass->dtable = newMetaClass->dtable = uninstalled_dtable;
 	
+	/* 
+	 * Make sure that the kernel_module is inherited, so that it can be unloaded
+	 * when the superclass' module gets unloaded.
+	 */
+	newClass->kernel_module = superclass->kernel_module;
+	newMetaClass->kernel_module = superclass->isa->kernel_module;
+	
 	/* It is inserted into the class tree and hash table on class_finish */
 	
 	return newClass;

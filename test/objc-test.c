@@ -153,7 +153,9 @@ static int event_handler(struct module *module, int event, void *arg) {
 			run_tests();
 			break;
 		case MOD_UNLOAD:
-			_objc_unload_kernel_module(module);
+			if (!_objc_unload_kernel_module(module)){
+				e = EOPNOTSUPP;
+			}
 			break;
 		default:
 			e = EOPNOTSUPP;
