@@ -424,6 +424,7 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 {
 	MAP_TABLE_WLOCK(&table->lock);
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
+	objc_assert(cell != NULL, "Removing something that's not in the hash table!\n");
 	if (NULL == cell) {
 		MAP_TABLE_UNLOCK(&table->lock);
 		return;

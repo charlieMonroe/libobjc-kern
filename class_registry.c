@@ -368,6 +368,39 @@ _objc_class_fixup_instance_size(Class cl)
 				   (unsigned int)cl->instance_size);*/
 }
 
+static inline void
+_objc_class_register_class_no_lock(Class cl){
+	if (objc_class_table_get(objc_classes, cl->name) != Nil){
+		objc_log("Class %s has been defined in multiple modules."
+				 " Which one will be used is undefined.\n", cl->name);
+		return;
+	}
+	
+	objc_log("Registering class %s with the runtime.\n", cl->name);
+	
+	_objc_class_fixup_instance_size(cl);
+	_objc_class_fixup_instance_size(cl->isa);
+	
+	objc_class_insert(objc_classes, cl);
+	
+	objc_register_selectors_from_class(cl, cl->isa);
+	
+	cl->dtable = uninstalled_dtable;
+	cl->isa->dtable = uninstalled_dtable;
+	
+	if (cl->super_class == Nil){
+		/* Root class */
+		cl->isa->super_class = cl;
+		cl->isa->isa = cl->isa;
+	}
+	
+	if (unresolved_classes != Nil){
+		unresolved_classes->unresolved_class_previous = cl;
+	}
+	cl->unresolved_class_next = unresolved_classes;
+	unresolved_classes = cl;
+}
+
 
 PRIVATE void
 objc_updateDtableForClassContainingMethod(Method m)
@@ -398,13 +431,17 @@ objc_allocateClassPairInModule(Class superclass, const char *name,
 	}
 	
 	if (superclass != Nil && !superclass->flags.resolved){
-		/*
-		 * Cannot create a subclass of an unfinished class.
-		 * The reason is simple: what if the superclass added
-		 * a variable after the subclass did so?
-		 */
-		objc_abort("Trying to create a subclass of an unresolved "
-				   "class.");
+		if (!objc_class_resolve(superclass)){
+			/*
+			 * Cannot create a subclass of an unfinished class.
+			 * The reason is simple: what if the superclass added
+			 * a variable after the subclass did so?
+			 */
+			objc_abort("Trying to create a subclass of an unresolved "
+					   "class.");
+		}
+		
+		/* Got resolved. */
 	}
 	
 	if (objc_class_table_get(objc_classes, name) != NULL){
@@ -678,39 +715,6 @@ objc_class_resolve_links(void)
 	} while (resolved_class);
 }
 
-static inline void
-_objc_class_register_class_no_lock(Class cl){
-	if (objc_class_table_get(objc_classes, cl->name) != Nil){
-		objc_log("Class %s has been defined in multiple modules."
-				 " Which one will be used is undefined.\n", cl->name);
-		return;
-	}
-	
-	objc_log("Registering class %s with the runtime.\n", cl->name);
-	
-	_objc_class_fixup_instance_size(cl);
-	_objc_class_fixup_instance_size(cl->isa);
-	
-	objc_class_insert(objc_classes, cl);
-	
-	objc_register_selectors_from_class(cl, cl->isa);
-	
-	cl->dtable = uninstalled_dtable;
-	cl->isa->dtable = uninstalled_dtable;
-	
-	if (cl->super_class == Nil){
-		/* Root class */
-		cl->isa->super_class = cl;
-		cl->isa->isa = cl->isa;
-	}
-	
-	if (unresolved_classes != Nil){
-		unresolved_classes->unresolved_class_previous = cl;
-	}
-	cl->unresolved_class_next = unresolved_classes;
-	unresolved_classes = cl;
-}
-
 PRIVATE void
 objc_class_register_class(Class cl)
 {
@@ -769,6 +773,8 @@ __objc_class_deallocate(Class cl)
 	}else{
 		_objc_deallocate_method_list(cl->methods);
 		_objc_deallocate_class_fields(cl);
+		
+		objc_class_remove(objc_classes, (void*)cl->name);
 	}
 }
 
@@ -778,8 +784,6 @@ objc_unload_class(Class cl)
 	/* Assumes the runtime lock is held. */
 	_objc_class_remove_from_class_tree(cl);
 	_objc_class_remove_from_class_tree(cl->isa);
-	
-	objc_class_remove(objc_classes, (void*)cl->name);
 	
 	/* It handles the meta class as well. */
 	__objc_class_deallocate(cl);

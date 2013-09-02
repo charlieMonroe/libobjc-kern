@@ -111,10 +111,12 @@ void run_tests(void)
 {
 	list_classes();
 	
+	handmade_class_test();
+	
 	associated_objects_test();
 	weak_ref_test();
 	ivar_test();
-	handmade_class_test();
+	
 	compiler_test();
 	exception_test();
 	forwarding_test();

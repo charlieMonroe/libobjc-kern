@@ -34,7 +34,7 @@ void handmade_class_test(void){
 		int retain_count;
 	} Object;
   
-	Class cl = objc_allocateClassPair([KKObject class], my_class_name, 0);
+	Class cl = objc_allocateClassPair(objc_getClass("KKObject"), my_class_name, 0);
 	Class meta_cl = object_getClass((id)cl);
 	
 	SEL getIvarSel = sel_registerName("getIvar", "@10@0:8");
@@ -48,6 +48,7 @@ void handmade_class_test(void){
 	
 	objc_registerClassPair(cl);
 	
+	objc_assert(cl == objc_getClass(my_class_name), "Can't get the class!\n");
 	
 	id instance = [[cl alloc] init];
 	

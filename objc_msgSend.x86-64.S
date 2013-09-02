@@ -94,7 +94,6 @@
   pushq 0x0
 .endif
 
-#TODO adjuct the 0xD8 - should be 0x40 (0xd8 - 0x98 == 0x40)
 	.cfi_adjust_cfa_offset 0x40
 	call  CDECL(slowMsgLookup)           # Call the slow lookup function
 
