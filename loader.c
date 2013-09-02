@@ -413,9 +413,13 @@ _objc_load_kernel_module(struct module *kernel_module)
 
 PRIVATE BOOL
 _objc_unload_kernel_module(struct module *kernel_module){
+	static BOOL unloaded = NO;
+	
 	void XYZ(void);
-	XYZ();
-	return NO;
+	if (!unloaded){
+		XYZ();
+		return NO;
+	}
 	
 	objc_assert(kernel_module != NULL, "Cannot unload a NULL module!\n");
 	
@@ -440,6 +444,9 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	
 	BOOL result = _objc_unload_modules(begin, end, kernel_module);
 	MOD_SUNLOCK;
+	
+	XYZ();
+	
 	return result;
 }
 
