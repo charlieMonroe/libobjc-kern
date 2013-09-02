@@ -771,10 +771,10 @@ __objc_class_deallocate(Class cl)
 			objc_disposeClassPair(cl);
 		}
 	}else{
+		objc_class_remove(objc_classes, (void*)cl->name);
+		
 		_objc_deallocate_method_list(cl->methods);
 		_objc_deallocate_class_fields(cl);
-		
-		objc_class_remove(objc_classes, (void*)cl->name);
 	}
 }
 
