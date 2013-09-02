@@ -781,6 +781,9 @@ __objc_class_deallocate(Class cl)
 
 void XYZ(void);
 void XYZ(void){
+	objc_debug_log("SLOWINIT2 == %p", objc_class_table_get(objc_classes, "SlowInit2"));
+	objc_debug_log("SLOWINIT2 == %p", objc_getClass("SlowInit2"));
+	
 	for (int i = 0; i < objc_classes->table_size; ++i){
 		if (objc_classes->table[i].secondMaps != 0){
 			objc_debug_log("===%s\n", class_getName(objc_classes->table[i].value));
