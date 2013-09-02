@@ -380,7 +380,7 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	unsigned int count;
 	Class *classes = objc_copyClassList(&count);
 	for (int i = 0; i < count; ++i){
-		objc_log("\t [%02i] %s\n", i, class_getName(classes[i]));
+		objc_log("\t [%02i] %s [%p]\n", i, class_getName(classes[i]), classes[i]);
 	}
 	objc_dealloc(classes, M_CLASS_TYPE);
 	

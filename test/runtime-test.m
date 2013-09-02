@@ -295,17 +295,17 @@ static int initCount;
 void runtime_test(void);
 void runtime_test(void)
 {
-  testInvalidArguments();
-  testGetMethod();
-  testProtocols();
-  testClassHierarchy();
-  testAllocateClass();
-  objc_log("Instance of __NSObject: %p\n", class_createInstance([__NSObject class], 0));
-
-  testSynchronized();
-  testExceptions();
-
-  objc_assert(exitStatus == 0, "Exit status != 0\n");
+	testInvalidArguments();
+	testGetMethod();
+	testProtocols();
+	testClassHierarchy();
+	testAllocateClass();
+	objc_log("Instance of __NSObject: %p\n", class_createInstance([__NSObject class], 0));
+	
+	testSynchronized();
+	testExceptions();
+	
+	objc_assert(exitStatus == 0, "Exit status != 0\n");
 	
 	
 	objc_log("===================\n");

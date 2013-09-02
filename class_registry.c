@@ -760,7 +760,7 @@ objc_class_init(void)
 static void
 __objc_class_deallocate(Class cl)
 {
-	objc_debug_log("Deallocating class %s.\n", cl->name);
+	objc_debug_log("Deallocating class %s [%p].\n", cl->name, cl);
 	if (cl->flags.user_created) {
 		if (cl->flags.fake) {
 			/* TODO: We shouldn't really be here at all! */
