@@ -381,6 +381,11 @@ namespace {
                                        ArrayRef<llvm::Constant *> MethodTypes,
                                        bool isClassMethodList);
     
+    /// Generates the actual method list structure
+    virtual llvm::Constant *GenerateMethodListStructure(llvm::Constant *MethodArray,
+                                                        llvm::Type *ObjCMethodArrayTy,
+                                                        unsigned Size) = 0;
+    
     /// Returns the structure type for a method structure used by the runtime.
     virtual llvm::StructType *GetMethodStructureType(void) = 0;
     
@@ -856,6 +861,9 @@ namespace {
                                                  llvm::Constant *Method,
                                                  llvm::Constant *SelectorName,
                                                  llvm::Constant *MethodTypes);
+    virtual llvm::Constant *GenerateMethodListStructure(llvm::Constant *MethodArray,
+                                                        llvm::Type *ObjCMethodArrayTy,
+                                                        unsigned Size);
     virtual llvm::StructType *GetMethodDescriptionStructureType(void);
     virtual void GenerateMethodDescriptionStructureElements(std::vector<llvm::Constant*> &Elements,
                                                             llvm::Constant *SelectorName,
@@ -1889,6 +1897,10 @@ namespace {
                                const ObjCAtThrowStmt &S,
                                bool ClearInsertionPoint);
     
+    virtual llvm::Constant *GenerateMethodListStructure(llvm::Constant *MethodArray,
+                                                        llvm::Type *ObjCMethodArrayTy,
+                                                        unsigned Size);
+    
     virtual llvm::Constant *GeneratePropertyListStructure(llvm::Constant *PropertyArray,
                                                           unsigned int size);
     
@@ -1992,8 +2004,19 @@ GenerateMethodList(const StringRef &ClassName,
   // Array of method structures
   llvm::ArrayType *ObjCMethodArrayTy = llvm::ArrayType::get(ObjCMethodTy,
                                                             Methods.size());
+  
   llvm::Constant *MethodArray = llvm::ConstantArray::get(ObjCMethodArrayTy,
                                                          Methods);
+
+  
+  return GenerateMethodListStructure(MethodArray, ObjCMethodArrayTy,
+                                     Methods.size());
+}
+
+llvm::Constant *
+CGObjCPointerSelectorBase::GenerateMethodListStructure(llvm::Constant *MethodArray,
+                                                       llvm::Type *ObjCMethodArrayTy,
+                                                       unsigned Size){
   
   // Structure containing list pointer, array and array count
   llvm::StructType *ObjCMethodListTy = llvm::StructType::create(VMContext);
@@ -2004,15 +2027,42 @@ GenerateMethodList(const StringRef &ClassName,
                             ObjCMethodArrayTy,
                             NULL);
   
-  Methods.clear();
-  Methods.push_back(llvm::ConstantPointerNull::get(
-                                                   llvm::PointerType::getUnqual(ObjCMethodListTy)));
-  Methods.push_back(llvm::ConstantInt::get(Int32Ty, MethodTypes.size()));
-  Methods.push_back(MethodArray);
+  std::vector<llvm::Constant*> Fields;
+  Fields.push_back(llvm::ConstantPointerNull::get(
+                                                  llvm::PointerType::getUnqual(ObjCMethodListTy)));
+  Fields.push_back(llvm::ConstantInt::get(Int32Ty, Size));
+  Fields.push_back(MethodArray);
   
   // Create an instance of the structure
-  return MakeGlobal(ObjCMethodListTy, Methods, ".objc_method_list");
+  return MakeGlobal(ObjCMethodListTy, Fields, ".objc_method_list");
 }
+
+llvm::Constant *
+CGObjCKern::GenerateMethodListStructure(llvm::Constant *MethodArray,
+                                                       llvm::Type *ObjCMethodArrayTy,
+                                                       unsigned Size){
+  
+  // Structure containing list pointer, array and array count
+  llvm::StructType *ObjCMethodListTy = llvm::StructType::create(VMContext);
+  llvm::Type *NextPtrTy = llvm::PointerType::getUnqual(ObjCMethodListTy);
+  ObjCMethodListTy->setBody(
+                            NextPtrTy,
+                            IntTy, // Size
+                            BoolTy, // Allocated dynamically
+                            ObjCMethodArrayTy,
+                            NULL);
+  
+  std::vector<llvm::Constant*> Fields;
+  Fields.push_back(llvm::ConstantPointerNull::get(
+                                                  llvm::PointerType::getUnqual(ObjCMethodListTy)));
+  Fields.push_back(llvm::ConstantInt::get(Int32Ty, Size));
+  Fields.push_back(llvm::ConstantInt::get(BoolTy, 0));
+  Fields.push_back(MethodArray);
+  
+  // Create an instance of the structure
+  return MakeGlobal(ObjCMethodListTy, Fields, ".objc_method_list");
+}
+
 
 llvm::Value *CGObjCPointerSelectorBase::GetSelector(CodeGenFunction &CGF, Selector Sel,
                                                     const std::string &TypeEncoding, bool lval) {

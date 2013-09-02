@@ -491,14 +491,11 @@ _objc_deallocate_method_list(objc_method_list *list)
 	if (list == NULL){
 		return;
 	}
-	
-	if (list->next == NULL){
-		/* It's the last one - don't deallocate that one! */
-		return;
-	}
-	
+		
 	_objc_deallocate_method_list(list->next);
-	objc_dealloc(list, M_METHOD_LIST_TYPE);
+	if (list->is_dynamically_allocated){
+		objc_dealloc(list, M_METHOD_LIST_TYPE);
+	}
 }
 
 void

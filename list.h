@@ -32,6 +32,16 @@
 	#define OBJC_LIST_CHAINABLE 0
 #endif
 
+/*
+ * Unfortunately, we need to sometimes distinguish between dynamically allocated
+ * and simply loaded-from-binary lists (most importantly method lists) so that
+ * we can free the dynamically allocated ones safely, while ignoring those that
+ * aren't.
+ */
+#ifndef OBJC_LIST_HAS_ALLOCATION_FIELD
+	#define OBJC_LIST_HAS_ALLOCATION_FIELD 0
+#endif
+
 #ifndef OBJC_LIST_VALUES_ARE_POINTERS
 	#define OBJC_LIST_VALUES_ARE_POINTERS 0
 #endif
@@ -92,6 +102,10 @@ struct OBJC_LIST_STRUCTURE_NAME {
 	 * Size of the *_list below.
 	 */
 	unsigned int size;
+  
+	#if OBJC_LIST_HAS_ALLOCATION_FIELD
+		BOOL is_dynamically_allocated;
+	#endif
 	
 	/*
 	 * Actual list of the items.
@@ -105,6 +119,9 @@ struct OBJC_LIST_STRUCTURE_NAME {
 static inline OBJC_LIST_STRUCTURE_TYPE_NAME *PREFIX_SUFFIX(OBJC_LIST_STRUCTURE_TYPE_NAME, _create)(unsigned int count){
 	OBJC_LIST_STRUCTURE_TYPE_NAME *result = objc_zero_alloc(sizeof(OBJC_LIST_STRUCTURE_TYPE_NAME) + count * sizeof(OBJC_LIST_TYPE), OBJC_LIST_MALLOC_TYPE);
 	result->size = count;
+	#if OBJC_LIST_HAS_ALLOCATION_FIELD
+		result->is_dynamically_allocated = YES;
+	#endif
 	return result;
 }
 

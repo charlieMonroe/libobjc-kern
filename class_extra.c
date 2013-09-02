@@ -133,8 +133,10 @@ objc_class_extra_destroy_for_class(Class cl)
 				objc_abort("Unknown extra identifier %d!\n", extra->identifier);
 				/** Not reached. */
 			}
+			
+			void *old_extra = extra;
 			extra = extra->next;
-			objc_dealloc(extra, M_CLASS_EXTRA_TYPE);
+			objc_dealloc(old_extra, M_CLASS_EXTRA_TYPE);
 		}
 	}
 }

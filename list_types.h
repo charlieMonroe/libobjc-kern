@@ -14,6 +14,7 @@
 #define OBJC_LIST_TYPE_NAME method
 #define OBJC_LIST_TYPE struct objc_method
 #define OBJC_LIST_CHAINABLE 1
+#define OBJC_LIST_HAS_ALLOCATION_FIELD 1
 #include "list.h"
 
 /* Ivar list. */

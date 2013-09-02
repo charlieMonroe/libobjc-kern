@@ -35,6 +35,7 @@ _objc_register_methods(Class cls, objc_method_list *list)
 							(list->size * sizeof(struct objc_method));
 	objc_method_list *copied_list = objc_alloc(size, M_METHOD_LIST_TYPE);
 	memcpy(copied_list, list, size);
+	copied_list->is_dynamically_allocated = YES;
 	
 	/* Replace the method names with selectors. */
 	objc_register_selectors_from_method_list(copied_list);

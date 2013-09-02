@@ -231,6 +231,7 @@ _objc_cleanup_pools(struct objc_arc_thread_data *data)
 {
 	if (data->pool != NULL){
 		_objc_empty_pool_until(data, NULL);
+		objc_dealloc(data, M_AUTORELEASE_POOL_TYPE);
 		objc_assert(data->pool == NULL,
 			    "The pool should have been emptied!\n");
 	}
