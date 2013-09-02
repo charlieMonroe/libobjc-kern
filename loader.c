@@ -418,6 +418,7 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	void XYZ(void);
 	if (!unloaded){
 		XYZ();
+		unloaded = YES;
 		return NO;
 	}
 	
