@@ -35,14 +35,13 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 #endif
 
 /* Default unloaded module method. */
-static id
-__objc_unloaded_module_implementation_called(id sender, SEL _cmd, ...)
+static void
+__objc_unloaded_module_implementation_called(id sender, SEL _cmd)
 {
 	objc_msgSend(objc_getClass("__KKUnloadedModuleException"),
 				 sel_getNamed("raiseUnloadedModuleException:selector:"),
 				 sender,
 				 _cmd);
-	return nil;
 }
 
 /* The hook. */
@@ -61,11 +60,18 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 				IMP old_imp = m->implementation;
 				m->implementation = objc_unloaded_module_method;
 				
+				/* Since the selector name and types can actually be also 
+				 * allocated in the module, we better update the strings
+				 * as well.
+				 */
+				m->selector_name = "__objc_unloaded_method";
+				m->selector_types = sizeof(void*) == 4 ? "v8@0:4" : "v16@0:8";
+				
 				/* Update the dtable! */
 				if (cl->dtable != NULL && cl->dtable != uninstalled_dtable){
 					SparseArray *arr = (SparseArray*)cl->dtable;
 					struct objc_slot *slot = SparseArrayLookup(arr, m->selector);
-					if (slot->implementation == old_imp){
+					if (slot != NULL && slot->implementation == old_imp){
 						slot->implementation = m->implementation;
 						++slot->version;
 					}
