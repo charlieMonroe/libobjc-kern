@@ -392,6 +392,10 @@ _objc_unload_modules(struct objc_loader_module **begin,
 PRIVATE BOOL
 _objc_load_kernel_module(struct module *kernel_module)
 {
+	void XYZ(void);
+	XYZ();
+	return NO;
+	
 	objc_assert(kernel_module != NULL, "Cannot load a NULL module!\n");
 	
 	struct linker_file *file = module_file(kernel_module);

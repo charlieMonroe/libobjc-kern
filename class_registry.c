@@ -85,6 +85,7 @@ static void _objc_class_fixup_instance_size(Class cl);
 #define MAP_TABLE_HASH_KEY objc_hash_string
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
+#define MAP_TABLE_KEY_TYPE const char *
 #define MAP_TABLE_NO_LOCK 1
 #define MAP_MALLOC_TYPE M_CLASS_MAP_TYPE
 #include "hashtable.h"
@@ -775,6 +776,15 @@ __objc_class_deallocate(Class cl)
 		
 		_objc_deallocate_method_list(cl->methods);
 		_objc_deallocate_class_fields(cl);
+	}
+}
+
+void XYZ(void);
+void XYZ(void){
+	for (int i = 0; i < objc_classes->table_size; ++i){
+		if (objc_classes->table[i].secondMaps != 0){
+			objc_debug_log("===%s\n", class_getName(objc_classes->table[i].value));
+		}
 	}
 }
 
