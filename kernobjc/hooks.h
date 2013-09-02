@@ -28,4 +28,9 @@ extern Class(*objc_class_lookup_hook)(const char *name);
 /* Compatibility reasons. */
 #define _objc_lookup_class objc_class_lookup_hook
 
+/*
+ * Allows own handling of methods that are in modules that were unloaded.
+ */
+extern IMP objc_unloaded_module_method;
+
 #endif /* !OBJC_HOOKS_H */

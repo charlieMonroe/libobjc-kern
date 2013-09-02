@@ -1,0 +1,31 @@
+Unlike the userspace, unloading a kernel module (~ quitting an app) 
+unfortunately doesn't mean that all the memory is realeased and that there are
+no references to classes declared in that particular module.
+
+One option would be, of course, to have the isa pointer a weak pointer, which
+would help with the issue of existing objects of a class implemented in a parti-
+cular module. This would, however, imply having a list of objects per class,
+which is simply too memory consuming as well as it would slow down object 
+allocation.
+
+This doesn't help anyhow with the following scenario this test is testing:
+
+- One module implements a class MyClass.
+- Second module adds a method via a category to class MyClass.
+- Second module is unloaded.
+- Third module allocates an instance of MyClass and calls this method.
+
+It would normally mean a kernel panic, however, the runtime on module unload
+replaces all IMPs from that module by an internal function that throws 
+an exception, which can be handled - or not. This handler can be replaced
+by your own IMP - see hooks.h.
+
+HOW TO RUN THE TEST
+===================
+
+Of course, the ObjC runtime kernel module must be loaded.
+
+- Load the module "myclass".
+- Load the module "messer".
+- Unload the module "messer".
+- Load the module "messee" - this module calls the method installed by messer.

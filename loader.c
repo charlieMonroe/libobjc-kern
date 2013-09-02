@@ -10,6 +10,7 @@
 #include "class_registry.h"
 #include "private.h"
 
+
 #ifndef _KERNEL
 static inline const char *module_getname(void *module){
 	return "USERLAND";
@@ -33,7 +34,7 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 }
 #endif
 
-
+/* Default unloaded module method. */
 static id
 __objc_unloaded_module_implementation_called(id sender, SEL _cmd, ...)
 {
@@ -43,6 +44,9 @@ __objc_unloaded_module_implementation_called(id sender, SEL _cmd, ...)
 				 _cmd);
 	return nil;
 }
+
+/* The hook. */
+IMP objc_unloaded_module_method = (IMP)__objc_unloaded_module_implementation_called;
 
 static void
 _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
@@ -55,7 +59,7 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 			Method m = &list->list[i];
 			if (module_contains_IMP(kernel_module, m->implementation)){
 				IMP old_imp = m->implementation;
-				m->implementation = __objc_unloaded_module_implementation_called;
+				m->implementation = objc_unloaded_module_method;
 				
 				/* Update the dtable! */
 				if (cl->dtable != NULL && cl->dtable != uninstalled_dtable){

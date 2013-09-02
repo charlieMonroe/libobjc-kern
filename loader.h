@@ -112,8 +112,8 @@ PRIVATE BOOL _objc_load_kernel_module(struct module *kernel_module);
  * exception isn't a NSException, but a special subclass of KKObject declared
  * in the kernel. See KKObjects.h.
  *
- * THOUGHTS: Actually remove the IMP pointer? Instead of throwing the exception,
- *				do something else? A hook?
+ * You can change this IMP pointer replacement using the objc_unloaded_module_method
+ * hook.
  *
  */
 PRIVATE BOOL _objc_unload_kernel_module(struct module *kernel_module);
