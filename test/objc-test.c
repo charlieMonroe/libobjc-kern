@@ -111,18 +111,16 @@ void run_tests(void)
 {
 	list_classes();
 	
-	/*
-	 associated_objects_test();
-	 weak_ref_test();
-	 ivar_test();
-	 handmade_class_test();
-	 compiler_test();
-	 exception_test();
-	 forwarding_test();
-	 message_send_test();
-	 property_test();
-	 property_introspection_test1();
-	 */
+	associated_objects_test();
+	weak_ref_test();
+	ivar_test();
+	handmade_class_test();
+	compiler_test();
+	exception_test();
+	forwarding_test();
+	message_send_test();
+	property_test();
+	property_introspection_test1();
 	protocol_creation_test();
 	runtime_test();
 	category_test();
