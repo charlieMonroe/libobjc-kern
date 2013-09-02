@@ -55,8 +55,14 @@ _objc_create_pool_if_necessary(struct objc_arc_thread_data *data);
 
 static inline struct objc_arc_thread_data *
 _objc_get_arc_thread_data(void){
-	return (struct objc_arc_thread_data*)
-			objc_get_tls_for_key(objc_autorelease_pool_tls_key);
+	struct objc_arc_thread_data *data = (struct objc_arc_thread_data*)
+						objc_get_tls_for_key(objc_autorelease_pool_tls_key);
+	if (data == NULL){
+		data = objc_zero_alloc(sizeof(struct objc_arc_thread_data),
+						  M_AUTORELEASE_POOL_TYPE);
+		objc_set_tls_for_key(data, objc_autorelease_pool_tls_key);
+	}
+	return data;
 }
 
 static inline id
@@ -134,7 +140,8 @@ _objc_autorelease(id obj)
 	}
 	
 	struct objc_arc_thread_data *data = _objc_get_arc_thread_data();
-	if (data != NULL) {
+	if (data != NULL){
+		/* Data == NULL generally only if allocation fails. */
 		struct objc_autorelease_pool *pool;
 		pool = _objc_create_pool_if_necessary(data);
 		
@@ -144,7 +151,11 @@ _objc_autorelease(id obj)
 		return obj;
 	}
 	
-	return objc_send_autorelease_msg(obj);
+	/* 
+	 * Last resort - don't send the autorelease message since it can result in
+	 * an inifinite loop.
+	 */
+	return obj;
 }
 
 
