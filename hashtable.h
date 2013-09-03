@@ -265,6 +265,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 /*
  * Rebalancing the table.
  */
+__attribute__((unused))
 static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 {
 	for (unsigned i = 32; i < table->table_size; i++)
