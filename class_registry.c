@@ -793,8 +793,9 @@ void XYZ(void){
 		Class cl = objc_classes->table[i].value;
 		if (cl != Nil){
 			const char *class_name = class_getName(cl);
-			objc_debug_log("===[%03i;%03i] - %s\n", i,
+			objc_debug_log("===[%03i;%03i;%08x] - %s\n", i,
 						   objc_hash_string(class_name) % objc_classes->table_size,
+						   objc_classes->table[i].secondMaps,
 						   class_name);
 		}
 	}
