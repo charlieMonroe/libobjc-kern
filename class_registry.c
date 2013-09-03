@@ -782,8 +782,11 @@ __objc_class_deallocate(Class cl)
 void XYZ(void);
 void XYZ(void){
 	for (int i = 0; i < objc_classes->table_size; ++i){
-		if (objc_classes->table[i].value != Nil){
-			objc_debug_log("===[%02i] - %s\n", i, class_getName(objc_classes->table[i].value));
+		Class cl = objc_classes->table[i].value;
+		if (cl != Nil){
+			const char *class_name = class_getName(cl);
+			objc_debug_log("===[%02i] - %s [%d]\n", i, class_name,
+						   objc_hash_string(class_name));
 		}
 	}
 }
