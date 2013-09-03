@@ -245,6 +245,8 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 		}
 		
 		_count = count;
+		
+		objc_debug_log("Created a new array, returning self\n");
 	}
 	return self;
 }

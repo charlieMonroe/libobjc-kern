@@ -10,6 +10,7 @@ void run_array_test(void){
 		KKObject *obj3 = [[[KKObject alloc] init] autorelease];
 		
 		NSArray *arr = [NSArray arrayWithObject:obj1];
+		objc_debug_log("Created array %p\n", obj1);
 		objc_assert([arr count] == 1, "Wrong object count\n");
 		objc_assert([arr lastObject] == obj1, "Wrong object\n");
 		
