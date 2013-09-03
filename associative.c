@@ -173,15 +173,6 @@ _objc_class_for_object(id object, BOOL create)
 	return (Class)cl;
 }
 
-static inline void *_alloc(void){
-	return objc_zero_alloc(sizeof(struct reference_list),
-					M_REFLIST_TYPE);
-}
-
-static inline void _dealloc(void *list){
-	objc_dealloc(list, M_REFLIST_TYPE);
-}
-
 /*
  * Returns a reference to the objc_object_ref_list struct for
  * that particular object, or NULL if none exists and create == NULL.
@@ -201,7 +192,8 @@ _objc_ref_list_for_object(id object, BOOL create)
 		if (*extra_space == NULL && create){
 			objc_debug_log("Creating ref list on class %s\n", class_getName(cl));
 			struct reference_list *list;
-			list = _alloc();
+			list = objc_zero_alloc(sizeof(struct reference_list),
+									M_REFLIST_TYPE);
 			
 			/*
 			 * The lock names need to be unique, so we're actually allocating the
@@ -285,8 +277,8 @@ _objc_find_free_reference_in_list(struct reference_list *list, BOOL create)
 		 * linked list - if creation is allowed, allocate.
 		 */
 		if (list->next == NULL && create){
-			objc_debug_log("Creating an extra ref list\n");
-			list->next = _alloc();
+			list->next = objc_zero_alloc(sizeof(struct reference_list),
+										 M_REFLIST_TYPE);
 			return &list->next->refs[0];
 		}
 		
@@ -325,7 +317,7 @@ _objc_remove_associative_list(struct reference_list *prev,
 	}
 	
 	if (free){
-		_dealloc(list);
+		objc_dealloc(list, M_REFLIST_TYPE);
 	}
 }
 
@@ -348,8 +340,6 @@ _objc_remove_associative_lists_for_object(id object)
 										  spin_lock,
 										  NO);
 		}
-		
-		objc_debug_log("Freeing ref list for class %s\n", class_getName((Class)object));
 		
 		objc_rw_lock_destroy(&list->lock);
 		_objc_remove_associative_list(NULL,
