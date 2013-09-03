@@ -347,11 +347,12 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	}
 	/* If this virtual cell is full, rebalance the hash from this point and
 	 * try again. */
-	if (PREFIX(_table_rebalance)(table, hash))
+	/*if (PREFIX(_table_rebalance)(table, hash))
 	{
 		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
+	 */
 	/* If rebalancing failed, resize even if we are <80% full.  This can
 	 * happen if your hash function sucks.  If you don't want this to happen,
 	 * get a better hash function. */
@@ -361,7 +362,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 		return PREFIX(_insert)(table, value);
 	}
 	
-	objc_log("Insert failed\n");
+	objc_abort("Insert failed\n");
 	MAP_TABLE_UNLOCK(&table->lock);
 	return 0;
 }
