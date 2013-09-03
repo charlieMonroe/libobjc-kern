@@ -9,7 +9,8 @@ LDFLAGS += --print-gc-sections
 KMOD	= foundation_test
 
 SRCS	= foundation-test.c \
-		NSArrayTest.m
+		NSArrayTest.m \
+		NSDictionaryTest.m
 
 .include <bsd.kmod.mk>
 
