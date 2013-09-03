@@ -43,8 +43,8 @@ _objc_handle_load_imp_for_class(IMP load_imp, Class cl)
 	 * IMPs so that they don't get called twice.
 	 */
 	if (objc_load_messages_table_get(objc_load_messages, load_imp) == NULL){
-		objc_debug_log("Will be sending a load message to class %s\n",
-					   class_getName(cl));
+		objc_debug_log("Will be sending a load message to class %s [%p]\n",
+					   class_getName(cl), load_imp);
 		load_imp((id)cl, objc_load_selector);
 		objc_load_messages_insert(objc_load_messages, load_imp);
 		

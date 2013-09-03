@@ -173,6 +173,15 @@ _objc_class_for_object(id object, BOOL create)
 	return (Class)cl;
 }
 
+static inline void *_alloc(void){
+	return objc_zero_alloc(sizeof(struct reference_list),
+					M_REFLIST_TYPE);
+}
+
+static inline void _dealloc(void *list){
+	objc_dealloc(list, M_REFLIST_TYPE);
+}
+
 /*
  * Returns a reference to the objc_object_ref_list struct for
  * that particular object, or NULL if none exists and create == NULL.
@@ -185,14 +194,14 @@ _objc_ref_list_for_object(id object, BOOL create)
 		 * It's a class - install the associated object directly onto
 		 * the metaclass.
 		 */
-		Class cl = object->isa;
+		Class cl = (Class)object;
 		void **extra_space;
 		extra_space = objc_class_extra_with_identifier(cl,
 													   OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
 		if (*extra_space == NULL && create){
+			objc_debug_log("Creating ref list on class %s\n", class_getName(cl));
 			struct reference_list *list;
-			list = objc_zero_alloc(sizeof(struct reference_list),
-								   M_REFLIST_TYPE);
+			list = _alloc();
 			
 			/*
 			 * The lock names need to be unique, so we're actually allocating the
@@ -202,7 +211,6 @@ _objc_ref_list_for_object(id object, BOOL create)
 			
 			objc_rw_lock_init(&list->lock,
 							  _objc_unique_lock_name_for_object(object, cl));
-			//					  "objc_reference_list_lock");
 			
 			*extra_space = list;
 		}
@@ -277,9 +285,8 @@ _objc_find_free_reference_in_list(struct reference_list *list, BOOL create)
 		 * linked list - if creation is allowed, allocate.
 		 */
 		if (list->next == NULL && create){
-			list->next = objc_zero_alloc(
-										 sizeof(struct reference_list),
-										 M_REFLIST_TYPE);
+			objc_debug_log("Creating an extra ref list\n");
+			list->next = _alloc();
 			return &list->next->refs[0];
 		}
 		
@@ -318,7 +325,7 @@ _objc_remove_associative_list(struct reference_list *prev,
 	}
 	
 	if (free){
-		objc_dealloc(list, M_REFLIST_TYPE);
+		_dealloc(list);
 	}
 }
 
@@ -328,7 +335,7 @@ _objc_remove_associative_lists_for_object(id object)
 	volatile int *spin_lock = lock_for_pointer(object);
 	if (object->isa->flags.meta){
 		void **extra_space;
-		extra_space = objc_class_extra_with_identifier(object->isa,
+		extra_space = objc_class_extra_with_identifier((Class)object,
 													   OBJC_ASSOCIATED_OBJECTS_IDENTIFIER);
 		if (*extra_space == NULL){
 			return;
@@ -339,8 +346,10 @@ _objc_remove_associative_lists_for_object(id object)
 			_objc_remove_associative_list(list,
 										  list->next,
 										  spin_lock,
-										  YES);
+										  NO);
 		}
+		
+		objc_debug_log("Freeing ref list for class %s\n", class_getName((Class)object));
 		
 		objc_rw_lock_destroy(&list->lock);
 		_objc_remove_associative_list(NULL,
