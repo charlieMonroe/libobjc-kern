@@ -21,7 +21,8 @@ static inline void NSSetRaiseNoStackMemoryException(void){
 #define NSSetCreateStackBufferFromArgsAndPerformCode(bufferName, code)		\
 			id bufferName[kNSSetMaxStackBufferSize];						\
 			id obj;															\
-			int count = 0;													\
+			int count = 1;													\
+			bufferName[0] = firstObject;									\
 																			\
 			va_list __ap;													\
 			va_start(__ap, firstObject);									\

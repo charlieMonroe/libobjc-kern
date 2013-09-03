@@ -31,7 +31,8 @@ static inline void NSArrayRaiseOutOfBoundsException(void){
 #define NSArrayCreateStackBufferFromArgsAndPerformCode(bufferName, code)	\
 			id bufferName[kNSArrayMaxStackBufferSize];						\
 			id obj;															\
-			int count = 0;													\
+			int count = 1;													\
+			bufferName[0] = firstObject;									\
 																			\
 			va_list __ap;													\
 			va_start(__ap, firstObject);									\
@@ -103,7 +104,10 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 }
 
 +(id)arrayWithObject:(id)anObject{
-	return [[[self alloc] initWithObjects:&anObject count:1] autorelease];
+	NSArray *arr = [[self alloc] initWithObjects:&anObject count:1];
+	objc_debug_log("Arr->isa: %p\n", arr->isa);
+	objc_debug_log("Self: %p\n", self);
+	return [arr autorelease];
 }
 +(id)arrayWithObjects:(id)firstObject, ...{
 	NSArrayCreateStackBufferFromArgsAndPerformCode(buffer, {
@@ -186,7 +190,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	return [self indexOfObject:anObject inRange:NSMakeRange(0, _count)];
 }
 -(NSUInteger)indexOfObject:(id)anObject inRange:(NSRange)aRange{
-	if (aRange.location + aRange.length >= _count){
+	if (aRange.location + aRange.length > _count){
 		NSArrayRaiseOutOfBoundsException();
 	}
 	
@@ -201,7 +205,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	return [self indexOfObjectIdenticalTo:anObject inRange:NSMakeRange(0, _count)];
 }
 -(NSUInteger)indexOfObjectIdenticalTo:(id)anObject inRange:(NSRange)aRange{
-	if (aRange.location + aRange.length >= _count){
+	if (aRange.location + aRange.length > _count){
 		NSArrayRaiseOutOfBoundsException();
 	}
 	
@@ -246,7 +250,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 		
 		_count = count;
 		
-		objc_debug_log("Created a new array, returning self\n");
+		objc_debug_log("Creating a new array with count %li, first object %p\n", (unsigned long)count, objects[0]);
 	}
 	return self;
 }

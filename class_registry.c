@@ -317,9 +317,7 @@ _objc_class_calculate_instance_size(Class cl)
 	size_t size = 0;
 	Class superclass = cl->super_class;
 	if (superclass != Nil){
-		if (superclass->instance_size == 0
-		    && superclass->ivars != NULL
-		    && superclass->ivars->size > 0){
+		if (superclass->instance_size == 0){
 			_objc_class_fixup_instance_size(superclass);
 		}
 		size = superclass->instance_size;
@@ -348,6 +346,8 @@ _objc_class_calculate_instance_size(Class cl)
 			cl->ivar_offsets[i] = offset;
 			
 		}
+	}else{
+		cl->instance_size = size;
 	}
 	return size;
 }
@@ -366,6 +366,12 @@ _objc_class_fixup_instance_size(Class cl)
 		cl->instance_size = sizeof(struct objc_class);
 	}else{
 		cl->instance_size = _objc_class_calculate_instance_size(cl);
+		
+		if (cl ->ivars != NULL){
+			for (int i = 0; i < cl->ivars->size; ++i){
+				Ivar ivar = &cl->ivars->list[i];
+			}
+		}
 	}
 	
 /*	objc_debug_log("Fixing up instance size of class %s%s - %d bytes\n",

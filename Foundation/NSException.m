@@ -14,6 +14,7 @@ NSString *const NSInvalidArgumentException = @"NSInvalidArgumentException";
 @implementation NSException
 
 +(NSException *)exceptionWithName:(NSString *)name reason:(NSString *)reason userInfo:(id)userInfo{
+	objc_debug_log("Trowing exception with name %s reason %s\n", [name cString], [reason cString]);
 	return [[[self alloc] initWithName:name reason:reason userInfo:userInfo] autorelease];
 }
 
