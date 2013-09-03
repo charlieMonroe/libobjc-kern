@@ -51,7 +51,7 @@ static inline BOOL KKRectsEqual(KKRect rect1, KKRect rect2){
 
 void compiler_test(void);
 void compiler_test(void) {
-	KKTest *test = [[KKTest alloc] init];
+	KKTest *test = [[[KKTest alloc] init] autorelease];
 	
 	[test setInteger:5];
 	objc_assert([test integer] == 5, "Failed integer assignment\n");

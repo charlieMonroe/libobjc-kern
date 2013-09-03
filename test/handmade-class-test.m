@@ -50,7 +50,7 @@ void handmade_class_test(void){
 	
 	objc_assert(cl == objc_getClass(my_class_name), "Can't get the class!\n");
 	
-	id instance = [[cl alloc] init];
+	id instance = [[[cl alloc] init] autorelease];
 	
 	objc_assert(gotInitialized, "The class did not get initialized!\n");
 	

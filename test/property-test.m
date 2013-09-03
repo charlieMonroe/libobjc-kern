@@ -55,6 +55,7 @@ void property_test(void) {
 			found++;
 		}
 	}
+	objc_dealloc(properties, M_PROPERTY_TYPE);
 	objc_assert(found == 1, "Couldn't find the added property!");
     
     objc_log("===================\n");
