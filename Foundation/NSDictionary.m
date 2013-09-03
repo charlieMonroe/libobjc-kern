@@ -36,10 +36,12 @@ static inline void NSDictionaryRaiseNoStackMemoryException(void){
 			id keysBufferName[kNSDictionaryMaxStackBufferSize];				\
 			id obj;															\
 			id key;															\
-			int count = 0;													\
+			int count = 1;													\
 																			\
 			va_list __ap;													\
 			va_start(__ap, firstObject);									\
+			objectBufferName[0] = firstObject;								\
+			keysBufferName[0] = va_arg(__ap, id);							\
 			while (count < kNSDictionaryMaxStackBufferSize){				\
 				obj = va_arg(__ap, id);										\
 				key = va_arg(__ap, id);										\
@@ -310,6 +312,8 @@ struct _NSDictionaryBucket {
 			
 			[self _insertObject:obj forKey:key];
 		}
+		
+		_itemCount = count;
 	}
 	return self;
 }
@@ -487,8 +491,8 @@ struct _NSDictionaryBucket {
 						 sizeof(NSDictionaryPair) * bucket->count,
 						 M_NSDICTIONARY_TYPE);
 		}
-		
 	}
+	--_itemCount;
 }
 -(void)removeObjectsForKeys:(NSArray*)keyArray{
 	for (NSUInteger i = 0; i < [keyArray count]; ++i){

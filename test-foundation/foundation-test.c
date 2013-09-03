@@ -16,11 +16,13 @@
 #include "../loader.h"
 
 void run_array_test(void);
+void run_dictionary_test(void);
 
 void run_tests(void);
 void run_tests(void)
 {
 	run_array_test();
+	run_dictionary_test();
 }
 
 #ifdef _KERNEL
