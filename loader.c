@@ -459,7 +459,9 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	BOOL result = _objc_unload_modules(begin, end, kernel_module);
 	MOD_SUNLOCK;
 	
-	XYZ();
+	if (!unloaded){
+		XYZ();
+	}
 	
 	return result;
 }

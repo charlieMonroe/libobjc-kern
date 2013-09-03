@@ -310,8 +310,10 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 		MAP_TABLE_UNLOCK(&table->lock);
 		return 1;
 	}
+	
+	
 	/* If this cell is full, try the next one. */
-	for (unsigned int i=0 ; i<32 ; i++)
+	/*for (unsigned int i=0 ; i<32 ; i++)
 	{
 		PREFIX(_table_cell) second =
 		PREFIX(_table_lookup)(table, hash+i);
@@ -323,7 +325,8 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 			MAP_TABLE_UNLOCK(&table->lock);
 			return 1;
 		}
-	}
+	}*/
+	 
 	/* If the table is full, or nearly full, then resize it.  Note that we
 	 * resize when the table is at 80% capacity because it's cheaper to copy
 	 * everything than spend the next few updates shuffling everything around
