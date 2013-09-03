@@ -417,11 +417,16 @@ objc_updateDtableForClassContainingMethod(Method m)
 		nextClass = objc_class_next(objc_classes,
 									(struct objc_class_table_enumerator**)&state);
 		if (nextClass == Nil){
+			objc_class_destroy_enumerator(objc_classes,
+								  (struct objc_class_table_enumerator**)&state);
 			break;
 		}
 		
 		if (class_getInstanceMethodNonRecursive(nextClass, sel) == m){
 			objc_update_dtable_for_class(nextClass);
+			
+			objc_class_destroy_enumerator(objc_classes,
+								  (struct objc_class_table_enumerator**)&state);
 			return;
 		}
 	}

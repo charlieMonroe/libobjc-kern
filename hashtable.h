@@ -472,6 +472,16 @@ static void PREFIX(_table_set)(PREFIX(_table) *table, const void *key,
 }
 
 __attribute__((unused))
+static void PREFIX(_destroy_enumerator)(PREFIX(_table) *table,
+										struct PREFIX(_table_enumerator) **state)
+{
+	MAP_TABLE_RLOCK(&table->lock);
+	__sync_fetch_and_sub(&table->enumerator_count, 1);
+	MAP_TABLE_UNLOCK(&table->lock);
+	objc_dealloc(*state, MAP_MALLOC_TYPE);
+}
+
+__attribute__((unused))
 static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE
 PREFIX(_next)(PREFIX(_table) *table,
 	      struct PREFIX(_table_enumerator) **state)
