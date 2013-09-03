@@ -105,8 +105,6 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 
 +(id)arrayWithObject:(id)anObject{
 	NSArray *arr = [[self alloc] initWithObjects:&anObject count:1];
-	objc_debug_log("Arr->isa: %p\n", arr->isa);
-	objc_debug_log("Self: %p\n", self);
 	return [arr autorelease];
 }
 +(id)arrayWithObjects:(id)firstObject, ...{
