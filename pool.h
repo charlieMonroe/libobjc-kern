@@ -2,11 +2,16 @@
 #ifndef POOL_TYPE
 #error POOL_TYPE must be defined
 #endif
-#ifndef POOL_TYPE
+#ifndef POOL_NAME
 #error POOL_NAME must be defined
 #endif
 #ifndef POOL_MALLOC_TYPE
 #error POOL_MALLOC_TYPE must be defined
+#endif
+
+/* This option allows to eat out of the pool arbitrary amounts of memory. */
+#ifndef POOL_FREE_FORM_SIZE
+	#define POOL_FREE_FORM_SIZE 0
 #endif
 
 #define NAME(x) PREFIX_SUFFIX(POOL_NAME, x)
@@ -34,7 +39,13 @@ static struct NAME(_pool_page) *NAME(_pages);
 
 static int pool_size = 0;
 static int pool_allocs = 0;
-static inline POOL_TYPE*NAME(_pool_alloc)(void)
+static inline POOL_TYPE*NAME(_pool_alloc)(
+									#if POOL_FREE_FORM_SIZE
+										  size_t size
+									#else
+										  void
+									#endif
+										  )
 {
 	LOCK_POOL();
 	pool_allocs++;
@@ -50,7 +61,12 @@ static inline POOL_TYPE*NAME(_pool_alloc)(void)
 		NAME(_pool_next_index) = POOL_SIZE - 1;
 		pool_size += PAGE_SIZE;
 	}
+#if POOL_FREE_FORM_SIZE
+	NAME(_pool_next_index) -= size;
+	POOL_TYPE *new = &NAME(_pool)[NAME(_pool_next_index)];
+#else
 	POOL_TYPE* new = &NAME(_pool)[NAME(_pool_next_index)--];
+#endif
 	UNLOCK_POOL();
 	return new;
 }

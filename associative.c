@@ -14,6 +14,13 @@
 #include "utils.h"
 #include "init.h"
 
+/* Needed for lock name allocations. */
+#define POOL_TYPE char
+#define POOL_NAME objc_associative
+#define POOL_MALLOC_TYPE M_FAKE_CLASS_TYPE
+#define POOL_FREE_FORM_SIZE 1
+#include "pool.h"
+
 #define REF_CNT 10
 
 struct reference {
@@ -106,7 +113,7 @@ _objc_unique_lock_name_for_object(id object, Class cl)
 	unsigned int lock_name_len = name_prefix_len + class_name_len
 	+ pointer_str_len;
 	
-	char *lock_name = objc_alloc(lock_name_len, M_FAKE_CLASS_TYPE);
+	char *lock_name = objc_associative_pool_alloc(lock_name_len);
 	objc_copy_memory(lock_name, name_prefix, name_prefix_len);
 	objc_copy_memory(lock_name + name_prefix_len, class_name,
 					 class_name_len);
@@ -335,8 +342,6 @@ _objc_remove_associative_lists_for_object(id object)
 										  NO);
 		}
 		
-		objc_dealloc((void*)objc_rw_lock_get_name(&list->lock),
-					 M_FAKE_CLASS_TYPE);
 		objc_rw_lock_destroy(&list->lock);
 		_objc_remove_associative_list(NULL,
 									  list,
@@ -356,13 +361,7 @@ _objc_remove_associative_lists_for_object(id object)
 										  spin_lock, YES);
 		}
 		
-		/*
-		 * The lock names need to be unique, so we've actually allocated the name.
-		 */
-		objc_dealloc((void*)objc_rw_lock_get_name(&cl->list.lock),
-					 M_FAKE_CLASS_TYPE);
 		objc_rw_lock_destroy(&cl->list.lock);
-		
 		
 		_objc_remove_associative_list(NULL, &cl->list,
 									  spin_lock, NO);
@@ -603,7 +602,5 @@ objc_associated_objects_init(void)
 PRIVATE void
 objc_associated_objects_destroy(void)
 {
-	/*
-	 * No-op at this moment.
-	 */
+	objc_associative_pool_free();
 }
