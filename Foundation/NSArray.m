@@ -120,9 +120,11 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	NSArray *array = [[NSArray alloc] init];
 	
 	array->_items = objc_alloc(sizeof(id) * (_count + 1), M_NSARRAY_TYPE);
-	memcpy(array->_items, _items, sizeof(id) * _count);
+	for (NSUInteger i = 0; i < _count; ++i){
+		array->_items[i] = [_items[i] retain];
+	}
 	
-	array->_items[_count] = anObject;
+	array->_items[_count] = [anObject retain];
 	array->_count = _count + 1;
 	
 	return [array autorelease];
@@ -132,11 +134,13 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	
 	array->_items = objc_alloc(sizeof(id) * (_count + anotherArray->_count),
 							   M_NSARRAY_TYPE);
+	for (NSUInteger i = 0; i < _count; ++i){
+		array->_items[i] = [_items[i] retain];
+	}
 	
-	memcpy(array->_items, _items, sizeof(id) * _count);
-	memcpy((char*)array->_items + (sizeof(id) * _count),
-		   anotherArray->_items,
-		   sizeof(id) * anotherArray->_count);
+	for (NSUInteger i = 0; i < anotherArray->_count; ++i){
+		array->_items[i + _count] = [anotherArray->_items[i] retain];
+	}
 	
 	array->_count = _count + anotherArray->_count;
 	
@@ -290,7 +294,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 	if (_capacity == 0 || _items == NULL){
 		/* Special case */
 		NSUInteger newCapacity = 16;
-		_items = objc_alloc(sizeof(id) * newCapacity, M_NSARRAY_TYPE);
+		_items = objc_zero_alloc(sizeof(id) * newCapacity, M_NSARRAY_TYPE);
 		_capacity = newCapacity;
 		return;
 	}

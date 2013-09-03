@@ -299,11 +299,11 @@ call_cxx_destruct(id obj)
 		slot = objc_get_slot(cls, objc_cxx_destruct_selector);
 		
 		if (NULL != slot) {
-			objc_debug_log("\tSlot found.\n");
+			objc_debug_log("\tCXX Destruct Slot found.\n");
 			cls = slot->owner->super_class;
 			slot->implementation(obj, objc_cxx_destruct_selector);
 		}else{
-			objc_debug_log("\tSlot not found.\n");
+			objc_debug_log("\tCXX Destruct Slot not found.\n");
 			cls = Nil;
 		}
 	}

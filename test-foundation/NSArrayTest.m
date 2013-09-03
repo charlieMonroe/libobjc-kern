@@ -31,7 +31,9 @@ void run_array_test(void){
 		objc_assert([arr indexOfObject:obj2] == 1, "Wrong index\n");
 		objc_assert([arr indexOfObject:obj3] == 2, "Wrong index\n");
 		
+		
 		KKObject *obj4 = [[[KKObject alloc] init] autorelease];
+		
 		NSMutableArray *mutableArr = [[arr mutableCopy] autorelease];
 		[mutableArr addObject:obj4];
 		
@@ -43,5 +45,6 @@ void run_array_test(void){
 		objc_assert([mutableArr count] == 3, "Wrong object count\n");
 		objc_assert(![mutableArr containsObject:obj2],
 					"Contains object after removal\n");
+		 
 	}
 }
