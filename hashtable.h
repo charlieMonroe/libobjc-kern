@@ -407,10 +407,10 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 
 __attribute__((unused))
 static void PREFIX(_table_move_second)(PREFIX(_table) *table,
-				       PREFIX(_table_cell) emptyCell)
+				       PREFIX(_table_cell) emptyCell, int offset)
 {
 	uint32_t jump = emptyCell->secondMaps;
-	int hop = __builtin_ffs(jump);
+	int hop = __builtin_ffs(jump) + offset;
 	PREFIX(_table_cell) hopCell =
 	PREFIX(_table_lookup)(table, MAP_TABLE_HASH_VALUE(emptyCell->value) + hop);
 	emptyCell->value = hopCell->value;
@@ -421,7 +421,7 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 	}
 	else
 	{
-		PREFIX(_table_move_second)(table, hopCell);
+		PREFIX(_table_move_second)(table, hopCell, hop);
 	}
 	
 }
@@ -442,7 +442,7 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 	}
 	else
 	{
-		PREFIX(_table_move_second)(table, cell);
+		PREFIX(_table_move_second)(table, cell, 0);
 	}
 	table->table_used--;
 	MAP_TABLE_UNLOCK(&table->lock);
