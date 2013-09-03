@@ -758,7 +758,7 @@ objc_class_init(void)
 	objc_debug_log("Initializing classes.\n");
 	
 	objc_classes =
-	objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY);
+	objc_class_table_create(OBJC_CLASS_TABLE_INITIAL_CAPACITY, "objc_class_table_lock");
 	objc_load_messages =
 	objc_load_messages_table_create(OBJC_LOAD_TABLE_INITIAL_CAPACITY,
 									"objc_load_messages");
