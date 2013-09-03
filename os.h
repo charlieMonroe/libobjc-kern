@@ -42,9 +42,11 @@ PRIVATE extern unsigned int objc_lock_locked_count;
 
 #define objc_format_string snprintf
 
-#define objc_assert(condition, description...)				\
-	if (!(condition)){						\
-		objc_abort(description);				\
+#define objc_assert(condition, description...)								\
+	if (!(condition)){														\
+		objc_log("Failed assertion in function %s:%d\n", __FUNCTION__,		\
+					__LINE__);												\
+		objc_abort(description);											\
 	}
 
 
