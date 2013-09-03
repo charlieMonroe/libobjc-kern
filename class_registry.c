@@ -147,6 +147,9 @@ void(*objc_class_load_callback)(Class cl) = __objc_class_default_load_callback;
 static inline BOOL
 _objc_class_name_is_equal_to(const char *key, Class cl)
 {
+	if (cl == Nil){
+		return NO;
+	}
 	return objc_strings_equal(cl->name, (const char*)key);
 }
 
@@ -790,8 +793,9 @@ void XYZ(void){
 		Class cl = objc_classes->table[i].value;
 		if (cl != Nil){
 			const char *class_name = class_getName(cl);
-			objc_debug_log("===[%02i] - %s \t\t\t[%d]\n", i, class_name,
-						   objc_hash_string(class_name));
+			objc_debug_log("===[%03i;%03i] - %s\n", i,
+						   objc_hash_string(class_name) % objc_classes->table_size,
+						   class_name);
 		}
 	}
 }

@@ -410,7 +410,8 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 				       PREFIX(_table_cell) emptyCell)
 {
 	uint32_t jump = emptyCell->secondMaps;
-	uint32_t hash_of_removed_obj = MAP_TABLE_HASH_VALUE(emptyCell->value);
+	uint32_t hash_of_removed_obj = MAP_TABLE_HASH_VALUE(emptyCell->value)
+														% table->table_size;
 	
 	// Look at each offset defined by the jump table to find the displaced location.
 	for (int hop = 0; hop < 32 ; ++hop){
@@ -421,7 +422,8 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 		
 		PREFIX(_table_cell) hopCell = PREFIX(_table_lookup)(table,
 															hash_of_removed_obj + hop);
-		uint32_t hop_cell_hash = MAP_TABLE_HASH_VALUE(hopCell->value);
+		uint32_t hop_cell_hash = MAP_TABLE_HASH_VALUE(hopCell->value)
+														% table->table_size;
 		if (hop_cell_hash != hash_of_removed_obj){
 			/* Not the same chain! */
 			continue;
