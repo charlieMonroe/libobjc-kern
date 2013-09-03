@@ -265,6 +265,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 /*
  * Rebalancing the table.
  */
+
 __attribute__((unused))
 static int PREFIX(_table_rebalance)(PREFIX(_table) *table, uint32_t hash)
 {
@@ -314,7 +315,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	
 	
 	/* If this cell is full, try the next one. */
-	/*for (unsigned int i=0 ; i<32 ; i++)
+	for (unsigned int i=0 ; i<32 ; i++)
 	{
 		PREFIX(_table_cell) second =
 		PREFIX(_table_lookup)(table, hash+i);
@@ -326,7 +327,7 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 			MAP_TABLE_UNLOCK(&table->lock);
 			return 1;
 		}
-	}*/
+	}
 	 
 	/* If the table is full, or nearly full, then resize it.  Note that we
 	 * resize when the table is at 80% capacity because it's cheaper to copy
@@ -348,12 +349,12 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 	}
 	/* If this virtual cell is full, rebalance the hash from this point and
 	 * try again. */
-	/*if (PREFIX(_table_rebalance)(table, hash))
+	if (PREFIX(_table_rebalance)(table, hash))
 	{
 		MAP_TABLE_UNLOCK(&table->lock);
 		return PREFIX(_insert)(table, value);
 	}
-	 */
+	
 	/* If rebalancing failed, resize even if we are <80% full.  This can
 	 * happen if your hash function sucks.  If you don't want this to happen,
 	 * get a better hash function. */
@@ -409,20 +410,34 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 				       PREFIX(_table_cell) emptyCell)
 {
 	uint32_t jump = emptyCell->secondMaps;
+	uint32_t hash_of_removed_obj = MAP_TABLE_HASH_VALUE(emptyCell->value);
+	
 	// Look at each offset defined by the jump table to find the displaced location.
-	int hop = __builtin_ffs(jump);
-	PREFIX(_table_cell) hopCell =
-	PREFIX(_table_lookup)(table, MAP_TABLE_HASH_VALUE(emptyCell->value) + hop);
-	emptyCell->value = hopCell->value;
-	emptyCell->secondMaps &= ~(1 << (hop-1));
-	if (0 == hopCell->secondMaps)
-	{
-		hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+	for (int hop = 0; hop < 32 ; ++hop){
+		if ((jump & (1 << hop)) == 0){
+			// Bit not set
+			continue;
+		}
+		
+		PREFIX(_table_cell) hopCell = PREFIX(_table_lookup)(table,
+															hash_of_removed_obj + hop);
+		uint32_t hop_cell_hash = MAP_TABLE_HASH_VALUE(hopCell->value);
+		if (hop_cell_hash != hash_of_removed_obj){
+			/* Not the same chain! */
+			continue;
+		}
+		
+		emptyCell->value = hopCell->value;
+		emptyCell->secondMaps &= ~(1 << hop);
+		if (0 == hopCell->secondMaps){
+			hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+		}else{
+			PREFIX(_table_move_second)(table, hopCell);
+		}
+		
+		return;
 	}
-	else
-	{
-		PREFIX(_table_move_second)(table, hopCell);
-	}
+	
 }
 __attribute__((unused))
 static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
@@ -430,11 +445,6 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 	MAP_TABLE_WLOCK(&table->lock);
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
 	if (NULL == cell) {
-		
-		uint32_t hash = MAP_TABLE_HASH_KEY(key);
-		PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
-		objc_debug_log("cell ----> %p\n", cell->value);
-		
 		MAP_TABLE_UNLOCK(&table->lock);
 		return;
 	}
