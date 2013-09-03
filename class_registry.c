@@ -86,7 +86,8 @@ static void _objc_class_fixup_instance_size(Class cl);
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
 #define MAP_TABLE_KEY_TYPE const char *
-#define MAP_TABLE_NO_LOCK 1
+/* We do need a lock since we are sometimes removing the classes as well. */
+#define MAP_TABLE_NO_LOCK 0
 #define MAP_MALLOC_TYPE M_CLASS_MAP_TYPE
 #include "hashtable.h"
 
@@ -410,11 +411,11 @@ PRIVATE void
 objc_updateDtableForClassContainingMethod(Method m)
 {
 	Class nextClass;
-	void *state = NULL;
+	struct objc_class_table_enumerator e = { 0 };
+	struct objc_class_table_enumerator *state = &e;
 	SEL sel = method_getName(m);
 	for (;;) {
-		nextClass = objc_class_next(objc_classes,
-									(struct objc_class_table_enumerator**)&state);
+		nextClass = objc_class_next(objc_classes, &state);
 		if (nextClass == Nil){
 			break;
 		}
@@ -604,10 +605,11 @@ objc_copyClassList(unsigned int *out_count)
 	Class *classes = objc_alloc(class_count * sizeof(Class), M_CLASS_TYPE);
 	
 	int count = 0;
-	struct objc_class_table_enumerator *e = NULL;
+	struct objc_class_table_enumerator e = { 0 };
+	struct objc_class_table_enumerator *state = &e;
 	Class next;
 	while (count < class_count &&
-	       (next = objc_class_next(objc_classes, &e))){
+	       (next = objc_class_next(objc_classes, &state))){
 		classes[count++] = next;
 	}
 	
@@ -622,10 +624,11 @@ int
 objc_getClassList(Class *buffer, int len)
 {
 	int count = 0;
-	struct objc_class_table_enumerator *e = NULL;
+	struct objc_class_table_enumerator e = { 0 };
+	struct objc_class_table_enumerator *state = &e;
 	Class next;
 	while (count < len &&
-	       (next = objc_class_next(objc_classes, &e))){
+	       (next = objc_class_next(objc_classes, &state))){
 		buffer[count++] = next;
 	}
 	
