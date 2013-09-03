@@ -781,11 +781,16 @@ __objc_class_deallocate(Class cl)
 
 void XYZ(void);
 void XYZ(void){
+	Class slow_init_cl =
+	objc_class_table_lookup(objc_classes, objc_hash_string("SlowInit2"))->value;
+	objc_debug_log("Getting SlowInit2 - class at hash %s\n",
+				   class_getName(slow_init_cl));
+	
 	for (int i = 0; i < objc_classes->table_size; ++i){
 		Class cl = objc_classes->table[i].value;
 		if (cl != Nil){
 			const char *class_name = class_getName(cl);
-			objc_debug_log("===[%02i] - %s [%d]\n", i, class_name,
+			objc_debug_log("===[%02i] - %s \t\t\t[%d]\n", i, class_name,
 						   objc_hash_string(class_name));
 		}
 	}

@@ -112,9 +112,15 @@ _objc_unload_IMPs_from_kernel_module(void *kernel_module)
 	}
 }
 
+static BOOL unloaded = NO;
+
 static void
 _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 {
+	if (unloaded){
+		return;
+	}
+	
 	if (branch == Nil){
 		return;
 	}
@@ -138,6 +144,7 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 	if (branch->kernel_module == kernel_module){
 		/* Remove this node. */
 		objc_unload_class(branch);
+		unloaded = YES;
 	}
 }
 
@@ -356,6 +363,12 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	 * classes and protocols.
 	 */
 	_objc_unload_classes_in_kernel_module(kernel_module);
+	if (unloaded){
+		unloaded = NO;
+		void XYZ(void);
+		XYZ();
+		return NO;
+	}
 	
 	objc_debug_log("Unloading protocols...\n");
 	
@@ -413,12 +426,12 @@ _objc_load_kernel_module(struct module *kernel_module)
 
 PRIVATE BOOL
 _objc_unload_kernel_module(struct module *kernel_module){
-	static BOOL unloaded = NO;
+	static BOOL ever_unloaded = NO;
 	
 	void XYZ(void);
-	if (!unloaded){
+	if (!ever_unloaded){
 		XYZ();
-		unloaded = YES;
+		ever_unloaded = YES;
 		return NO;
 	}
 	
