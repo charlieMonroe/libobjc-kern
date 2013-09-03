@@ -339,7 +339,7 @@ _objc_remove_associative_lists_for_object(id object)
 			_objc_remove_associative_list(list,
 										  list->next,
 										  spin_lock,
-										  NO);
+										  YES);
 		}
 		
 		objc_rw_lock_destroy(&list->lock);
