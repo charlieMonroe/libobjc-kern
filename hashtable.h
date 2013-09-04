@@ -391,7 +391,8 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 	// Value does not exist.
 	if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
-		if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
+		if (!MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(cell->value) &&
+			MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, cell->value))
 		{
 			return cell;
 		}
@@ -400,8 +401,9 @@ static void *PREFIX(_table_get_cell)(PREFIX(_table) *table, const void *key)
 		// Look at each offset defined by the jump table to find the displaced location.
 		for (int hop = __builtin_ffs(jump) ; hop > 0 ; hop = __builtin_ffs(jump))
 		{
-			PREFIX(_table_cell) hopCell = PREFIX(_table_lookup)(table, hash+hop);
-			if (MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, hopCell->value))
+			PREFIX(_table_cell) hopCell = PREFIX(_table_lookup)(table, hash + hop);
+			if (!MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(hopCell->value) &&
+				MAP_TABLE_COMPARE_FUNCTION((MAP_TABLE_KEY_TYPE)key, hopCell->value))
 			{
 				return hopCell;
 			}
