@@ -46,20 +46,6 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	}
 	return self;
 }
--(id)initWithCString:(const char*)byteString length:(NSUInteger)length{
-	if ((self = [super init]) != nil){
-		_data.mutable = objc_alloc(length + 1, M_NSSTRING_TYPE);
-		memcpy(_data.mutable, byteString, length);
-		_data.mutable[length] = '\0';
-		
-		_length = (unsigned int)length;
-	}
-	return self;
-}
-
--(id)initWithCString:(const char*)byteString{
-	return [self initWithCString:byteString length:objc_strlen(byteString)];
-}
 -(id)initWithBytesNoCopy:(void *)bytes length:(NSUInteger)length
 				encoding:(NSStringEncoding)encoding freeWhenDone:(BOOL)flag{
 	if ((self = [super init]) != nil){
@@ -68,20 +54,6 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 		_dontFreeOnDealloc = !flag;
 	}
 	return self;
-}
--(id)initWithString:(NSString*)string{
-	return [self initWithCString:string->_data.immutable];
-}
--(id)initWithFormat:(NSString*)format, ...{
-	va_list ap;
-	va_start(ap, format);
-	self = [self initWithFormat:format arguments: ap];
-	va_end(ap);
-	
-	return self;
-}
--(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
-	return [[[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy] autorelease];
 }
 
 @end
@@ -133,41 +105,47 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 }
 
 -(id)init{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	if ((self = [super init]) != nil){
+		_length = 0;
+		_data.immutable = "";
+	}
+	return self;
 }
 -(id)initWithCString:(const char*)byteString length:(NSUInteger)length{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	if ((self = [super init]) != nil){
+		_data.mutable = objc_alloc(length + 1, M_NSSTRING_TYPE);
+		memcpy(_data.mutable, byteString, length);
+		_data.mutable[length] = '\0';
+		
+		_length = (unsigned int)length;
+	}
+	return self;
 }
 
 -(id)initWithCString:(const char*)byteString{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	return [self initWithCString:byteString length:objc_strlen(byteString)];
 }
 -(id)initWithBytesNoCopy:(void *)bytes length:(NSUInteger)length
 				encoding:(NSStringEncoding)encoding freeWhenDone:(BOOL)flag{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	if ((self = [super init]) != nil){
+		_data.mutable = bytes;
+		_length = (unsigned int)length;
+	}
+	return self;
 }
 -(id)initWithString:(NSString*)string{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	return [self initWithCString:string->_data.immutable];
 }
 -(id)initWithFormat:(NSString*)format, ...{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	va_list ap;
+	va_start(ap, format);
+	self = [self initWithFormat:format arguments: ap];
+	va_end(ap);
+	
+	return self;
 }
 -(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
-	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
-								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
-								 userInfo:nil];
+	return [[[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy] autorelease];
 }
 
 -(BOOL)isMemberOfClass:(Class)cls{
