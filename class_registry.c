@@ -74,11 +74,14 @@ objc_class_send_load_messages(Class cl)
 	}
 }
 
-
 /* Forward declarations */
+#define _objc_class_placeholder_value ((Class)0x12345678)
 static inline BOOL _objc_class_name_is_equal_to(const char *key, Class cl);
 static inline uint32_t _objc_class_hash(Class cl);
 static void _objc_class_fixup_instance_size(Class cl);
+static inline BOOL _objc_class_is_placeholder(Class cl){
+	return cl == _objc_class_placeholder_value;
+}
 
 #define MAP_TABLE_NAME objc_class
 #define MAP_TABLE_COMPARE_FUNCTION _objc_class_name_is_equal_to
@@ -86,7 +89,8 @@ static void _objc_class_fixup_instance_size(Class cl);
 #define MAP_TABLE_HASH_VALUE _objc_class_hash
 #define MAP_TABLE_VALUE_TYPE Class
 #define MAP_TABLE_KEY_TYPE const char *
-/* We do need a lock since we are sometimes removing the classes as well. */
+#define MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION _objc_class_is_placeholder
+#define MAP_TABLE_PLACEHOLDER_VALUE _objc_class_placeholder_value
 #define MAP_TABLE_NO_LOCK 0
 #define MAP_MALLOC_TYPE M_CLASS_MAP_TYPE
 #include "hashtable.h"

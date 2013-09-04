@@ -32,8 +32,16 @@
 # error You must define MAP_MALLOC_TYPE
 #endif
 
+#ifndef MAP_TABLE_NULL_VALUE
+	#define MAP_TABLE_NULL_VALUE NULL
+#endif
+
+#ifndef MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION
+	#define MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(value) NO
+#endif
+
 #ifndef MAP_TABLE_PLACEHOLDER_VALUE
-	#define MAP_TABLE_PLACEHOLDER_VALUE NULL
+	#define MAP_TABLE_PLACEHOLDER_VALUE	NULL
 #endif
 
 #ifndef MAP_TABLE_KEY_TYPE
@@ -53,7 +61,7 @@
 #endif
 
 #ifndef MAP_TABLE_NULL_EQUALITY_FUNCTION
-#define MAP_TABLE_NULL_EQUALITY_FUNCTION(x) (x == NULL)
+	#define MAP_TABLE_NULL_EQUALITY_FUNCTION(x) (x == NULL)
 #endif
 
 #ifndef MAP_TABLE_NO_LOCK
@@ -183,7 +191,8 @@ PREFIX(_table_resize)(PREFIX(_table) *table)
 	for (uint32_t i=0 ; i<copy->table_size ; i++)
 	{
 		MAP_TABLE_VALUE_TYPE value = copy->table[i].value;
-		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(value))
+		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(value) &&
+			!MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(value))
 		{
 			copied++;
 			PREFIX(_insert)(table, value);
@@ -235,7 +244,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 		{
 			emptyCell->value = cell->value;
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
-			cell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+			cell->value = MAP_TABLE_NULL_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -251,7 +260,7 @@ static int PREFIX(_table_move_gap)(PREFIX(_table) *table, uint32_t fromHash,
 			cell->secondMaps |= (1 << ((fromHash - hash) - 1));
 			// Clear the hop bit in the original cell
 			cell->secondMaps &= ~(1 << (hop - 1));
-			hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+			hopCell->value = MAP_TABLE_NULL_VALUE;
 			if (hash - toHash < 32)
 			{
 				return 1;
@@ -304,6 +313,11 @@ static int PREFIX(_insert)(PREFIX(_table) *table,
 
 	uint32_t hash = MAP_TABLE_HASH_VALUE(value);
 	PREFIX(_table_cell) cell = PREFIX(_table_lookup)(table, hash);
+	if (MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(cell->value)){
+		cell->value = value;
+		MAP_TABLE_UNLOCK(&table->lock);
+		return 1;
+	}
 	if (MAP_TABLE_NULL_EQUALITY_FUNCTION(cell->value))
 	{
 		cell->secondMaps = 0;
@@ -417,7 +431,7 @@ static void PREFIX(_table_move_second)(PREFIX(_table) *table,
 	emptyCell->secondMaps &= ~(1 << (hop-1));
 	if (0 == hopCell->secondMaps)
 	{
-		hopCell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+		hopCell->value = MAP_TABLE_NULL_VALUE;
 	}
 	else
 	{
@@ -434,17 +448,10 @@ static void PREFIX(_remove)(PREFIX(_table) *table, void *key)
 		MAP_TABLE_UNLOCK(&table->lock);
 		return;
 	}
-	// If the cell contains a value, set it to the placeholder and shuffle up
-	// everything
-	if (0 == cell->secondMaps)
-	{
-		cell->value = MAP_TABLE_PLACEHOLDER_VALUE;
-	}
-	else
-	{
-		PREFIX(_table_move_second)(table, cell, 0);
-	}
-	table->table_used--;
+	
+	cell->value = MAP_TABLE_PLACEHOLDER_VALUE;
+	
+	// table->table_used--;
 	MAP_TABLE_UNLOCK(&table->lock);
 }
 
@@ -455,7 +462,10 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_table_get)(PREFIX(_table)
 	PREFIX(_table_cell) cell = PREFIX(_table_get_cell)(table, key);
 	if (NULL == cell)
 	{
-		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
+		return MAP_TABLE_REF MAP_TABLE_NULL_VALUE;
+	}
+	if (MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(cell->value)){
+		return MAP_TABLE_REF MAP_TABLE_NULL_VALUE;
 	}
 	return MAP_TABLE_REF cell->value;
 }
@@ -529,11 +539,12 @@ PREFIX(_next)(PREFIX(_table) *table,
 	if ((*state)->seen >= (*state)->table->table_used)
 	{
 		PREFIX(_destroy_enumerator)(table, state);
-		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
+		return MAP_TABLE_REF MAP_TABLE_NULL_VALUE;
 	}
 	while ((++((*state)->index)) < (*state)->table->table_size)
 	{
-		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(((*state)->table->table[(*state)->index].value)))
+		if (!MAP_TABLE_NULL_EQUALITY_FUNCTION((*state)->table->table[(*state)->index].value)
+			&& !MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION((*state)->table->table[(*state)->index].value))
 		{
 			(*state)->seen++;
 			return MAP_TABLE_REF (*state)->table->table[(*state)->index].value;
@@ -542,7 +553,7 @@ PREFIX(_next)(PREFIX(_table) *table,
 	
 	/* Should not be reached, but may be if the table is unsafely modified. */
 	PREFIX(_destroy_enumerator)(table, state);
-	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
+	return MAP_TABLE_REF MAP_TABLE_NULL_VALUE;
 }
 
 __attribute__((unused))
@@ -552,7 +563,8 @@ PREFIX(_table_destroy)(PREFIX(_table) *table,
 {
 	if (custom_deallocator != NULL) {
 		for (int i = 0; i < table->table_size; ++i){
-			if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(table->table[i].value)){
+			if (!MAP_TABLE_NULL_EQUALITY_FUNCTION(table->table[i].value)
+				&& !MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION(table->table[i].value)){
 				custom_deallocator(table->table[i].value);
 			}
 		}
@@ -589,7 +601,7 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_current)(PREFIX(_table) *
 #undef MAP_TABLE_HASH_KEY
 #undef MAP_TABLE_HASH_VALUE
 
-#undef MAP_TABLE_PLACEHOLDER_VALUE
+#undef MAP_TABLE_NULL_VALUE
 #undef MAP_TABLE_KEY_TYPE
 #undef MAP_TABLE_VALUE_TYPE
 
@@ -604,3 +616,6 @@ static MAP_TABLE_VALUE_TYPE MAP_TABLE_REF_TYPE PREFIX(_current)(PREFIX(_table) *
 #undef MAP_TABLE_LOCK_INIT
 #undef M_MAP_TABLE_TYPE
 #undef MAP_MALLOC_TYPE
+#undef MAP_TABLE_PLACEHOLDER_EQUALITY_FUNCTION
+#undef MAP_TABLE_PLACEHOLDER_VALUE
+
