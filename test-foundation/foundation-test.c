@@ -30,9 +30,9 @@ void run_tests(void)
 	run_dictionary_test();
 	run_enumerator_test();
 	run_indexset_test();
-	run_string_test();
 	run_value_test();
 	run_number_test();
+	run_string_test();
 }
 
 #ifdef _KERNEL
