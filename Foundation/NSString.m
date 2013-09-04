@@ -91,7 +91,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 @implementation NSString
 
 +(id)alloc{
-	return [_NSString alloc];
+	id obj = [super alloc];
+	object_setClass(obj, [_NSString class]);
+	return obj;
 }
 +(void)load{
 	if (self == [NSString class]){
