@@ -147,6 +147,12 @@ static NSString *const NSValueAbstractException = @"NSValueAbstractException";
 	@throw [NSException exceptionWithName:NSValueAbstractException reason:@"" userInfo:nil];
 }
 
+-(void)dealloc{
+	objc_dealloc(_objCType, M_UTILITIES_TYPE);
+	
+	[super dealloc];
+}
+
 -(void)getValue:(void*)value{
 	memcpy(value, &_data, [self _sizeForCurrentType]);
 }

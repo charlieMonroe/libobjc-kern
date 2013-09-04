@@ -67,7 +67,16 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	object_setClass(obj, [_NSString class]);
 	return obj;
 }
-+(void)load{
+
+/* We need to populate the _KKConstString in +initialize when testing in
+ * user-land.
+ */
+#if defined(__APPLE__)
++(void)initialize
+#else
++(void)load
+#endif
+{
 	if (self == [NSString class]){
 		class_addMethodsFromClass([_KKConstString class], self);
 	}
@@ -91,9 +100,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 +(id)stringWithFormat:(NSString*)format, ...{
 	va_list ap;
 	va_start(ap, format);
-	NSString *str = [[_NSString alloc] initWithFormat:format arguments: ap];
+	NSString *str = [[[_NSString alloc] initWithFormat:format arguments: ap] autorelease];
 	va_end(ap);
-	return [str autorelease];
+	return str;
 }
 +(id)stringWithUTF8String:(const unichar*)str{
 	return [self stringWithCString:str];
@@ -181,8 +190,8 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	memcpy(buffer + _length, aString->_data.immutable, aString->_length);
 	buffer[totalLength] = '\0';
 	
-	return [[NSString alloc] initWithBytesNoCopy:buffer length:totalLength
-										encoding:0 freeWhenDone:YES];
+	return [[[_NSString alloc] initWithBytesNoCopy:buffer length:totalLength
+										encoding:0 freeWhenDone:YES] autorelease];
 }
 
 -(NSArray*)componentsSeparatedByString:(NSString*)separator{
@@ -235,7 +244,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	char *buffer = objc_alloc(range.length + 1, M_NSSTRING_TYPE);
 	memcpy(buffer, _data.immutable + range.location, range.length);
 	buffer[range.length] = '\0';
-	return [[[NSString alloc] initWithBytesNoCopy:buffer length:range.length
+	return [[[_NSString alloc] initWithBytesNoCopy:buffer length:range.length
 										encoding:0 freeWhenDone:YES] autorelease];
 }
 
@@ -372,13 +381,13 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 -(void)appendFormat:(NSString*)format, ...{
 	va_list ap;
 	va_start(ap, format);
-	NSString *str = [[NSString alloc] initWithFormat:format arguments: ap];
+	NSString *str = [[[_NSString alloc] initWithFormat:format arguments: ap] autorelease];
 	va_end(ap);
 	[self appendString:str];
 }
 
 -(id)copy{
-	return [[NSString alloc] initWithString:self];
+	return [[_NSString alloc] initWithString:self];
 }
 -(void)dealloc{
 	objc_dealloc(_data.mutable, M_NSSTRING_TYPE);
