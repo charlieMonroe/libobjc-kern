@@ -370,6 +370,12 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 
 @implementation NSMutableString
 
++(id)alloc{
+	id obj = [super alloc];
+	object_setClass(obj, [NSMutableString class]);
+	return obj;
+}
+
 -(void)appendCString:(const unichar *)str length:(NSUInteger)length{
 	NSUInteger totalLen = _length + length;
 	_data.mutable = objc_realloc(_data.mutable, totalLen + 1, M_NSSTRING_TYPE);
