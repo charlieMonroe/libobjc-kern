@@ -193,7 +193,7 @@ PREFIX(_table_resize)(PREFIX(_table) *table)
 	__sync_synchronize();
 	table->old = NULL;
 	objc_dealloc(copy->table, MAP_MALLOC_TYPE);
-  objc_dealloc(copy, MAP_MALLOC_TYPE);
+	objc_dealloc(copy, MAP_MALLOC_TYPE);
 	
 	return 1;
 }
@@ -472,13 +472,49 @@ static void PREFIX(_table_set)(PREFIX(_table) *table, const void *key,
 }
 
 __attribute__((unused))
-static void PREFIX(_destroy_enumerator)(PREFIX(_table) *table,
+static void
+PREFIX(_destroy_enumerator)(PREFIX(_table) *table,
 										struct PREFIX(_table_enumerator) **state)
 {
+	if (*state == NULL){
+		return;
+	}
+	
 	MAP_TABLE_RLOCK(&table->lock);
 	__sync_fetch_and_sub(&table->enumerator_count, 1);
 	MAP_TABLE_UNLOCK(&table->lock);
 	objc_dealloc(*state, MAP_MALLOC_TYPE);
+	*state = NULL;
+}
+
+
+__attribute__((unused))
+static inline void
+PREFIX(_init_enumerator)(PREFIX(_table) *table,
+						 struct PREFIX(_table_enumerator) *state)
+{
+	/*
+	 * Make sure that we are not reallocating the table when we start
+	 * enumerating
+	 */
+	MAP_TABLE_WLOCK(&table->lock);
+	state->table = table;
+	state->index = -1;
+	__sync_fetch_and_add(&table->enumerator_count, 1);
+	MAP_TABLE_UNLOCK(&table->lock);
+}
+
+__attribute__((unused))
+static inline struct PREFIX(_table_enumerator) *
+PREFIX(_create_enumerator)(PREFIX(_table) *table)
+{
+	struct PREFIX(_table_enumerator) *state;
+	state = objc_zero_alloc(sizeof(struct PREFIX(_table_enumerator)),
+							MAP_MALLOC_TYPE);
+	
+	PREFIX(_init_enumerator)(table, state);
+	
+	return state;
 }
 
 __attribute__((unused))
@@ -488,21 +524,11 @@ PREFIX(_next)(PREFIX(_table) *table,
 {
 	if (NULL == *state)
 	{
-		*state = objc_zero_alloc(sizeof(struct PREFIX(_table_enumerator)), MAP_MALLOC_TYPE);
-		// Make sure that we are not reallocating the table when we start
-		// enumerating
-		MAP_TABLE_WLOCK(&table->lock);
-		(*state)->table = table;
-		(*state)->index = -1;
-		__sync_fetch_and_add(&table->enumerator_count, 1);
-		MAP_TABLE_UNLOCK(&table->lock);
+		*state = PREFIX(_create_enumerator)(table);
 	}
 	if ((*state)->seen >= (*state)->table->table_used)
 	{
-		MAP_TABLE_RLOCK(&table->lock);
-		__sync_fetch_and_sub(&table->enumerator_count, 1);
-		MAP_TABLE_UNLOCK(&table->lock);
-		objc_dealloc(*state, MAP_MALLOC_TYPE);
+		PREFIX(_destroy_enumerator)(table, state);
 		return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 	}
 	while ((++((*state)->index)) < (*state)->table->table_size)
@@ -513,11 +539,9 @@ PREFIX(_next)(PREFIX(_table) *table,
 			return MAP_TABLE_REF (*state)->table->table[(*state)->index].value;
 		}
 	}
-	// Should not be reached, but may be if the table is unsafely modified.
-	MAP_TABLE_RLOCK(&table->lock);
-	__sync_fetch_and_sub(&table->enumerator_count, 1);
-	MAP_TABLE_UNLOCK(&table->lock);
-	objc_dealloc(*state, MAP_MALLOC_TYPE);
+	
+	/* Should not be reached, but may be if the table is unsafely modified. */
+	PREFIX(_destroy_enumerator)(table, state);
 	return MAP_TABLE_REF MAP_TABLE_PLACEHOLDER_VALUE;
 }
 

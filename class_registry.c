@@ -411,25 +411,24 @@ PRIVATE void
 objc_updateDtableForClassContainingMethod(Method m)
 {
 	Class nextClass;
-	void *state = NULL;
+	
+	struct objc_class_table_enumerator *state;
+	state = objc_class_create_enumerator(objc_classes);
+	
 	SEL sel = method_getName(m);
 	for (;;) {
-		nextClass = objc_class_next(objc_classes,
-									(struct objc_class_table_enumerator**)&state);
+		nextClass = objc_class_next(objc_classes, &state);
 		if (nextClass == Nil){
-			objc_class_destroy_enumerator(objc_classes,
-								  (struct objc_class_table_enumerator**)&state);
 			break;
 		}
 		
 		if (class_getInstanceMethodNonRecursive(nextClass, sel) == m){
 			objc_update_dtable_for_class(nextClass);
-			
-			objc_class_destroy_enumerator(objc_classes,
-								  (struct objc_class_table_enumerator**)&state);
-			return;
+			break;
 		}
 	}
+	
+	objc_class_destroy_enumerator(objc_classes, &state);
 }
 
 Class
@@ -610,12 +609,16 @@ objc_copyClassList(unsigned int *out_count)
 	Class *classes = objc_alloc(class_count * sizeof(Class), M_CLASS_TYPE);
 	
 	int count = 0;
-	struct objc_class_table_enumerator *e = NULL;
 	Class next;
+	struct objc_class_table_enumerator *state;
+	state = objc_class_create_enumerator(objc_classes);
+	
 	while (count < class_count &&
-	       (next = objc_class_next(objc_classes, &e))){
+	       (next = objc_class_next(objc_classes, &state))){
 		classes[count++] = next;
 	}
+	
+	objc_class_destroy_enumerator(objc_classes, &state);
 	
 	if (out_count != NULL){
 		*out_count = count;
@@ -628,12 +631,16 @@ int
 objc_getClassList(Class *buffer, int len)
 {
 	int count = 0;
-	struct objc_class_table_enumerator *e = NULL;
 	Class next;
+	struct objc_class_table_enumerator *state;
+	state = objc_class_create_enumerator(objc_classes);
+	
 	while (count < len &&
-	       (next = objc_class_next(objc_classes, &e))){
+	       (next = objc_class_next(objc_classes, &state))){
 		buffer[count++] = next;
 	}
+	
+	objc_class_destroy_enumerator(objc_classes, &state);
 	
 	return count;
 }
