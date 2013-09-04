@@ -10,7 +10,8 @@ KMOD	= foundation_test
 
 SRCS	= foundation-test.c \
 		NSArrayTest.m \
-		NSDictionaryTest.m
+		NSDictionaryTest.m \
+		NSEnumeratorTest.m
 
 .include <bsd.kmod.mk>
 
