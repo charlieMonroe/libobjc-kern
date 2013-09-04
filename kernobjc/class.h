@@ -88,6 +88,13 @@ void class_setVersion(Class theClass, int version);
 BOOL class_addMethod(Class cls, SEL name, IMP imp, const char *types);
 
 /*
+ * This function takes all methods from source and isntalls them on target.
+ * This is used for making _KKConstString class act like NSString when Foundation
+ * is loaded.
+ */
+void class_addMethodsFromClass(Class target, Class source);
+
+/*
  * Replaces a method implementation for another one.
  *
  * Returns the old implementation.

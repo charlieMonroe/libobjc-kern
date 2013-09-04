@@ -113,3 +113,58 @@ static inline void NSSetRaiseNoStackMemoryException(void){
 }
 
 @end
+
+
+@implementation NSMutableSet
+
++(id)setWithCapacity:(NSUInteger)numItems{
+	return [[[self alloc] initWithCapacity:numItems] autorelease];
+}
+
+-(void)addObject:(id)anObject{
+	[_array addObject:anObject];
+}
+-(void)addObjectsFromArray:(NSArray*)array{
+	[_array addObjectsFromArray:array];
+}
+-(id)initWithCapacity:(NSUInteger)numItems{
+	if ((self = [super init]) != nil){
+		_array = [[NSMutableArray alloc] initWithCapacity:numItems];
+	}
+	return self;
+}
+-(void)intersectSet:(NSSet*)other{
+	if (other == self){
+		return;
+	}
+	
+	for (NSInteger i = [_array count] - 1; i >= 0; ++i){
+		if (![other containsObject:[_array objectAtIndex:i]]){
+			[_array removeObjectAtIndex:i];
+		}
+	}
+}
+-(void)minusSet:(NSSet*)other{
+	if (other == self){
+		[self removeAllObjects];
+		return;
+	}
+	
+	for (id obj in other->_array){
+		[_array removeObject:obj];
+	}
+}
+-(void)removeAllObjects{
+	[_array release];
+	_array = nil;
+}
+-(void)removeObject:(id)anObject{
+	[_array removeObject:anObject];
+}
+-(void)unionSet:(NSSet*)other{
+	[_array addObjectsFromArray:other->_array];
+}
+
+@end
+
+

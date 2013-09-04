@@ -3,6 +3,7 @@
 #import "NSString.h"
 #import "NSArray.h"
 #import "NSException.h"
+#import "../kernobjc/runtime.h"
 #import "../utils.h"
 
 #ifdef _KERNEL
@@ -12,6 +13,7 @@
 #endif
 
 NSString *const NSStringOutOfBoundsException = @"NSStringOutOfBoundsException";
+NSString *const NSStringAbstractClassAllocationException = @"NSStringAbstractClassAllocationException";
 
 static inline void NSStringRaiseOutOfBoundsException(void){
 	[[NSException exceptionWithName:NSStringOutOfBoundsException reason:@"" userInfo:nil] raise];
@@ -19,45 +21,21 @@ static inline void NSStringRaiseOutOfBoundsException(void){
 
 MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 
-@implementation NSString
-
-+(id)string{
-	return @"";
-}
-+(id)stringWithCharacters:(const unichar*)chars length:(NSUInteger)length{
-	return [[[self alloc] initWithCString:chars length:length] autorelease];
-}
-+(id)stringWithCString:(const char*)byteString length:(NSUInteger)length{
-	return [[[self alloc] initWithCString:byteString length:length] autorelease];
-}
-+(id)stringWithCString:(const char*)byteString{
-	return [[[self alloc] initWithCString:byteString
-								   length:objc_strlen(byteString)] autorelease];
-}
-+(id)stringWithString:(NSString*)string{
-	return [[[self alloc] initWithString:string] autorelease];
-}
-+(id)stringWithFormat:(NSString*)format, ...{
-	va_list ap;
-	va_start(ap, format);
-	NSString *str = [[NSString alloc] initWithFormat:format arguments: ap];
-	va_end(ap);
-	return [str autorelease];
-}
-+(id)stringWithUTF8String:(const unichar*)str{
-	return [self stringWithCString:str];
+/* This is the subclass that is used for allocations. */
+@interface _NSString : NSString {
+	BOOL _dontFreeOnDealloc;
 }
 
+@end
 
--(id)copy{
-	return [self retain];
-}
+@implementation _NSString
+
 -(void)dealloc{
-    if (!_dontFreeOnDealloc){
+	if (!_dontFreeOnDealloc){
 		objc_dealloc(_data.mutable, M_NSSTRING_TYPE);
 	}
 	
-    [super dealloc];
+	[super dealloc];
 }
 
 -(id)init{
@@ -74,7 +52,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 		memcpy(_data.mutable, byteString, length);
 		_data.mutable[length] = '\0';
 		
-		_length = length;
+		_length = (unsigned int)length;
 	}
 	return self;
 }
@@ -86,7 +64,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 				encoding:(NSStringEncoding)encoding freeWhenDone:(BOOL)flag{
 	if ((self = [super init]) != nil){
 		_data.mutable = bytes;
-		_length = length;
+		_length = (unsigned int)length;
 		_dontFreeOnDealloc = !flag;
 	}
 	return self;
@@ -106,6 +84,96 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return [[[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy] autorelease];
 }
 
+@end
+
+
+
+@implementation NSString
+
++(id)alloc{
+	return [_NSString alloc];
+}
++(void)load{
+	if (self == [NSString class]){
+		class_addMethodsFromClass([_KKConstString class], [NSString class]);
+	}
+}
++(id)string{
+	return @"";
+}
++(id)stringWithCharacters:(const unichar*)chars length:(NSUInteger)length{
+	return [[[_NSString alloc] initWithCString:chars length:length] autorelease];
+}
++(id)stringWithCString:(const char*)byteString length:(NSUInteger)length{
+	return [[[_NSString alloc] initWithCString:byteString length:length] autorelease];
+}
++(id)stringWithCString:(const char*)byteString{
+	return [[[_NSString alloc] initWithCString:byteString
+								   length:objc_strlen(byteString)] autorelease];
+}
++(id)stringWithString:(NSString*)string{
+	return [[[_NSString alloc] initWithString:string] autorelease];
+}
++(id)stringWithFormat:(NSString*)format, ...{
+	va_list ap;
+	va_start(ap, format);
+	NSString *str = [[_NSString alloc] initWithFormat:format arguments: ap];
+	va_end(ap);
+	return [str autorelease];
+}
++(id)stringWithUTF8String:(const unichar*)str{
+	return [self stringWithCString:str];
+}
+
+
+-(id)copy{
+	return [self retain];
+}
+
+-(id)init{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+-(id)initWithCString:(const char*)byteString length:(NSUInteger)length{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+
+-(id)initWithCString:(const char*)byteString{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+-(id)initWithBytesNoCopy:(void *)bytes length:(NSUInteger)length
+				encoding:(NSStringEncoding)encoding freeWhenDone:(BOOL)flag{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+-(id)initWithString:(NSString*)string{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+-(id)initWithFormat:(NSString*)format, ...{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+-(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
+	@throw [NSException exceptionWithName:NSStringAbstractClassAllocationException
+								   reason:[NSString stringWithUTF8String:sel_getName(_cmd)]
+								 userInfo:nil];
+}
+
+-(BOOL)isMemberOfClass:(Class)cls{
+	return cls == [NSString class];
+}
+-(BOOL)isKindOfClass:(Class)cls{
+	return cls == [NSString class] || [super isKindOfClass:cls];
+}
 -(NSUInteger)length{
 	return _length;
 }
@@ -321,6 +389,11 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 
 -(id)copy{
 	return [[NSString alloc] initWithString:self];
+}
+-(void)dealloc{
+	objc_dealloc(_data.mutable, M_NSSTRING_TYPE);
+	
+	[super dealloc];
 }
 -(id)initWithFormat:(NSString *)format arguments:(va_list)argList{
 	if ((self = [super init]) != nil){

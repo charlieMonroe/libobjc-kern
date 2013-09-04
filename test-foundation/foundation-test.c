@@ -19,6 +19,9 @@ void run_array_test(void);
 void run_dictionary_test(void);
 void run_enumerator_test(void);
 void run_indexset_test(void);
+void run_string_test(void);
+void run_value_test(void);
+void run_number_test(void);
 
 void run_tests(void);
 void run_tests(void)
@@ -27,6 +30,9 @@ void run_tests(void)
 	run_dictionary_test();
 	run_enumerator_test();
 	run_indexset_test();
+	run_string_test();
+	run_value_test();
+	run_number_test();
 }
 
 #ifdef _KERNEL

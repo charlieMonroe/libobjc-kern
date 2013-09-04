@@ -39,6 +39,30 @@ _add_methods_to_class(Class cl, Method *m, unsigned int count)
 }
 
 /*
+ * Recursively adds method list to target.
+ */
+static inline void _class_addMethodsFromList(Class target,
+											 objc_method_list *source_list)
+{
+	if (source_list->next != NULL){
+		_class_addMethodsFromList(target, source_list->next);
+	}
+	
+	unsigned int count = source_list->size;
+	objc_method_list *list = objc_method_list_create(count);
+	for (int i = 0; i < count; ++i){
+		list->list[i] = source_list->list[i];
+	}
+	
+	list->next = target->methods;
+	target->methods = list;
+	
+	if (target->dtable != uninstalled_dtable){
+		dtable_add_method_list_to_class(target, list);
+	}
+}
+
+/*
  * Adds instance methods to class cl.
  */
 static inline void
@@ -122,6 +146,23 @@ method_setImplementation(Method m, IMP imp)
 
 #pragma mark -
 #pragma mark Adding methods
+
+void
+class_addMethodsFromClass(Class target, Class source)
+{
+	if (target == Nil || source == Nil){
+		return;
+	}
+	
+	if (source->methods == NULL || source->methods->size == 0){
+		return;
+	}
+	
+	OBJC_LOCK_RUNTIME_FOR_SCOPE();
+	
+	objc_method_list *source_list = source->methods;
+	_class_addMethodsFromList(target, source_list);
+}
 
 BOOL
 class_addMethod(Class cls, SEL selector, IMP imp, const char *types)

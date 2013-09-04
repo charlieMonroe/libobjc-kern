@@ -82,6 +82,19 @@ static inline BOOL NSEqualRanges(NSRange range1, NSRange range2) {
     return (range1.location == range2.location && range1.length == range2.length);
 }
 
+static inline BOOL NSPointsEqual(NSPoint p1, NSPoint p2){
+	return p1.x == p2.x && p1.y == p2.y;
+}
+static inline BOOL NSRangesEqual(NSRange r1, NSRange r2){
+	return r1.location == r2.location && r1.length == r2.length;
+}
+static inline BOOL NSSizesEqual(NSSize s1, NSSize s2){
+	return s1.width == s2.width && s1.height == s2.height;
+}
+static inline BOOL NSRectsEqual(NSRect r1, NSRect r2){
+	return NSPointsEqual(r1.origin, r2.origin) && NSSizesEqual(r1.size, r2.size);
+}
+
 #define NSNotFound ((NSUInteger)-1)
 
 #endif

@@ -20,8 +20,7 @@ typedef NSUInteger NSStringEncoding;
 		const char	*immutable;
 		char		*mutable;
 	} _data;
-	NSUInteger _length;
-	BOOL _dontFreeOnDealloc;
+	unsigned int _length;
 }
 
 
