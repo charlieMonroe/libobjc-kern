@@ -11,7 +11,7 @@ void run_string_test(void){
 		
 		
 		
-		NSLog(@"Hello %02i %s!", 123, world);
+		NSLog(@"Hello %02i %s!", 123, "world");
 	}
 }
 
