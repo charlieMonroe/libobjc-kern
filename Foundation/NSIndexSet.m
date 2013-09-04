@@ -157,6 +157,13 @@
 		return;
 	}
 	
+	if (_dataCount == 0){
+		_data = [[NSValue valueWithRange:NSMakeRange(anIndex, 1)] retain];
+		++_indexCount;
+		++_dataCount;
+		return;
+	}
+	
 	if (_dataCount == 1){
 		/* Maybe we're lucky */
 		NSRange range = [_data rangeValue];
@@ -166,17 +173,19 @@
 			[_data release];
 			_data = [[NSValue valueWithRange:range] retain];
 			++_indexCount;
+			++_dataCount;
 			return;
 		}else if (anIndex == NSMaxRange(range)){
 			++range.length;
 			[_data release];
 			_data = [[NSValue valueWithRange:range] retain];
 			++_indexCount;
+			++_dataCount;
 			return;
 		}
 		
 		/* Nope, need to turn it into an array */
-		_data = [[NSArray alloc] initWithObjects:[_data autorelease], nil];
+		_data = [[NSMutableArray alloc] initWithObjects:[_data autorelease], nil];
 	}
 	
 	NSUInteger firstLargerIndex = NSNotFound;
@@ -203,7 +212,7 @@
 		}
 		
 		/* Nope */
-		if (range.location < anIndex){
+		if (range.location > anIndex){
 			firstLargerIndex = i;
 			break;
 		}
@@ -216,6 +225,7 @@
 		[_data insertObject:value atIndex:firstLargerIndex];
 	}
 	++_indexCount;
+	++_dataCount;
 }
 -(void)addIndexes:(NSIndexSet*)aSet{
 	if ([aSet count] == 0){
@@ -231,6 +241,13 @@
 	}
 }
 -(void)addIndexesInRange:(NSRange)aRange{
+	if (_dataCount == 0){
+		_data = [[NSValue valueWithRange:aRange] retain];
+		++_dataCount;
+		_indexCount = aRange.length;
+		return;
+	}
+	
 	for (NSUInteger i = aRange.location; i < NSMaxRange(aRange); ++i) {
 		[self addIndex:i];
 	}
@@ -268,10 +285,10 @@
 		
 		/* Need to split the range. */
 		NSRange r1 = NSMakeRange(range.location, anIndex - range.location);
-		NSRange r2 = NSMakeRange(anIndex + 1, NSMaxRange(range) - anIndex);
+		NSRange r2 = NSMakeRange(anIndex + 1, NSMaxRange(range) - anIndex - 1);
 		
 		[_data release];
-		_data = [[NSArray alloc] initWithObjects:[NSValue valueWithRange:r1],
+		_data = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithRange:r1],
 												 [NSValue valueWithRange:r2],
 												 nil];
 		
@@ -296,6 +313,21 @@
 	
 	/* Again, maybe we're lucky */
 	if (anIndex == range.location){
+		if (range.length == 1){
+			[_data removeObjectAtIndex:indexInData];
+			--_indexCount;
+			--_dataCount;
+			
+			if (_dataCount == 1){
+				/* need to release the array. */
+				NSValue *value = [_data lastObject];
+				[_data autorelease];
+				_data = [value retain];
+			}
+			
+			return;
+		}
+		
 		++range.location;
 		--range.length;
 		
@@ -314,7 +346,7 @@
 	
 	/* Need to split the range. */
 	NSRange r1 = NSMakeRange(range.location, anIndex - range.location);
-	NSRange r2 = NSMakeRange(anIndex + 1, NSMaxRange(range) - anIndex);
+	NSRange r2 = NSMakeRange(anIndex + 1, NSMaxRange(range) - anIndex - 1);
 	[_data replaceObjectAtIndex:indexInData withObject:[NSValue valueWithRange:r2]];
 	[_data insertObject:[NSValue valueWithRange:r1] atIndex:indexInData];
 	

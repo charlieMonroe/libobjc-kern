@@ -77,7 +77,8 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 		dtable_t dtable = dtable_for_class(class);
 		/* Install the dtable if it hasn't already been initialized. */
 		if (dtable == uninstalled_dtable){
-			objc_debug_log("Sending initialize to receiver %p, selector %s[%d]\n", *receiver, sel_getName(selector), (unsigned)selector);
+			objc_debug_log("Sending initialize to receiver %p, selector %s[%d]\n",
+						   *receiver, sel_getName(selector), (unsigned)selector);
 			objc_send_initialize(*receiver);
 			dtable = dtable_for_class(class);
 			result = objc_dtable_lookup(dtable, selector);
@@ -112,8 +113,8 @@ objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
 PRIVATE IMP
 slowMsgLookup(id *receiver, SEL cmd)
 {
-	objc_debug_log("slowMsgLookup: selector (%i), receiver (%p)\n", (int)cmd,
-				   *receiver);
+	objc_debug_log("slowMsgLookup: selector (%i;%s), receiver (%p)\n", (int)cmd,
+				   sel_getName(cmd), *receiver);
 	return objc_msg_lookup_sender(receiver, cmd, nil)->implementation;
 }
 
