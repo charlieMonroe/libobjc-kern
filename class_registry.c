@@ -816,6 +816,15 @@ void XYZ(void){
 PRIVATE void
 objc_unload_class(Class cl)
 {
+	/* We need to remove the load message so that in case the module gets 
+	 * reloaded and by chance to the same point in memory, the load message
+	 * is sent again.
+	 */
+	struct objc_slot *slot = SparseArrayLookup(cl->isa->dtable, objc_load_selector);
+	if (slot != NULL && slot->implementation != NULL){
+		objc_load_messages_remove(objc_load_messages, slot->implementation);
+	}
+	
 	/* Assumes the runtime lock is held. */
 	_objc_class_remove_from_class_tree(cl);
 	_objc_class_remove_from_class_tree(cl->isa);
