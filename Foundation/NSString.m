@@ -68,7 +68,6 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return obj;
 }
 +(void)load{
-{
 	if (self == [NSString class]){
 		class_addMethodsFromClass([_KKConstString class], self);
 	}
