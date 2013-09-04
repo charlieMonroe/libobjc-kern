@@ -808,7 +808,7 @@ void XYZ(void){
 	
 	for (int i = 0; i < objc_classes->table_size; ++i){
 		Class cl = objc_classes->table[i].value;
-		if (cl != Nil){
+		if (cl != Nil && cl != _objc_class_placeholder_value){
 			const char *class_name = class_getName(cl);
 			objc_debug_log("===[%03i;%03i;%08x] - %s\n", i,
 						   objc_hash_string(class_name) % objc_classes->table_size,
