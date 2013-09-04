@@ -261,6 +261,7 @@ _sel_register_name_no_lock(const char *name, const char *types)
 		}
 		
 		if (!sel_registerName_direct(selector)){
+			objc_dealloc(selector, M_SELECTOR_TYPE);
 			return null_selector;
 		}
 	}

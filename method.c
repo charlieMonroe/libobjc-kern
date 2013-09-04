@@ -178,6 +178,7 @@ class_addMethod(Class cls, SEL selector, IMP imp, const char *types)
 	
 	Method m = objc_method_create(selector, imp);
 	_add_methods(cls, &m, 1);
+	objc_dealloc(m, M_METHOD_TYPE);
 	return YES;
 }
 
@@ -211,6 +212,7 @@ class_replaceMethod(Class cls, SEL name, IMP imp)
 	if (m == NULL){
 		Method new_method = objc_method_create(name, imp);
 		_add_methods(cls, &new_method, 1);
+		objc_dealloc(new_method, M_METHOD_TYPE);
 	}else{
 		m->implementation = imp;
 		++m->version;

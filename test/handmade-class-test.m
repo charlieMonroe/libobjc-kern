@@ -60,7 +60,7 @@ void handmade_class_test(void){
 	objc_assert(var == nil, "var != nil (%p)\n", var);
 	
 	id targetValue = (id)0x123456;
-	var = objc_msgSend(instance, setIvarSel, targetValue);
+	objc_msgSend(instance, setIvarSel, targetValue);
 	objc_assert(((MyClass*)instance)->my_ivar == targetValue, "instance->my_ivar != targetValue (%p)\n", ((MyClass*)instance)->my_ivar);
 	
 	var = objc_msgSend(instance, getIvarSel);

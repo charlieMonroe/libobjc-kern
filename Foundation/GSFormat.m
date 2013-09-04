@@ -1666,81 +1666,8 @@ break
 							len = 0;
 						}
 					}
-					else if (!is_long && spec != 'S')
-					{
-						/* This is complicated.  We have to transform the multibyte
-						 string into a unicode string.  */
-						const char			*str = (const char*)string;
-						NSUInteger			blen;
-						static NSStringEncoding	enc = 0;
-						static BOOL			byteEncoding = NO;
-						
-						if (enc == 0)
-						{
-							enc = 0;
-							byteEncoding = YES;
-						}
-						
-						if (-1 == prec)
-						{
-							len = strlen(str);	// Number of bytes to convert.
-							blen = len;		// Size of unichar output buffer.
-						}
-						else
-						{
-							if (byteEncoding == YES)
-							{
-								/* Where the external encoding is one byte per character,
-								 * we know we don't need to convert more bytes than the
-								 * precision required for output.
-								 */
-								len = 0;
-								while (len < prec && str[len] != 0)
-								{
-									len++;
-								}
-								blen = len;
-							}
-							else
-							{
-								/* FIXME ... it looks like modern standards mean that
-								 * the number of *bytes* in an input string may not
-								 * exceed the precision ... but that's unintuitive for
-								 * input strings with multibyte characters, so we need
-								 * to check and emulate OSX behavior.
-								 */
-								len = 0;
-								while (len < prec && str[len] != 0)
-								{
-									len++;
-								}
-								blen = len;
-							}
-						}
-						
-						/* Allocate dynamically an array which definitely is long
-						 * enough for the unichar version.
-						 */
-						if (blen < 8192 || ((string = (unichar *)
-											 objc_alloc((blen + 1) * sizeof(unichar), M_NSSTRING_TYPE)) == NULL))
-							string = (unichar *) alloca((blen + 1) * sizeof(unichar));
-						else
-							string_malloced = 1;
-						
-						// GSToUnicode(&string, &blen, (unsigned char*)str, len, enc, 0, 0);
-						
-						/* get the number of unichars produced and truncate to the
-						 * required output precision if necessary.
-						 */
-						len = blen;
-						if (prec != -1 && prec < len)
-						{
-							len = prec;
-						}
-					}
 					else
 					{
-						/* This is simple.  Wide string == unicode string.  */
 						int prc;
 						unichar *wsp;
 						

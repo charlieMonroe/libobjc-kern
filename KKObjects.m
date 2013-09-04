@@ -52,7 +52,8 @@
 	// No-op
 }
 
-+(id)autorelease{
++(id)autorelease
+{
 	return self;
 }
 +(id)retain
@@ -76,6 +77,10 @@
 -(void)dealloc
 {
 	object_dispose((id)self);
+}
+
+-(id)description{
+	return @"KKObject<>";
 }
 
 -(Class)class

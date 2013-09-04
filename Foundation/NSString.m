@@ -68,8 +68,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return obj;
 }
 +(void)load{
+{
 	if (self == [NSString class]){
-		class_addMethodsFromClass([_KKConstString class], [NSString class]);
+		class_addMethodsFromClass([_KKConstString class], self);
 	}
 }
 +(id)string{
@@ -102,7 +103,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 -(id)copy{
 	return [self retain];
 }
-
+-(id)description{
+	return self;
+}
 -(id)init{
 	if ((self = [super init]) != nil){
 		_length = 0;
@@ -144,7 +147,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return self;
 }
 -(id)initWithFormat:(NSString*)format arguments:(va_list)argList{
-	return [[[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy] autorelease];
+	return [[[[NSMutableString alloc] initWithFormat:format arguments:argList] autorelease] copy];
 }
 
 -(BOOL)isMemberOfClass:(Class)cls{
@@ -315,7 +318,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	const char *strStr = str->_data.immutable;
 	
 	for (NSUInteger i = range.location; i < NSMaxRange(range);){
-		if (i + strLen >= _length){
+		if (i + strLen > _length){
 			break;
 		}
 		
@@ -334,6 +337,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 		
 		return NSMakeRange(i, strLen);
 	}
+	
 	return NSMakeRange(NSNotFound, 0);
 }
 
@@ -358,6 +362,8 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	_data.mutable = objc_realloc(_data.mutable, totalLen + 1, M_NSSTRING_TYPE);
 	memcpy(_data.mutable + _length, str, length);
 	_data.mutable[totalLen] = '\0';
+	
+	_length = (unsigned int)totalLen;
 }
 -(void)appendString:(NSString*)string{
 	objc_assert(string != nil, "Appending nil string!\n");
@@ -422,7 +428,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	if (stringLength == range.length){
 		/* We're lucky, just replace the chars */
 		for (NSUInteger i = range.location; i < NSMaxRange(range); ++i){
-			_data.mutable[i] = str->_data.immutable[i];
+			_data.mutable[i] = str->_data.immutable[i - range.location];
 		}
 		return;
 	}
@@ -452,7 +458,7 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	}
 	
 	for (NSUInteger i = range.location; i < stringLength; ++i){
-		_data.mutable[i] = str->_data.immutable[i];
+		_data.mutable[i] = str->_data.immutable[i - range.location];
 	}
 }
 -(void)replaceOccurrencesOfString:(NSString *)needle withString:(id)str options:(NSUInteger)options range:(NSRange)range{

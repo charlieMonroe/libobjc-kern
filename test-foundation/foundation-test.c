@@ -23,8 +23,8 @@ void run_string_test(void);
 void run_value_test(void);
 void run_number_test(void);
 
-void run_tests(void);
-void run_tests(void)
+void run_foundation_tests(void);
+void run_foundation_tests(void)
 {
 	run_array_test();
 	run_dictionary_test();
@@ -44,7 +44,7 @@ static int event_handler(struct module *module, int event, void *arg) {
 			/* Attempt to load this module's classes. */
 			_objc_load_kernel_module(module);
 			
-			run_tests();
+			run_foundation_tests();
 			break;
 		case MOD_UNLOAD:
 			if (!_objc_unload_kernel_module(module)){

@@ -96,3 +96,4 @@ extern NSString *const NSStringOutOfBoundsException;
 
 #define NSLog(format...) \
 		objc_log("%s\n", [[NSString stringWithFormat:format] UTF8String])
+
