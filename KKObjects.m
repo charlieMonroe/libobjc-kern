@@ -35,11 +35,15 @@
 }
 +(void)initialize
 {
-	/* 
-	 * This is a relatively ugly hack that prevents the -autorelease message
-	 * from becoming recursive.
-	 */
-	self->flags.has_custom_arr = NO;
+	if (self == [KKObject class]){
+		/*
+		 * This is a relatively ugly hack that prevents the -autorelease message
+		 * from becoming recursive.
+		 */
+		objc_debug_log("Updating %s's custom ARR flag to NO\n",
+					   class_getName(self));
+		self->flags.has_custom_arr = NO;
+	}
 }
 
 
@@ -65,7 +69,8 @@
 	return self;
 }
 
--(id)autorelease{
+-(id)autorelease
+{
 	return objc_autorelease(self);
 }
 -(void)dealloc
@@ -164,6 +169,10 @@
 	return self->_length;
 }
 
+-(id)autorelease
+{
+	return self;
+}
 -(void)release
 {
 	// No-op

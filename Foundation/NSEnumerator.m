@@ -31,7 +31,9 @@
 	if (_index >= [_representedObject count]){
 		return nil;
 	}
-	return [_representedObject objectAtIndex:_index];
+	id obj = [_representedObject objectAtIndex:_index];
+	++_index;
+	return obj;
 }
 
 

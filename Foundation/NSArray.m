@@ -156,7 +156,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 }
 
 -(id)copy{
-	return [[NSArray alloc] initWithArray:self];
+	return [self retain];
 }
 
 -(NSUInteger)count{
@@ -179,6 +179,7 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 			[_items[i] autorelease];
 		}
 		objc_dealloc(_items, M_NSARRAY_TYPE);
+		_items = NULL;
 	}
 	
 	[super dealloc];
@@ -331,6 +332,9 @@ static void _GSQuickSort(id *objects, NSRange sortRange, id comparisonEntity,
 		++_count;
 		++_version;
 	}
+}
+-(id)copy{
+	return [[NSArray alloc] initWithArray:self];
 }
 -(NSUInteger)countByEnumeratingWithState:(NSFastEnumerationState *)state
 								 objects:(id [])stackbuf

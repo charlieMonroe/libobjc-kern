@@ -166,7 +166,6 @@ struct _NSDictionaryBucket {
 				[keys addObject:_buckets[i].data.many[o].key];
 			}
 		}
-		
 	}
 	return [keys autorelease];
 }
