@@ -99,7 +99,6 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 	return [self stringWithCString:str];
 }
 
-
 -(id)copy{
 	return [self retain];
 }
@@ -383,6 +382,9 @@ MALLOC_DEFINE(M_NSSTRING_TYPE, "NSString", "NSString backing");
 }
 -(id)initWithFormat:(NSString *)format arguments:(va_list)argList{
 	if ((self = [super init]) != nil){
+		_data.mutable = objc_zero_alloc(1, M_NSSTRING_TYPE);
+		_data.mutable[0] = '\0';
+		
 		unichar	fbuf[1024];
 		unichar	*fmt = fbuf;
 		size_t	len;
