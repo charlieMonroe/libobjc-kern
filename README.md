@@ -20,6 +20,8 @@ There is no support for Garbage Collection, however, ARC is supported.
 
 If you are going to implement your own ARR methods, never forget to implement your own `-autorelease` method as you could get to an infinite loop!
 
+I strongly discourage anyone from using protocols within the kernel as well since they are weird creatures of the runtime in the first place. Since they aren't classes (but instances of a class Protocol) and usually declared in a header file, the nature of how the kernel module gets compiled, you end up with one instance of the protocol in any file that includes the header declaring the protocol. This makes it quite easy in the user space, however, here in kernel as modules can be unloaded, it can lead to a lot of trouble and fixing this would require pretty much reworking how protocols work. It is definitely fine to use them as long as you keep them in one compilation unit, or use dynamically allocated ones.
+
 ### Installing the runtime
 
 To install the runtime you need to have both `git` and `subversion` installed (the subversion is for getting llvm+clang). Enter the folder you want to install the runtime to and use `git clone https://github.com/charlieMonroe/libobjc-kern.git` - this will clone the repository into a `libobj-kern` folder.
@@ -39,9 +41,10 @@ There's a `Install.sh` script that installs these files, however, you may need t
 
 Unfortunately, you need to go further than just building the compiler, you need to replace the default `cc` with it, and not just by defining the `CC` env variable as that applies only to `.c` files according to the FreeBSD kernel module makefiles - everything else falls back to `cc` - the easiest way is to do the following:
 
-`sudo mv /usr/bin/cc /usr/bin/_cc`
-
-`sudo ln -s /path/to/clang/build/dir/build/Debug+Asserts/bin/clang /usr/bin/cc`
+```
+sudo mv /usr/bin/cc /usr/bin/_cc
+sudo ln -s /path/to/clang/build/dir/build/Debug+Asserts/bin/clang /usr/bin/cc
+```
 
 Now you are pretty much all done.
 
@@ -133,6 +136,12 @@ SRCS	= hello_world.m
 The first flag tells the compiler that you are targetting the kernel runtime, the second one adds the `libobjc-kern` directory to include paths, so that you can do `#import <kernobjc/runtime.h>` and actually even `#import <Foundation/Foundation.h>` (about that later).
 
 `KMOD` is the name of your module and the rest is quite self-explanatory. Note that you __must__ include the `bsd.kmod.mk` file.
+
+```
+Note: If you want to use blocks, you need to add the following to the Makefile:
+
+CFLAGS	+= -fblocks
+```
 
 ##### Launching
 
