@@ -34,11 +34,11 @@ __attribute__((objc_root_class))
 }
 @end
 @implementation __NSObject
-- (id)class
+- (Class)class
 {
 	return object_getClass(self);
 }
-+ (id)class
++ (Class)class
 {
 	return self;
 }
@@ -71,7 +71,6 @@ __attribute__((objc_root_class))
 }
 - (void) aMethod;
 + (void) aMethod;
-- (int) manyTypes;
 - (void) synchronizedCode;
 + (void) synchronizedCode;
 + (id) shared;
@@ -84,7 +83,6 @@ __attribute__((objc_root_class))
 }
 - (void) anotherMethod;
 + (void) anotherMethod;
-- (id) manyTypes;
 - (id) aBool: (BOOL)d andAnInt: (int) w;
 @end
 
@@ -96,10 +94,6 @@ id exceptionObj = @"Exception";
 }
 + (void) aMethod
 {
-}
-- (int) manyTypes
-{
-  return YES;
 }
 - (void) synchronizedCode
 {
@@ -142,10 +136,6 @@ id exceptionObj = @"Exception";
 }
 + (void) anotherMethod
 {
-}
-- (id) manyTypes
-{
-  return @"Hello";
 }
 - (id) aBool: (BOOL)d andAnInt: (int) w
 {
