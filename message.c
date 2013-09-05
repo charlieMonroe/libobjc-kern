@@ -25,51 +25,47 @@ static struct objc_slot nil_slot = { Nil, Nil, (IMP)nil_method, 0, 1, 0 };
 
 
 /* Default proxy lookup. */
-static id
-objc_proxy_lookup_null(id receiver, SEL op)
+id
+objc_proxy_lookup_default(id receiver, SEL op)
 {
 	return nil;
 }
 
 /* Default forwarding hook. */
-static struct objc_slot *
-objc_msg_forward3_null(id receiver, SEL op)
+struct objc_slot *
+objc_msg_forward3_default(id receiver, SEL op)
 {
 	return &nil_slot;
 }
 
 /* Forward declarations. */
 struct objc_slot *objc_msg_lookup_sender(id *receiver, SEL selector, id sender);
-static struct objc_slot *objc_msg_lookup_internal(id *receiver, SEL selector, id sender);
 
 /*
  * The proxy lookup. When the method isn't cached the slow msg lookup goes on
  * to ask the proxy hook to supply a different receiver. If none is supplied,
  * the dispatch goes to the the __objc_msg_forward3 hook.
  */
-id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_null;
+id (*objc_proxy_lookup)(id receiver, SEL op) = objc_proxy_lookup_default;
 
 /*
  * When slow method lookup fails and the proxy lookup hook returns no receiver,
  * the dispatch tries this hook for forwarding.
  */
 struct objc_slot *(*__objc_msg_forward3)(id receiver, SEL op)
-= objc_msg_forward3_null;
+												= objc_msg_forward3_default;
 
 /*
- * An export of the other otherwise
+ * An export of the other otherwise.
  */
-struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) =
-objc_msg_lookup_internal;
+struct objc_slot *(*objc_plane_lookup)(id *receiver, SEL op, id sender) 
+												= objc_msg_lookup_default;
 
 
-
-
-static
 /* Uncomment for debugging */
 /* __attribute__((noinline)) */
 __attribute__((always_inline)) struct objc_slot *
-objc_msg_lookup_internal(id *receiver, SEL selector, id sender)
+objc_msg_lookup_default(id *receiver, SEL selector, id sender)
 {
 	Class class = objc_object_get_class_inline((*receiver));
 	struct objc_slot *result = objc_dtable_lookup(class->dtable, selector);
@@ -123,7 +119,7 @@ slowMsgLookup(id *receiver, SEL cmd)
 struct objc_slot *
 objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender)
 {
-	return objc_msg_lookup_internal(receiver, selector, sender);
+	return objc_msg_lookup_default(receiver, selector, sender);
 }
 
 /*
@@ -161,7 +157,7 @@ objc_msg_lookup_sender(id *receiver, SEL selector, id sender)
 		return &nil_slot;
 	}
 	
-	return objc_msg_lookup_internal(receiver, selector, sender);
+	return objc_msg_lookup_default(receiver, selector, sender);
 }
 
 PRIVATE struct objc_slot *

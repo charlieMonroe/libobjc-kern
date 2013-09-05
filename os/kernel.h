@@ -99,7 +99,7 @@ static inline void *objc_zero_alloc(size_t size, struct malloc_type *type){
 }
 static inline void *objc_realloc(void *mem, size_t size,
 				 struct malloc_type *type){
-	return realloc(mem, size, type, 0);
+	return realloc(mem, size, type, M_WAITOK);
 }
 static inline void *objc_alloc_page(struct malloc_type *type){
 	return objc_alloc(PAGE_SIZE, type);

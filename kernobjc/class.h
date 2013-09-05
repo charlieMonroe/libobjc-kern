@@ -41,7 +41,6 @@ Ivar class_getInstanceVariable(Class cls, const char *name);
  */
 Ivar *class_copyIvarList(Class cls, unsigned int *outCount);
 
-
 Method class_getMethod(Class cls, SEL name);
 Method class_getInstanceMethod(Class cls, SEL name);
 Method class_getInstanceMethodNonRecursive(Class cls, SEL name);
@@ -70,6 +69,9 @@ objc_property_t class_getProperty(Class cls, const char *name);
 objc_property_t *class_copyPropertyList(Class cls, unsigned int *outCount);
 
 
+/*
+ * Sets or gets version of a class.
+ */
 int class_getVersion(Class theClass);
 void class_setVersion(Class theClass, int version);
 
@@ -108,6 +110,12 @@ IMP class_replaceMethod(Class cls, SEL name, IMP imp);
 BOOL class_addIvar(Class cls, const char *name, size_t size,
 		   uint8_t alignment, const char *types);
 
+
+/*
+ * Creates an instance of class. You shouldn't be using this directly, used
+ * by +alloc.
+ */
+id class_createInstance(Class cl, size_t extraBytes);
 
 
 BOOL class_addProtocol(Class cls, Protocol *protocol);

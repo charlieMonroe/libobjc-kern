@@ -272,7 +272,7 @@ call_cxx_construct_for_class(Class cls, id obj)
 /*
  * Calls .cxx_construct methods on all classes obj inherits from.
  */
-PRIVATE void
+static void
 call_cxx_construct(id obj)
 {
 	call_cxx_construct_for_class(objc_object_get_class_inline(obj), obj);
@@ -282,7 +282,7 @@ call_cxx_construct(id obj)
 /*
  * Calls .cxx_destruct methods on all classes obj inherits from.
  */
-PRIVATE void
+static void
 call_cxx_destruct(id obj)
 {
 	/*

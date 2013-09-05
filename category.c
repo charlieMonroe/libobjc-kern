@@ -99,23 +99,4 @@ objc_category_try_load(Category category)
 	}
 }
 
-PRIVATE void
-objc_load_buffered_categories(void)
-{
-	BOOL any_category_loaded = NO;
-	
-	for (unsigned i = 0; i < buffered_objects; ++i){
-		Category c = buffered_object_at_index(i);
-		if (NULL != c){
-			if (_objc_category_try_load(c)){
-				set_buffered_object_at_index(NULL, i);
-				any_category_loaded = YES;
-			}
-		}
-	}
-	
-	if (any_category_loaded){
-		compact_buffer();
-	}
-}
 

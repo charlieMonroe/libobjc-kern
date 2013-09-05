@@ -35,7 +35,7 @@ static inline BOOL module_contains_IMP(void *module, void *IMP){
 #endif
 
 /* Default unloaded module method. */
-static void
+void
 __objc_unloaded_module_implementation_called(id sender, SEL _cmd)
 {
 	objc_msgSend(objc_getClass("__KKUnloadedModuleException"),
@@ -137,7 +137,7 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 				   class_getName(branch->sibling_list));
 	if (branch->kernel_module == kernel_module){
 		/* Remove this node. */
-		objc_unload_class(branch);
+		objc_class_unload(branch);
 	}
 }
 
@@ -386,6 +386,26 @@ _objc_unload_modules(struct objc_loader_module **begin,
 		objc_log("\t [%02i] %s [%p]\n", i, class_getName(classes[i]), classes[i]);
 	}
 	objc_dealloc(classes, M_CLASS_TYPE);
+	
+	
+	/*
+	 * Check the hooks and restore them with the default ones.
+	 */
+	if (objc_module_for_pointer(objc_proxy_lookup) == kernel_module){
+		objc_proxy_lookup = objc_proxy_lookup_default;
+	}
+	if (objc_module_for_pointer(__objc_msg_forward3) == kernel_module){
+		__objc_msg_forward3 = objc_msg_forward3_default;
+	}
+	if (objc_module_for_pointer(objc_plane_lookup) == kernel_module){
+		objc_plane_lookup = objc_msg_lookup_default;
+	}
+	if (objc_module_for_pointer(objc_class_lookup_hook) == kernel_module){
+		objc_class_lookup_hook = __objc_class_lookup_default_hook;
+	}
+	if (objc_module_for_pointer(objc_unloaded_module_method) == kernel_module){
+		objc_unloaded_module_method = (IMP)__objc_unloaded_module_implementation_called;
+	}
 	
 	return YES;
 }

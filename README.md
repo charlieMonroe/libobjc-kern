@@ -205,7 +205,21 @@ This behavior can be modified using a `objc_unloaded_module_method` hook that al
 
 Note that the runtime automatically restores default hooks when you unload a module that implements these hooks.
 
+### Freeing memory from `*_copy*` functions
+
+There are some functions in the runtime that return allocated memory that you are responsible for freeing afterwards, for example `class_copyIvarList`.
+
+You must release it using the standard `free` function - the question is which kind. These kinds are described in `kernobjc/types.h` (at very the bottom) - the types are quite obvious.
+
 ### ObjC in Kernel (Considerations)
+
+Obviously, being in kernel, it is important to know about when the runtime performs some allocations, or locking.
+
+The runtime usually doesn't perform any allocations or locking when sending messages to objects. The only time that any allocations or locking is performed is when the very first message is sent to that particular object or class. At this point, class initialization is performed - the class is locked and the dispatch table is allocated and installed onto the class.
+
+To force the class initialization on module load, simply implement a `+load` method on the class - the runtime will then immediately send the `+load` message to the class, thus forcing initialization.
+
+Another point where any locking or allocations are performed is the `@synchronize` statement (or calling `objc_sync_enter`), which uses associated objects, which are implemented just like in GNUstep runtime by creating a fake class and installing a lock on there. This also means that associated objects can perform allocations and use some locks.
 
 ### Porting
 

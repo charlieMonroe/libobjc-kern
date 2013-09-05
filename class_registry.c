@@ -56,7 +56,7 @@ _objc_handle_load_imp_for_class(IMP load_imp, Class cl)
 	}
 }
 
-PRIVATE void
+static void
 objc_class_send_load_messages(Class cl)
 {
 	/* It's a class method, need to link at the meta class */
@@ -130,13 +130,13 @@ objc_rw_lock objc_runtime_lock;
 /*
  * Default class lookup hook.
  */
-static Class __objc_class_lookup_default_hook(const char *name) { return Nil; }
+Class __objc_class_lookup_default_hook(const char *name) { return Nil; }
 
 /*
  * The basic class lookup hook allowing the app to supply a class.
  */
 Class(*objc_class_lookup_hook)(const char *name) =
-__objc_class_lookup_default_hook;
+											__objc_class_lookup_default_hook;
 
 /*
  * Default load callback.
@@ -374,7 +374,7 @@ _objc_class_register_class_no_lock(Class cl){
 		return;
 	}
 	
-	objc_log("Registering class %s with the runtime.\n", cl->name);
+	objc_debug_log("Registering class %s with the runtime.\n", cl->name);
 	
 	_objc_class_fixup_instance_size(cl);
 	_objc_class_fixup_instance_size(cl->isa);
@@ -653,7 +653,7 @@ objc_getClass(const char *name)
 	return (id)c;
 }
 
-id
+PRIVATE id
 objc_lookup_class(const char *name)
 {
 	objc_debug_log("Class lookup: %s\n", name);
@@ -809,7 +809,7 @@ objc_classes_dump(void){
 }
 
 PRIVATE void
-objc_unload_class(Class cl)
+objc_class_unload(Class cl)
 {
 	/* We need to remove the load message so that in case the module gets 
 	 * reloaded and by chance to the same point in memory, the load message

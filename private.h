@@ -3,57 +3,82 @@
 #define OBJC_PRIVATE_H
 
 /*
- * These functions are either marked as unavailble with ARC,
- * or indeed private.
+ * These functions are private, meant generally only for private runtime use.
  */
 
-#pragma mark -
-#pragma mark ARC_UNAVAILABLE
+/* Registers a small object class (aka tagged pointers). */
+PRIVATE BOOL			objc_register_small_object_class(Class cl,
+														 uintptr_t mask);
 
-id	class_createInstance(Class cl, size_t extraBytes);
-id	object_copy(id obj, size_t size);
-void	object_dispose(id obj);
-void	*object_getIndexedIvars(id obj);
-
-
-#pragma mark -
-#pragma mark Private
-
-PRIVATE BOOL			objc_register_small_object_class(Class cl, uintptr_t mask);
+/* Tries to load a category. */
 PRIVATE void			objc_category_try_load(Category category);
+
+/* Gets a slot for class. May return NULL. */
 PRIVATE struct objc_slot	*objc_get_slot(Class cl, SEL selector);
+
+/* Attempts to resolve a class. */
 PRIVATE BOOL			objc_class_resolve(Class cl);
+
+/* Updates dtables of classes containing this method. */
 PRIVATE void			objc_updateDtableForClassContainingMethod(Method m);
+
+/* Returns length of type encoding. */
 PRIVATE	size_t			lengthOfTypeEncoding(const char *types);
+
+/* Inits a list of protocols. Used from categories. */
 PRIVATE void			objc_init_protocols(objc_protocol_list *protocols);
+
+/* A function that gets called if the IMP isn't found in dtable in objc_msgSend 
+ */
 PRIVATE IMP				slowMsgLookup(id *receiver, SEL cmd);
-PRIVATE void			objc_class_resolve_links(void);
+
+/*
+ * Returns the first root class registered with the runtime, i.e. the root
+ * of the class tree. Used for climbing the class tree.
+ */
 PRIVATE Class			objc_class_get_root_class_list(void);
-PRIVATE void			objc_unload_class(Class cl);
+
+/* Unloads a class. */
+PRIVATE void			objc_class_unload(Class cl);
+
+/* Unloads a protocol. */
 PRIVATE void			objc_protocol_unload(Protocol *protocol);
-void
-objc_classes_dump(void);
 
-PRIVATE void
-objc_load_buffered_categories(void);
+/* 
+ * Prints out a list of classes registered with the runtime. Mostly for debug
+ * purposes.
+ */
+void objc_classes_dump(void);
 
-PRIVATE void
-objc_class_send_load_messages(Class cl);
+/* Looks up a slot. */
+struct objc_slot *objc_msg_lookup_sender_non_nil(id *receiver, SEL selector,
+												 id sender);
 
-struct objc_slot *
-objc_msg_lookup_sender_non_nil(id *receiver, SEL selector, id sender);
-PRIVATE struct objc_slot *
-objc_slot_lookup_super(struct objc_super *super, SEL selector);
+/* Looks up a slot on super. */
+PRIVATE struct objc_slot *objc_slot_lookup_super(struct objc_super *super,
+												 SEL selector);
 
-id
-objc_lookup_class(const char *name);
+/* This is the function that currently gets called to get the Class pointer
+ * for any class methods. Hopefully this will change soon, but requires compiler
+ * support.
+ */
+PRIVATE id objc_lookup_class(const char *name);
 
-PRIVATE void
-objc_class_resolve_links(void);
+/* Resolves all unresolved class links if possible. */
+PRIVATE void objc_class_resolve_links(void);
 
-PRIVATE void
-call_cxx_construct(id obj);
-PRIVATE void
-call_cxx_destruct(id obj);
 
+#pragma mark -
+#pragma mark Default hooks
+
+/*
+ * These are the default hooks that the hooks in kernobjc/hooks.h are declared.
+ */
+extern struct objc_slot		*objc_msg_forward3_default(id receiver, SEL op);
+extern id					objc_proxy_lookup_default(id receiver, SEL op);
+extern struct objc_slot		*objc_msg_lookup_default(id *receiver, SEL selector,
+													 id sender);
+extern Class				__objc_class_lookup_default_hook(const char *name);
+extern void					__objc_unloaded_module_implementation_called(id sender,
+																		 SEL _cmd);
 #endif
