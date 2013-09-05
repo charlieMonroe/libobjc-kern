@@ -5,18 +5,10 @@
 #include <sys/module.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/linker.h>
-#include <sys/limits.h>
 
 #include "os.h"
-#include "kernobjc/types.h"
+#include <kernobjc/runtime.h>
 #include "init.h" /* For objc_runtime_destroy() */
-#include "loader.h" /* For _objc_load_kernel_module() */
-
-
-SET_DECLARE(objc_module_list_set, struct objc_loader_module);
-
-extern void run_tests(void);
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
@@ -26,7 +18,6 @@ static int event_handler(struct module *module, int event, void *arg) {
 		break;
 	case MOD_UNLOAD:
 		objc_runtime_destroy();
-		uprintf("G'bye\n");
 		break;
 	default:
 		e = EOPNOTSUPP;
