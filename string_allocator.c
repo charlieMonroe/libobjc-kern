@@ -1,4 +1,5 @@
 #include "os.h"
+#include "types.h"
 #include "init.h"
 #include "utils.h"
 
