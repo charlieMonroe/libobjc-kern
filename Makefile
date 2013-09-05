@@ -1,5 +1,4 @@
 CFLAGS  += -fobjc-runtime=kernel-runtime
-CFLAGS	+= -O0
 
 KMOD	= libobjc
 
