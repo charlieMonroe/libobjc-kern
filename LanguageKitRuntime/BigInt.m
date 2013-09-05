@@ -188,7 +188,7 @@ CMP(isEqual, ==)
 	}
 	return result;
 }
-- (id) to: (id) other by: (id) incr do: (id(^)(id)) aBlock
+- (id) to: (id) other by: (id) incr do: (id) aBlock
 {
 	id result = nil;
 	if ([other isKindOfClass: object_getClass(self)] && [incr isKindOfClass: object_getClass(self)]){
@@ -248,7 +248,7 @@ CMP(isEqual, ==)
 	}
 	return result;
 }
-- (id) to: (id) other do: (id(^)(id)) aBlock
+- (id) to: (id) other do: (id) aBlock
 {
 	return [self to: other by: [BigInt bigIntWithLongLong: 1] do: aBlock];
 }
@@ -332,17 +332,17 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 	}
 	return ret;
 }
-- (id)to: (id)to by: (id)by do: (id(^)(id))block
+- (id)to: (id)to by: (id)by do: (id)block
 {
 	unsigned long long i = [self unsignedLongLongValue];
 	id result = nil;
 	for (unsigned long long step = [by unsignedLongLongValue]; i<step ; i++)
 	{
-		result = block([NSNumber numberWithUnsignedLongLong: i]);
+		result = ((id(^)(id))block)([NSNumber numberWithUnsignedLongLong: i]);
 	}
 	return result;
 }
-- (id)to: (id)to do: (id(^)(id))block
+- (id)to: (id)to do: (id)block
 {
 	return [self to: to by: [NSNumber numberWithInt: 1] do: block];
 }
