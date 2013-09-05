@@ -14,6 +14,7 @@
 #include "arc.h"
 #include "hooks.h"
 #include "encoding.h"
+#include "loader.h"
 
 /*
  * Finds a class registered with the run-time and returns it,
