@@ -167,7 +167,7 @@
 	return objc_hash_string(self->_cString);
 }
 
--(unsigned int)length
+-(unsigned long long)length
 {
 	return self->_length;
 }

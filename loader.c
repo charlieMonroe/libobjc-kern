@@ -389,7 +389,7 @@ _objc_unload_modules(struct objc_loader_module **begin,
 }
 
 #ifdef _KERNEL
-PRIVATE BOOL
+BOOL
 _objc_load_kernel_module(struct module *kernel_module)
 {
 	objc_assert(kernel_module != NULL, "Cannot load a NULL module!\n");
@@ -411,7 +411,7 @@ _objc_load_kernel_module(struct module *kernel_module)
 	return YES;
 }
 
-PRIVATE BOOL
+BOOL
 _objc_unload_kernel_module(struct module *kernel_module){
 	objc_assert(kernel_module != NULL, "Cannot unload a NULL module!\n");
 	

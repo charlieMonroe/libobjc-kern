@@ -50,9 +50,10 @@ __attribute__((objc_root_class))
 }
 
 -(const char*)cString;
--(unsigned int)length;
+-(unsigned long long)length;
 
 @end
+
 
 /* 
  * When a kernel module is unloaded, the memory containing the code gets unloaded

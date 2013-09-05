@@ -8,7 +8,7 @@
  * Finds the ObjC modules for the kernel module and loads them. Returns YES
  * if anything was loaded.
  */
-PRIVATE BOOL _objc_load_kernel_module(struct module *kernel_module);
+BOOL _objc_load_kernel_module(struct module *kernel_module);
 
 /*
  * This is the fun part. Since the runtime doesn't copy any class structures,
@@ -50,7 +50,7 @@ PRIVATE BOOL _objc_load_kernel_module(struct module *kernel_module);
  * hook.
  *
  */
-PRIVATE BOOL _objc_unload_kernel_module(struct module *kernel_module);
+BOOL _objc_unload_kernel_module(struct module *kernel_module);
 
 #endif
 

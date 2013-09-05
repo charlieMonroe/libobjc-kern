@@ -264,6 +264,11 @@ _sel_register_name_no_lock(const char *name, const char *types)
 			objc_dealloc(selector, M_SELECTOR_TYPE);
 			return null_selector;
 		}
+	}else{
+		objc_assert(objc_strings_equal(types, sel_getTypes(selector->sel_uid)),
+					"Registering selector %s for the second time with different"
+					" types [%s vs %s]!\n", name, sel_getTypes(selector->sel_uid),
+					types);
 	}
 	return selector->sel_uid;
 }

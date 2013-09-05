@@ -49,6 +49,7 @@ Now you are pretty much all done.
 
 Now we will build a sample Hello World kernel module in Objective-C. This assumes you already have compiled `clang` and installed it as the default `cc`.
 
+##### hello_world.m
 Create a new directory called `hello_world`. Create a new file `hello_world.m` and enter following:
 
 ```
@@ -60,11 +61,140 @@ Create a new directory called `hello_world`. Create a new file `hello_world.m` a
 #include <sys/kernel.h>
 #include <sys/systm.h>
 
-#include 
+#include <kernobjc/runtime.h>
 
+@interface HelloWorld : KKObject
+-(void)sayHello;
+@end
+
+@implementation HelloWorld
+-(void)sayHello{
+	printf("Hello World!\n");
+}
+@end
+
+static int event_handler(struct module *module, int event, void *arg) {
+	int e = 0;
+	switch (event) {
+		case MOD_LOAD:
+			_objc_load_kernel_module(module);
+			
+			HelloWorld *world = [[HelloWorld alloc] init];
+			[world sayHello];
+			[world release];
+			break;
+		case MOD_UNLOAD:
+			if (!_objc_unload_kernel_module(module)){
+				e = EOPNOTSUPP;
+			}
+			break;
+		default:
+			e = EOPNOTSUPP;
+			break;
+	}
+	return (e);
+}
+
+static moduledata_t hello_world_conf = {
+	"hello_world", 	/* Module name. */
+	event_handler,  /* Event handler. */
+	NULL 		/* Extra data */
+};
+
+DECLARE_MODULE(hello_world, hello_world_conf, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
+MODULE_VERSION(hello_world, 0);
+
+/* Depend on libobjc */
+MODULE_DEPEND(hello_world, libobjc, 0, 0, 999);
 ```
 
-First, in the `libobjc-kern` directory, run the `make_and_load.sh` script. This script doesn't do anything else than `make && sudo make load` with a few file syncing operations inbetween. I found that playing with the kernel can result in quite frequent kernel panics, which unfortunately lead to lost files that weren't synced - to avoid this, I tend to use this script which in my experience fixed this issue, at least partially. It's a good idea to use something similar if you plan to experiment with the runtime and kernel since the file you are going to lose most likely is the edited one last - which means that it's more likely the source code file you've modified.
+Generally each kernel module needs to have an event handler that is called on several occasions, most importantly on `MOD_LOAD` and `MOD_UNLOAD`. You need to call `_objc_load_kernel_module(module);` on `MOD_LOAD` manually - the runtime has no way of observing when a module is loaded, at least I am not aware of it. The same goes for `MOD_UNLOAD` - here, however, you __must__ check for the return value since the runtime might find some dependencies on classes declared in this module and it may "forbid" unloading the module. The module then __mustn't__ be unloaded (by returning `EOPNOTSUPP`) since it would most likely lead to page faults in the kernel and hence kernel panic sooner or later when the runtime tries to read from the class structures that get unmapped on module unload.
+
+Then you need to declare the module data with the module name, declare the module and its version. You need to also declare the module's dependency on `libobjc` module. This is done only once per module, __not__ in every file.
+
+```
+NOTE: Technically, you may have more than one module per linker file. This is NOT supported by the runtime at this time. The runtime assumes one module per linker file! (linker file ~ the resulting .ko object)
+```
+
+##### Makefile
+Now you need to create the `Makefile`:
+
+```
+CFLAGS	+= -fobjc-runtime=kernel-runtime
+CFLAGS	+= -I/path/to/libobj-kern
+
+KMOD	= hello_world
+
+SRCS	= hello_world.m
+
+.include <bsd.kmod.mk>
+```
+
+The first flag tells the compiler that you are targetting the kernel runtime, the second one adds the `libobjc-kern` directory to include paths, so that you can do `#import <kernobjc/runtime.h>` and actually even `#import <Foundation/Foundation.h>` (about that later).
+
+`KMOD` is the name of your module and the rest is quite self-explanatory. Note that you __must__ include the `bsd.kmod.mk` file.
+
+##### Launching
+
+First, in the `libobjc-kern` directory, check that `OBJC_DEBUG_LOG` is set to `0` in `os.h` - the logging is quite extensive. Now run the `make_and_load.sh` script. This script doesn't do anything else than `make && sudo make load` with a few file syncing operations in between. I found that playing with the kernel can result in quite frequent kernel panics, which unfortunately leads to lost files that weren't synced - to avoid this, I tend to use this script which in my experience fixed this issue, at least in most cases. It's a good idea to use something similar if you plan to experiment with the runtime and kernel since the files you are going to lose most likely are the ones edited last - which generally means the source code file you've modified.
+
+Now go back to the `hello_world` directory and run `make && sudo make load` - your first ObjC kernel module. Run `sudo make unload` to unload it.
+
+That's pretty much it and now you can do whatever you want!
+
+### KKObject
+
+As you might have noticed in the Hello World module, the `HelloWorld` class inherits from something called `KKObject` - this is a very light-weight version of `NSObject` - a simple root class. It includes the general memory management methods, as well as some other basic functionality - your classes are absolutely welcome to derive from this class. Note that unlike the traditional `NSObject`, the `KKObject` contains the retain count in a variable.
+
+Aside from `KKObject`, the `KKObjects.h` header file declares two more classes.
+
+`_KKConstString` is a class that implements ObjC constant strings. The class doesn't respond to any other messages other than `-cString` and `-length` - the Foundation (see next chapter) includes `NSString`, however, which extends the functionality of this class with all its methods.
+
+`__KKUnloadedModuleException` is a class representing an exception caused by invoking an unloaded method. More about that in section on module unloading.
+
+### Foundation
+
+As mentioned before, the runtime comes with several subprojects, or submodules, Foundation being one of them. The Foundation is only a subset of the regular Foundation framework, containing only a few classes and those classes only implement methods found essential as well as required to port the LanguageKit runtime, etc.
+
+Most notably, the Foundation implements `NSObject`, which however inherits from `KKObject` (!) - this means that the `NSObject` doesn't just have the `isa` field, but the `__retainCount` field as well. This shouldn't even be noticed, unless you plan to cast the object to something else, or your code relies on this fact.
+
+The Foundation also implements `NSString` which automatically enriches the `_KKConstString` class with its methods, making those two compatible and allowing to use constant strings in a more meaningful way.
+
+The other more "fully implemented" classes include `NSArray`, `NSDictionary`, `NSNumber` and `NSValue`. For `NSArray`, `NSDictionary` and `NSString`, their mutable counterparts are included as well.
+
+If you intend to use any of the Foundation classes, you need to go to the `libobjc/Foundation` directory and run the `make_and_load.sh` script as well, since it is a separate kernel module. You also need to declare a dependency on the Foundation the same way you declared the dependency on `libobjc`:
+
+```
+/* Depend on Foundation */
+MODULE_DEPEND(hello_world, objc_foundation, 0, 0, 999);
+```
+
+### Loading
+
+As noted earlier, loading a kernel module is a simple `sudo make load` command. On the module load, you are required to to call the `_objc_load_kernel_module` function which finds the corresponding section in the loaded file and registers all the classes, categories and protocols with the runtime as well as registers the selectors and updates necessary internal structures.
+
+The function returns `YES` if it finds some ObjC data in the module, `NO` if no data can be found.
+
+### Unloading
+
+With unloading the fun begins. Since loading the module really means just mapping some memory, unloading means unmapping it. This presents a grave danger in several scenarios:
+- You have loaded a module that includes a category that adds some methods to a class implemented in another module (e.g. on `KKObject`), or even overrides some. As soon as your module gets unloaded, calling such a method would be a death trap since the memory containing the function implementing the method is no longer available, or in a worse case contains already something else.
+- If someone creates a subclass of your class from another module, unloading your module would make that subclass "unstable", resulting in the same issue as the previous one.
+- The runtime also doesn't copy class structures on load since they are externally visible symbols when linking and the class structures actually get linked together. This means that reading something from the class structure would again result in a kernel panic.
+
+This is generally why you __must__ call `_objc_unload_kernel_module` on unload. As noted by the second point, however, someone may be still using some classes from your module, which makes it potentially dangerous to simply go ahead and unload the module. This is why you __must__ check the return value and if `NO` is returned, you __mustn't__ let the module unload.
+
+So what exactly `_objc_unload_kernel_module` does do?
+
+First, it checks whether there is a class allocated by another module that inherits from a class in your module. If yes, returns `NO`, otherwise goes on to unloading the module.
+
+This means going through the class tree and removing all classes declared by this module. The same goes for protocols.
+
+After this, the runtime goes through all the methods on the classes left and sees if any of the function pointers is from your module. If yes, the function pointer gets replaced by an internal function that throws a `__KKUnloadedModuleException` which contains both the object the message was sent to as well as the selector.
+
+This behavior can be modified using a `objc_unloaded_module_method` hook that allows you to specify your own function to be called when an unloaded method is called.
+
+Note that the runtime automatically restores default hooks when you unload a module that implements these hooks.
 
 ### Porting
 
