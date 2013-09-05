@@ -190,6 +190,8 @@ _objc_can_unload_protocol(Protocol *p, Class root_class, void *kernel_module)
 			continue;
 		}
 		
+		objc_debug_log("Checking protocol %p for class %s\n", p,
+					   class_getName(c));
 		objc_protocol_list *protocol_list = c->protocols;
 		if (protocol_list != NULL){
 			while (protocol_list != NULL) {
