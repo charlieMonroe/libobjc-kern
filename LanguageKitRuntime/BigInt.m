@@ -322,13 +322,13 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 	}
 	return falseBlock();
 }
-- (id)timesRepeat: (id(^)(void))block
+- (id)timesRepeat: (id)block
 {
 	void *ret = NULL;
 	unsigned long long max = [self unsignedLongLongValue];
 	for (unsigned long long i=0 ; i<max ; i++)
 	{
-		ret = block();
+		ret = ((id(^)(void))block)();
 	}
 	return ret;
 }
