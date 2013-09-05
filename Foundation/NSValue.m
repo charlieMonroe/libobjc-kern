@@ -8,7 +8,7 @@ static NSString *const NSValueAbstractException = @"NSValueAbstractException";
 
 #define NSValueCreateAndReturnPopulated(typeEnc, code)		\
 			NSValue *value = [self value];					\
-			value->_objCType = objc_strcpy(typeEnc);		\
+			value->_objCType = typeEnc;						\
 			code;											\
 			return value;
 
@@ -148,7 +148,7 @@ static NSString *const NSValueAbstractException = @"NSValueAbstractException";
 }
 
 -(void)dealloc{
-	objc_dealloc((void*)_objCType, M_UTILITIES_TYPE);
+	// objc_dealloc((void*)_objCType, M_UTILITIES_TYPE);
 	
 	[super dealloc];
 }
