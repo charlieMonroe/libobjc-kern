@@ -9,8 +9,7 @@
 #include <sys/limits.h>
 
 #include "../os.h"
-#include "../kernobjc/types.h"
-#include "../loader.h"
+#include <kernobjc/runtime.h>
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;
