@@ -1,10 +1,5 @@
-CC=~/build/Debug+Asserts/bin/clang
-
-
 CFLAGS  += -fobjc-runtime=kernel-runtime
 CFLAGS	+= -O0
-
-LDFLAGS += --print-gc-sections
 
 KMOD	= libobjc
 
@@ -29,7 +24,8 @@ SRCS	= kernel_module.c \
 		selector.c \
 		sarray2.c \
 		KKObjects.m \
-		blocks.c
+		blocks.c \
+		string_allocator.c
 
 .include <bsd.kmod.mk>
 
