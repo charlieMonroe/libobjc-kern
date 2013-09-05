@@ -3,7 +3,7 @@
 #define OBJC_OS_H_
 
 /* Constants */
-#define OBJC_DEBUG_LOG 1
+#define OBJC_DEBUG_LOG 0
 
 #define KERNEL_OBJC 1
 
