@@ -72,6 +72,10 @@ static inline POOL_TYPE*NAME(_pool_alloc)(
 }
 
 static void NAME(_pool_free_page)(struct NAME(_pool_page) *page){
+	if (page == NULL){
+		return;
+	}
+	
 	if (page->next != NULL){
 		NAME(_pool_free_page)(page->next);
 	}
