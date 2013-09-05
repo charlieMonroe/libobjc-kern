@@ -205,6 +205,8 @@ This behavior can be modified using a `objc_unloaded_module_method` hook that al
 
 Note that the runtime automatically restores default hooks when you unload a module that implements these hooks.
 
+### ObjC in Kernel (Considerations)
+
 ### Porting
 
 Porting the runtime to another platform requires only to modify the `kernel.h` file in the `os` folder. This file contains all the OS-related stuff. Some is only defined using `#define` macros, other is declared using static inline functions. Which approach you use is very much up to you.

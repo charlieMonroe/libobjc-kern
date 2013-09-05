@@ -35,4 +35,7 @@ PRIVATE void	objc_blocks_destroy(void);
 PRIVATE void	objc_runtime_init(void);
 PRIVATE void	objc_runtime_destroy(void);
 
+PRIVATE void	objc_string_allocator_init(void);
+PRIVATE void	objc_string_allocator_destroy(void);
+
 #endif /* !OBJC_INIT_H_ */

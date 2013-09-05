@@ -36,6 +36,7 @@ void objc_runtime_init(void) {
 	objc_protocol_init();
 	objc_associated_objects_init();
 	objc_exceptions_init();
+	objc_string_allocator_init();
 	
 	/* Do NOT call blocks init. They get initialized in KKObject's load! */
 	/* objc_blocks_init(); */
@@ -66,9 +67,10 @@ void	objc_runtime_destroy(void) {
 	objc_associated_objects_destroy();
 	objc_exceptions_destroy();
 	objc_blocks_destroy();
+	objc_string_allocator_destroy();
 
-  /* The lock must be destroyed at the end since some destructors may used it */
-  objc_rw_lock_destroy(&objc_runtime_lock);
+	/* The lock must be destroyed at the end since some destructors may used it */
+	objc_rw_lock_destroy(&objc_runtime_lock);
 	
 }
 

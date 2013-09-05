@@ -38,6 +38,7 @@ void property_introspection_test1(void){
 			case 'B': assert(objc_strings_equal(l[i].value, "foo")); break;
 		}
 	}
+	objc_dealloc(l, M_PROPERTY_TYPE);
 	objc_assert(0 == property_copyAttributeList(0, &count), "Couldn't copy attlist");
     
     objc_log("===================\n");

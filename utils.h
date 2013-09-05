@@ -6,6 +6,9 @@
 #ifndef OBJC_UTILITIES_H
 #define OBJC_UTILITIES_H
 
+/* A private allocator that uses pages for allocations. */
+PRIVATE char *objc_string_allocator_alloc(size_t size);
+
 /*
  * Just as the regular strlen function, returns a number of non-zero characters.
  */
@@ -41,7 +44,7 @@ objc_strcpy(const char *str)
 	}
 	
 	len = objc_strlen(str);
-	result = objc_alloc(len + 1, M_UTILITIES_TYPE); /* +1 for zero-termination */
+	result = objc_string_allocator_alloc(len + 1); /* +1 for zero-termination */
 	curr_char = result;
 	
 	while (*str != '\0') {

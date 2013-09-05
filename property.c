@@ -288,13 +288,13 @@ static const char *property_getTypeEncoding(Property property)
 		return &name[1];
 	}
 	size_t typeSize = lengthOfTypeEncoding(name);
-	char *buffer = objc_alloc(typeSize + 2, M_PROPERTY_TYPE);
+	char *buffer = objc_string_allocator_alloc(typeSize + 2);
 	buffer[0] = 0;
 	objc_copy_memory(buffer+1, name, typeSize);
 	buffer[typeSize+1] = 0;
 	if (!__sync_bool_compare_and_swap(&(property->getter_types), name, buffer))
 	{
-		objc_dealloc(buffer, M_PROPERTY_TYPE);
+		/* No op */
 	}
 	return &property->getter_types[1];
 }
@@ -361,7 +361,7 @@ PRIVATE const char *constructPropertyAttributes(Property property,
 	{
 		encodingSize += 2 + iVarNameSize;
 	}
-	unsigned char *encoding = objc_alloc(encodingSize, M_PROPERTY_TYPE);
+	unsigned char *encoding = (unsigned char*)objc_string_allocator_alloc(encodingSize);
 	// Set the leading 0 and the offset of the name
 	unsigned char *insert = encoding;
 	BOOL needsComma = NO;
@@ -424,7 +424,7 @@ PRIVATE const char *constructPropertyAttributes(Property property,
 	// it, then discard the one that we created and return theirs.
 	if (!__sync_bool_compare_and_swap(&(property->name), name, (char*)encoding))
 	{
-		objc_dealloc(encoding, M_PROPERTY_TYPE);
+		/* No op */
 		return property->name + 2;
 	}
 	return (const char*)(encoding + 2);
@@ -537,7 +537,7 @@ PRIVATE struct objc_property propertyFromAttrs(const objc_property_attribute_t *
 			case 'T':
 			{
 				size_t typeSize = strlen(attributes[i].value);
-				char *buffer = objc_alloc(typeSize + 2, M_PROPERTY_TYPE);
+				char *buffer = objc_string_allocator_alloc(typeSize + 2);
 				buffer[0] = 0;
 				memcpy(buffer+1, attributes[i].value, typeSize);
 				buffer[typeSize+1] = 0;
