@@ -298,29 +298,29 @@ CASTMETHOD(BOOL, boolValue, mpz_get_ui)
 @end
 
 @implementation NSNumber (LanguageKit)
-- (id)ifTrue: (id(^)(void))block
+- (id)ifTrue: (id)block
 {
 	if ([self boolValue])
 	{
-		return block();
+		return ((id(^)(void))block)();
 	}
 	return 0;
 }
-- (id)ifFalse: (id(^)(void))block
+- (id)ifFalse: (id)block
 {
 	if (![self boolValue])
 	{
-		return block();
+		return ((id(^)(void))block)();
 	}
 	return 0;
 }
-- (id)ifTrue: (id(^)(void))block ifFalse: (id(^)(void))falseBlock
+- (id)ifTrue: (id)block ifFalse: (id)falseBlock
 {
 	if ([self boolValue])
 	{
-		return block();
+		return ((id(^)(void))block)();
 	}
-	return falseBlock();
+	return ((id(^)(void))falseBlock)();
 }
 - (id)timesRepeat: (id)block
 {
