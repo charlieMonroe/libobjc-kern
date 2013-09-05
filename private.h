@@ -31,6 +31,8 @@ PRIVATE void			objc_class_resolve_links(void);
 PRIVATE Class			objc_class_get_root_class_list(void);
 PRIVATE void			objc_unload_class(Class cl);
 PRIVATE void			objc_protocol_unload(Protocol *protocol);
+void
+objc_classes_dump(void);
 
 PRIVATE void
 objc_load_buffered_categories(void);

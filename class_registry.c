@@ -174,8 +174,6 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 	/* Inserting into the linked list */
 	Class last_sibling = sibling->sibling_list;
 	if (last_sibling == Nil){
-		objc_log("Adding class %s to the sibling list (%s)\n", class_getName(cl),
-					   class_getName(sibling));
 		sibling->sibling_list = cl;
 		sibling->isa->sibling_list = cl->isa;
 		return;
@@ -184,9 +182,6 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 	while (last_sibling->sibling_list != Nil){
 		last_sibling = last_sibling->sibling_list;
 	}
-	
-	objc_log("Adding class %s to the sibling list (%s)\n", class_getName(cl),
-				   class_getName(last_sibling));
 	
 	/* Add it to the end of the list */
 	last_sibling->sibling_list = cl;
@@ -201,8 +196,6 @@ _objc_insert_class_to_back_of_sibling_list(Class cl, Class sibling)
 static inline void
 _objc_insert_class_into_class_tree(Class cl)
 {
-	objc_log("Adding class %s to class tree\n", class_getName(cl));
-	
 	if (cl->subclass_list != Nil || cl->sibling_list != Nil){
 		/* Already there. */
 		return;
@@ -213,7 +206,6 @@ _objc_insert_class_into_class_tree(Class cl)
 		/* Root class */
 		if (class_tree == Nil){
 			/* The first one, yay! */
-			objc_log("Adding class %s to to the class tree (root)\n", class_getName(cl));
 			class_tree = cl;
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
@@ -230,9 +222,6 @@ _objc_insert_class_into_class_tree(Class cl)
 			/* First subclass */
 			super_class->subclass_list = cl;
 			super_class->isa->subclass_list = cl->isa;
-			
-			objc_log("Adding class %s to class tree (first subcls of %s)\n",
-					 class_getName(cl), class_getName(super_class));
 		}else{
 			_objc_insert_class_to_back_of_sibling_list(cl,
 													   super_class->subclass_list);
@@ -801,8 +790,12 @@ __objc_class_deallocate(Class cl)
 	}
 }
 
-void XYZ(void);
-void XYZ(void){
+PRIVATE void
+objc_classes_dump(void){
+	if (!OBJC_DEBUG_LOG){
+		return;
+	}
+	
 	for (int i = 0; i < objc_classes->table_size; ++i){
 		Class cl = objc_classes->table[i].value;
 		if (cl != Nil && cl != _objc_class_placeholder_value){
