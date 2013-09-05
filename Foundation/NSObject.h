@@ -1,5 +1,5 @@
 
-#import "../KKObjects.h"
+#import "../kernobjc/KKObjects.h"
 #import "NSTypes.h"
 
 @protocol NSObject

@@ -1,7 +1,7 @@
 #include "../kernobjc/runtime.h"
 #include "../os.h"
 #include "../private.h"
-#include "../KKObjects.h"
+#import "../kernobjc/KKObjects.h"
 
 @interface ExceptionClass : KKObject
 +(void)throw;

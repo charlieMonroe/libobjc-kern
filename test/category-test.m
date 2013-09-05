@@ -1,4 +1,4 @@
-#import "../KKObjects.h"
+#import "../kernobjc/KKObjects.h"
 
 BOOL didSomethingCrazy = NO;
 

@@ -1,7 +1,6 @@
 #import "../kernobjc/runtime.h"
 #import "../os.h"
 #import "../utils.h"
-#import "../KKObjects.h"
 
 void protocol_as_object_test(void);
 void protocol_as_object_test(void)

@@ -1,5 +1,4 @@
 #import "../../../os.h"
-#import "../../../KKObjects.h"
 #import "../../../kernobjc/runtime.h"
 
 @interface MyClass : KKObject

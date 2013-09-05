@@ -1,7 +1,7 @@
 #include "../os.h"
 #include "../kernobjc/types.h"
 #include "../types.h"
-#import "../KKObjects.h"
+#import "../kernobjc/KKObjects.h"
 
 
 typedef struct {

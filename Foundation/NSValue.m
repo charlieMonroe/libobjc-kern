@@ -148,7 +148,7 @@ static NSString *const NSValueAbstractException = @"NSValueAbstractException";
 }
 
 -(void)dealloc{
-	objc_dealloc(_objCType, M_UTILITIES_TYPE);
+	objc_dealloc((void*)_objCType, M_UTILITIES_TYPE);
 	
 	[super dealloc];
 }

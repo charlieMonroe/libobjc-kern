@@ -1,6 +1,5 @@
 #include "../kernobjc/runtime.h"
 #include "../types.h"
-#include "../KKObjects.h"
 
 @interface Forward : KKObject
 - (id)forwardingTargetForSelector: (SEL)sel;

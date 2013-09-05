@@ -52,7 +52,15 @@ Now we will build a sample Hello World kernel module in Objective-C. This assume
 Create a new directory called `hello_world`. Create a new file `hello_world.m` and enter following:
 
 ```
+#include <sys/types.h>
+#include <sys/cdefs.h>
+#include <sys/module.h>
+#include <sys/param.h>
+#include <sys/module.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
 
+#include 
 
 ```
 

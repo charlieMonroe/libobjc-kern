@@ -1,5 +1,5 @@
 #include "../class_registry.h"
-#import "../KKObjects.h"
+#import "../kernobjc/KKObjects.h"
 #include "../os.h"
 #include "../kernobjc/types.h"
 #include "../types.h"

@@ -15,6 +15,9 @@
 #include "hooks.h"
 #include "encoding.h"
 #include "loader.h"
+#ifdef __OBJC__
+	#import "KKObjects.h"
+#endif
 
 /*
  * Finds a class registered with the run-time and returns it,

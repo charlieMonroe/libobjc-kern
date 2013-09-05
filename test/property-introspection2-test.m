@@ -2,7 +2,6 @@
 #include "../os.h"
 #include "../utils.h"
 #include "../private.h"
-#include "../KKObjects.h"
 
 #pragma GCC diagnostic ignored "-Wobjc-property-no-attribute"
 

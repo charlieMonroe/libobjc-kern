@@ -1,4 +1,3 @@
-#import "../KKObjects.h"
 #include "../kernobjc/runtime.h"
 
 static BOOL weak_obj_deallocated = NO;
