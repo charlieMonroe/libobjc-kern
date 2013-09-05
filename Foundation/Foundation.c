@@ -5,12 +5,9 @@
 #include <sys/module.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/linker.h>
-#include <sys/limits.h>
 
 #include "../os.h"
-#include "../kernobjc/types.h"
-#include "../loader.h"
+#include <kernobjc/types.h"
 
 static int event_handler(struct module *module, int event, void *arg) {
 	int e = 0;

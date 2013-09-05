@@ -11,9 +11,8 @@
 #include <sys/limits.h>
 #endif
 
-#include "../kernobjc/runtime.h"
+#include <kernobjc/runtime.h>
 #include "../types.h"
-#include "../loader.h"
 
 void run_array_test(void);
 void run_dictionary_test(void);

@@ -1,8 +1,7 @@
-CC=~/build/Debug+Asserts/bin/clang
-
 CFLAGS  += -fobjc-runtime=kernel-runtime
 CFLAGS	+= -O0
 CFLAGS	+= -fblocks
+CFLAGS	+= -I../
 
 LDFLAGS += --print-gc-sections
 
