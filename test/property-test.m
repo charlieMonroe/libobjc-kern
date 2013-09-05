@@ -15,7 +15,7 @@ __attribute__((objc_root_class))
 
 @implementation helloclass
 @synthesize propName = varName;
-+ (id)class { return self; }
++ (Class)class { return self; }
 @end
 
 void property_test(void);
