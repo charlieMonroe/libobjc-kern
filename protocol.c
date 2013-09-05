@@ -608,7 +608,12 @@ __objc_protocol_dealloc(Protocol *protocol)
 PRIVATE void
 objc_protocol_unload(Protocol *protocol)
 {
-	objc_protocol_remove(objc_protocols, (void*)protocol->name);
+	/* There can be multiple protocols of the same name, but only one is truly
+	 * registered.
+	 */
+	if (objc_protocol_table_get(objc_protocols, protocol->name) == protocol){
+		objc_protocol_remove(objc_protocols, (void*)protocol->name);
+	}
 	__objc_protocol_dealloc(protocol);
 }
 
