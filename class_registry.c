@@ -656,7 +656,8 @@ objc_getClass(const char *name)
 PRIVATE id
 objc_lookup_class(const char *name)
 {
-	objc_debug_log("Class lookup: %s\n", name);
+	objc_log("****** Using a deprecated function objc_lookup_class() %s."
+           " Please, use objc_getClass() instead.\n", name);
 	return objc_getClass(name);
 }
 

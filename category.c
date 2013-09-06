@@ -9,10 +9,6 @@
 #include "kernobjc/protocol.h"
 #include "private.h"
 
-#define BUFFER_TYPE struct objc_category
-#include "buffer.h"
-
-
 /*
  * Registers the method list with class.
  */
@@ -76,7 +72,9 @@ _objc_category_try_load(Category category)
 {
 	Class cl = (Class)objc_getClass(category->class_name);
 	if (cl == Nil){
-		return NO;
+		objc_abort("Trying to load a category of non-existant class %s\n",
+               category->class_name);
+    return NO;
 	}
 	
 	_objc_category_load(category, cl);
@@ -84,19 +82,15 @@ _objc_category_try_load(Category category)
 }
 
 /*
- * Sees whether the class for the category was loaded yet,
- * and if so, attaches all the methods and protocols to the class.
- * If not, puts the category to the buffer.
+ * We do not allow categories of forward classes - the modules get loaded one by
+ * one and you should define a module dependence.
  */
 PRIVATE void
 objc_category_try_load(Category category)
 {
 	objc_assert(category != NULL, "Trying to load a NULL category.\n");
 	
-	if (!_objc_category_try_load(category)){
-		/* Save it for later */
-		set_buffered_object_at_index(category, buffered_objects++);
-	}
+	_objc_category_try_load(category);
 }
 
 

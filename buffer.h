@@ -45,6 +45,7 @@ static BUFFER_TYPE *buffered_object_at_index(unsigned int i)
 	return buffered_object_overflow[i-BUFFER_SIZE];
 }
 
+__attribute__((unused))
 static void compact_buffer(void)
 {
 	/* Move up all of the non-NULL pointers */
