@@ -378,7 +378,8 @@ namespace {
     llvm::Constant *GenerateMethodList(const StringRef &ClassName,
                                        const StringRef &CategoryName,
                                        ArrayRef<Selector> MethodSels,
-                                       ArrayRef<llvm::Constant *> MethodTypes,
+                                       ArrayRef<llvm::Constant *> MethodTypesConst,
+                                       ArrayRef<std::string> MethodTypes,
                                        bool isClassMethodList);
     
     /// Generates the actual method list structure
@@ -393,8 +394,10 @@ namespace {
     /// stores those elements into the Elements vector.
     virtual void GenerateMethodStructureElements(std::vector<llvm::Constant*> &Elements,
                                                  llvm::Constant *Method,
-                                                 llvm::Constant *SelectorName,
-                                                 llvm::Constant *MethodTypes) = 0;
+                                                 llvm::Constant *SelectorNameConst,
+                                                 const std::string &SelectorName,
+                                                 llvm::Constant *MethodTypesConst,
+                                                 const std::string &SelectorTypes) = 0;
     
     /// Returns the structure type for a method description structure used by
     /// the runtime. The method description structure differs from the method
@@ -812,7 +815,8 @@ namespace {
     void GenerateProtocolHolderCategory() {
       // Collect information about instance methods
       SmallVector<Selector, 1> MethodSels;
-      SmallVector<llvm::Constant*, 1> MethodTypes;
+      SmallVector<llvm::Constant*, 1> MethodTypesConst;
+      SmallVector<std::string, 1> MethodTypes;
       
       std::vector<llvm::Constant*> Elements;
       const std::string ClassName = "__ObjC_Protocol_Holder_Ugly_Hack";
@@ -821,10 +825,10 @@ namespace {
       Elements.push_back(MakeConstantString(ClassName));
       // Instance method list
       Elements.push_back(llvm::ConstantExpr::getBitCast(GenerateMethodList(
-                                                                           ClassName, CategoryName, MethodSels, MethodTypes, false), PtrTy));
+                                                                           ClassName, CategoryName, MethodSels, MethodTypesConst, MethodTypes, false), PtrTy));
       // Class method list
       Elements.push_back(llvm::ConstantExpr::getBitCast(GenerateMethodList(
-                                                                           ClassName, CategoryName, MethodSels, MethodTypes, true), PtrTy));
+                                                                           ClassName, CategoryName, MethodSels, MethodTypesConst, MethodTypes, true), PtrTy));
       // Protocol list
       llvm::ArrayType *ProtocolArrayTy = llvm::ArrayType::get(PtrTy,
                                                               ExistingProtocols.size());
@@ -859,8 +863,10 @@ namespace {
     virtual llvm::StructType *GetMethodStructureType(void);
     virtual void GenerateMethodStructureElements(std::vector<llvm::Constant*> &Elements,
                                                  llvm::Constant *Method,
-                                                 llvm::Constant *SelectorName,
-                                                 llvm::Constant *MethodTypes);
+                                                 llvm::Constant *SelectorNameConst,
+                                                 const std::string &SelectorName,
+                                                 llvm::Constant *MethodTypesConst,
+                                                 const std::string &SelectorTypes);
     virtual llvm::Constant *GenerateMethodListStructure(llvm::Constant *MethodArray,
                                                         llvm::Type *ObjCMethodArrayTy,
                                                         unsigned Size);
@@ -1587,7 +1593,7 @@ namespace {
     /// Type of the selector map.  This is roughly equivalent to the structure
     /// used in the GNUstep runtime, which maintains a list of all of the valid
     /// types for a selector in a table.
-    typedef llvm::DenseMap<Selector, SmallVector<TypedSelector, 2> >
+    typedef std::map<std::string, SmallVector<TypedSelector, 2> >
     SelectorMap;
     /// A map from selectors to selector types.  This allows us to emit all
     /// selectors of the same name and type together.
@@ -1712,7 +1718,8 @@ namespace {
         SetJmpBufferSize = (18);
         SetJmpBufferIntTy = IntTy;
 	    }else{
-#warning TODO: error
+        CGM.Error(clang::SourceLocation(),
+                  "Unknown target and hence unknown setjmp buffer size.");
 	    }
 	    
 	    // Exceptions
@@ -1752,13 +1759,13 @@ namespace {
       
     }
     
-    virtual llvm::Value *GetSelector(CodeGenFunction &CGF, Selector Sel,
-                                     const std::string &TypeEncoding, bool lval){
+    virtual llvm::GlobalVariable *GetSelectorByName(const std::string &SelName,
+                                     const std::string &TypeEncoding){
       if (TypeEncoding == ""){
         llvm_unreachable("No untyped selectors support in kernel runtime.");
       }
       
-      SmallVectorImpl<TypedSelector> &Types = SelectorTable[Sel];
+      SmallVectorImpl<TypedSelector> &Types = SelectorTable[SelName];
       llvm::GlobalVariable *SelValue = 0;
       
       
@@ -1767,8 +1774,12 @@ namespace {
         if (i->first == TypeEncoding) {
           if (i != Types.begin()){
             // This really means that there are two selectors with different types
-            // TODO make an error, not exception
-            llvm_unreachable("Registering a second selector with a different type.");
+            llvm::outs() << "Trying to register selector '" << SelName <<
+            "' for the second time with different type. Initial types: " <<
+            Types.begin()->first << " Types now: " << i->first << "\n";
+            CGM.Error(clang::SourceLocation(),
+                      "Same selector with different selectors isn't supported"
+                      " in the kernel runtime.");
           }
           SelValue = i->second;
           break;
@@ -1781,7 +1792,7 @@ namespace {
                                             false, // Const
                                             llvm::GlobalValue::LinkerPrivateLinkage, // Link
                                             llvm::ConstantInt::get(SelectorTy, 0), // Init
-                                            ".objc_selector_" + Sel.getAsString(), // Name
+                                            ".objc_selector_" + SelName, // Name
                                             0,
                                             llvm::GlobalVariable::NotThreadLocal,
                                             0,
@@ -1789,7 +1800,12 @@ namespace {
         
         Types.push_back(TypedSelector(TypeEncoding, SelValue));
       }
-      
+      return SelValue;
+    }
+    
+    virtual llvm::Value *GetSelector(CodeGenFunction &CGF, Selector Sel,
+                                     const std::string &TypeEncoding, bool lval){
+      llvm::GlobalVariable *SelValue = GetSelectorByName(Sel.getAsString(), TypeEncoding);
       if (lval) {
         llvm::Value *tmp = CGF.CreateTempAlloca(SelValue->getType());
         CGF.Builder.CreateStore(SelValue, tmp);
@@ -1802,7 +1818,7 @@ namespace {
                                      bool lval = false){
       /// In order to allow @selector, we need to allow this generic GetSelector
       /// but only return if such a selector already is available...
-      SmallVectorImpl<TypedSelector> &Types = SelectorTable[Sel];
+      SmallVectorImpl<TypedSelector> &Types = SelectorTable[Sel.getAsString()];
       if (Types.size() > 0){
         llvm::GlobalVariable *SelValue = Types[0].second;
         if (lval) {
@@ -1821,7 +1837,6 @@ namespace {
                                     Args, "getSEL");
         return GetSEL;
       }
-      llvm_unreachable("No untyped selectors support in kernel runtime.");
     }
 	  
     
@@ -1849,8 +1864,10 @@ namespace {
     virtual llvm::StructType *GetMethodStructureType(void);
     virtual void GenerateMethodStructureElements(std::vector<llvm::Constant*> &Elements,
                                                  llvm::Constant *Method,
-                                                 llvm::Constant *SelectorName,
-                                                 llvm::Constant *MethodTypes);
+                                                 llvm::Constant *SelectorNameConst,
+                                                 const std::string &SelectorName,
+                                                 llvm::Constant *MethodTypesConst,
+                                                 const std::string &SelectorTypes);
     virtual llvm::StructType *GetMethodDescriptionStructureType(void);
     virtual void GenerateMethodDescriptionStructureElements(std::vector<llvm::Constant*> &Elements,
                                                             llvm::Constant *SelectorName,
@@ -1916,45 +1933,63 @@ namespace {
       return llvm::GlobalValue::ExternalLinkage;
     }
     
+    virtual llvm::Value *GetClassNamed(CodeGenFunction &CGF,
+                                       const std::string &Name, bool isWeak) {
+      EmitClassRef(Name);
+      
+      std::string SymbolName = GetClassSymbolName(Name, false);
+      
+      llvm::GlobalVariable *ClassSymbol = TheModule.getGlobalVariable(SymbolName);
+      
+      if (!ClassSymbol)
+        ClassSymbol = new llvm::GlobalVariable(TheModule, LongTy, false,
+                                               llvm::GlobalValue::ExternalLinkage,
+                                               0, SymbolName);
+      
+      return ClassSymbol;
+    }
+    
 #pragma mark CGObjCKern Unreachables
     
     virtual llvm::Value * EmitObjCWeakRead(CodeGenFunction &CGF,
                                            llvm::Value *AddrWeakObj){
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
+      return NULL;
     }
     virtual void EmitObjCWeakAssign(CodeGenFunction &CGF,
                                     llvm::Value *src, llvm::Value *dst) {
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
     }
     virtual void EmitObjCGlobalAssign(CodeGenFunction &CGF,
                                       llvm::Value *src, llvm::Value *dest,
                                       bool threadlocal=false) {
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
     }
     virtual void EmitObjCIvarAssign(CodeGenFunction &CGF,
                                     llvm::Value *src, llvm::Value *dest,
                                     llvm::Value *ivarOffset) {
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
     }
     virtual void EmitObjCStrongCastAssign(CodeGenFunction &CGF,
                                           llvm::Value *src, llvm::Value *dest) {
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
     }
     
     
     virtual void RegisterAlias(const ObjCCompatibleAliasDecl *OAD) {
-      llvm_unreachable("No alias support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No alias support in kernel runtime.");
     }
     
     virtual void EmitGCMemmoveCollectable(CodeGenFunction &CGF,
                                           llvm::Value *DestPtr,
                                           llvm::Value *SrcPtr,
                                           llvm::Value *Size){
-      llvm_unreachable("No GC support in kernel runtime.");
+      CGM.Error(clang::SourceLocation(), "No GC support in kernel runtime.");
     }
     
-    virtual llvm::Value *EmitNSAutoreleasePoolClassRef(CodeGenFunction &CGF) {
-      llvm_unreachable("No NSAutoreleasePool support in kernel runtime.");
+    virtual llvm::Value *EmitNSAutoreleasePoolClassRef(CodeGenFunction &CGF){
+      CGM.Error(clang::SourceLocation(), "No NSAutoreleasePool support in kernel runtime.");
+      return NULL;
     }
   };
   
@@ -1978,7 +2013,8 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::
 GenerateMethodList(const StringRef &ClassName,
                    const StringRef &CategoryName,
                    ArrayRef<Selector> MethodSels,
-                   ArrayRef<llvm::Constant *> MethodTypes,
+                   ArrayRef<llvm::Constant *> MethodTypesConst,
+                   ArrayRef<std::string> MethodTypes,
                    bool isClassMethodList) {
   if (MethodSels.empty())
     return NULLPtr;
@@ -1996,7 +2032,10 @@ GenerateMethodList(const StringRef &ClassName,
                                               isClassMethodList));
     assert(Method && "Can't generate metadata for method that doesn't exist");
     
-    GenerateMethodStructureElements(Elements, Method, SelectorName, MethodTypes[i]);
+    const std::string &SelectorNameString = MethodSels[i].getAsString();
+    GenerateMethodStructureElements(Elements, Method,
+                                    SelectorName, SelectorNameString,
+                                    MethodTypesConst[i], MethodTypes[i]);
     
     Methods.push_back(llvm::ConstantStruct::get(ObjCMethodTy, Elements));
   }
@@ -2265,26 +2304,32 @@ void CGObjCNonMacBase<SelectorType>::GenerateCategory(const ObjCCategoryImplDecl
   std::string CategoryName = OCD->getNameAsString();
   // Collect information about instance methods
   SmallVector<Selector, 16> InstanceMethodSels;
-  SmallVector<llvm::Constant*, 16> InstanceMethodTypes;
+  SmallVector<llvm::Constant*, 16> InstanceMethodConstTypes;
+  SmallVector<std::string, 16> InstanceMethodTypes;
   for (ObjCCategoryImplDecl::instmeth_iterator
        iter = OCD->instmeth_begin(), endIter = OCD->instmeth_end();
        iter != endIter ; iter++) {
     InstanceMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     CGM.getContext().getObjCEncodingForMethodDecl(*iter,TypeStr);
-    InstanceMethodTypes.push_back(MakeConstantString(TypeStr));
+    
+    InstanceMethodTypes.push_back(TypeStr);
+    InstanceMethodConstTypes.push_back(MakeConstantString(TypeStr));
   }
   
   // Collect information about class methods
   SmallVector<Selector, 16> ClassMethodSels;
-  SmallVector<llvm::Constant*, 16> ClassMethodTypes;
+  SmallVector<llvm::Constant*, 16> ClassMethodConstTypes;
+  SmallVector<std::string, 16> ClassMethodTypes;
   for (ObjCCategoryImplDecl::classmeth_iterator
        iter = OCD->classmeth_begin(), endIter = OCD->classmeth_end();
        iter != endIter ; iter++) {
     ClassMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     CGM.getContext().getObjCEncodingForMethodDecl(*iter,TypeStr);
-    ClassMethodTypes.push_back(MakeConstantString(TypeStr));
+    
+    ClassMethodTypes.push_back(TypeStr);
+    ClassMethodConstTypes.push_back(MakeConstantString(TypeStr));
   }
   
   // Collect the names of referenced protocols
@@ -2300,12 +2345,20 @@ void CGObjCNonMacBase<SelectorType>::GenerateCategory(const ObjCCategoryImplDecl
   Elements.push_back(MakeConstantString(ClassName));
   // Instance method list
   Elements.push_back(llvm::ConstantExpr::getBitCast(GenerateMethodList(
-                                                                       ClassName, CategoryName, InstanceMethodSels, InstanceMethodTypes,
+                                                                       ClassName,
+                                                                       CategoryName,
+                                                                       InstanceMethodSels,
+                                                                       InstanceMethodConstTypes,
+                                                                       InstanceMethodTypes,
                                                                        false), PtrTy));
   // Class method list
   Elements.push_back(llvm::ConstantExpr::getBitCast(GenerateMethodList(
-                                                                       ClassName, CategoryName, ClassMethodSels, ClassMethodTypes, true),
-                                                    PtrTy));
+                                                                       ClassName,
+                                                                       CategoryName,
+                                                                       ClassMethodSels,
+                                                                       ClassMethodConstTypes,
+                                                                       ClassMethodTypes,
+                                                                       true), PtrTy));
   // Protocol list
   Elements.push_back(llvm::ConstantExpr::getBitCast(
                                                     GenerateProtocolList(Protocols), PtrTy));
@@ -2381,8 +2434,6 @@ template<class SelectorType>
 llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateEmptyProtocol(
                                                                       const std::string &ProtocolName) {
   
-  printf("Generating empty protocol %s\n", ProtocolName.c_str());
-  
   SmallVector<std::string, 0> EmptyStringVector;
   SmallVector<llvm::Constant*, 0> EmptyConstantVector;
   
@@ -2416,8 +2467,6 @@ llvm::Constant *CGObjCNonMacBase<SelectorType>::GenerateEmptyProtocol(
 
 void CGObjCPointerSelectorBase::GenerateClass(const ObjCImplementationDecl *OID) {
   ASTContext &Context = CGM.getContext();
-  
-  printf("Generating class %s!\n", OID->getNameAsString().c_str());
   
   // Get the superclass name.
   const ObjCInterfaceDecl * SuperClassDecl =
@@ -2481,8 +2530,6 @@ void CGObjCPointerSelectorBase::GenerateClass(const ObjCImplementationDecl *OID)
       Offset = BaseOffset - superInstanceSize;
     }
     
-    printf("Computed ivar offset %lli for ivar %s\n", Offset, IVD->getNameAsString().c_str());
-    
     llvm::Constant *OffsetValue = llvm::ConstantInt::get(IntTy, Offset);
     // Create the direct offset value
     std::string OffsetName = GetIvarOffsetValueVariableName(ClassName,
@@ -2524,30 +2571,36 @@ void CGObjCPointerSelectorBase::GenerateClass(const ObjCImplementationDecl *OID)
   
   // Collect information about instance methods
   SmallVector<Selector, 16> InstanceMethodSels;
-  SmallVector<llvm::Constant*, 16> InstanceMethodTypes;
+  SmallVector<llvm::Constant*, 16> InstanceMethodTypesConst;
+  SmallVector<std::string, 16> InstanceMethodTypes;
   for (ObjCImplementationDecl::instmeth_iterator
        iter = OID->instmeth_begin(), endIter = OID->instmeth_end();
        iter != endIter ; iter++) {
     InstanceMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     Context.getObjCEncodingForMethodDecl((*iter),TypeStr);
-    InstanceMethodTypes.push_back(MakeConstantString(TypeStr));
+    
+    InstanceMethodTypesConst.push_back(MakeConstantString(TypeStr));
+    InstanceMethodTypes.push_back(TypeStr);
   }
   
   llvm::Constant *Properties = GeneratePropertyList(OID, InstanceMethodSels,
-                                                    InstanceMethodTypes);
+                                                    InstanceMethodTypesConst);
   
   
   // Collect information about class methods
   SmallVector<Selector, 16> ClassMethodSels;
-  SmallVector<llvm::Constant*, 16> ClassMethodTypes;
+  SmallVector<llvm::Constant*, 16> ClassMethodTypesConst;
+  SmallVector<std::string, 16> ClassMethodTypes;
   for (ObjCImplementationDecl::classmeth_iterator
        iter = OID->classmeth_begin(), endIter = OID->classmeth_end();
        iter != endIter ; iter++) {
     ClassMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     Context.getObjCEncodingForMethodDecl((*iter),TypeStr);
-    ClassMethodTypes.push_back(MakeConstantString(TypeStr));
+  
+    ClassMethodTypesConst.push_back(MakeConstantString(TypeStr));
+    ClassMethodTypes.push_back(TypeStr);
   }
   // Collect the names of referenced protocols
   SmallVector<std::string, 16> Protocols;
@@ -2569,9 +2622,15 @@ void CGObjCPointerSelectorBase::GenerateClass(const ObjCImplementationDecl *OID)
   SmallVector<llvm::Constant*, 1>  empty;
   // Generate the method and instance variable lists
   llvm::Constant *MethodList = GenerateMethodList(ClassName, "",
-                                                  InstanceMethodSels, InstanceMethodTypes, false);
+                                                  InstanceMethodSels,
+                                                  InstanceMethodTypesConst,
+                                                  InstanceMethodTypes,
+                                                  false);
   llvm::Constant *ClassMethodList = GenerateMethodList(ClassName, "",
-                                                       ClassMethodSels, ClassMethodTypes, true);
+                                                       ClassMethodSels,
+                                                       ClassMethodTypesConst,
+                                                       ClassMethodTypes,
+                                                       true);
   llvm::Constant *IvarList = GenerateIvarList(IvarNames, IvarTypes,
                                               IvarOffsets);
   // Irrespective of whether we are compiling for a fragile or non-fragile ABI,
@@ -2668,8 +2727,6 @@ template<class SelectorType>
 llvm::Constant *
 CGObjCNonMacBase<SelectorType>::EmitClassRef(const std::string &className,
                                              bool isMeta) {
-  printf("Emiting class ref for class %s%s\n", className.c_str(), isMeta ? "[meta]" : "");
-  
   std::string symbolRef = GetClassRefSymbolName(className, isMeta);
   // Don't emit two copies of the same symbol
   if (TheModule.getGlobalVariable(symbolRef))
@@ -2932,16 +2989,13 @@ GenerateMessageSendSuper(CodeGenFunction &CGF,
                                                   llvm::GlobalValue::InternalLinkage, ".objc_metaclass_ref" +
                                                   Class->getNameAsString(), NULL, &TheModule);
       }
-      printf("Meta class ptr.....\n");
       ReceiverClass = MetaClassPtrAlias;
     } else {
       if (!ClassPtrAlias) {
-        printf("Getting class ptr alias for %s\n", Class->getNameAsString().c_str());
         ClassPtrAlias = new llvm::GlobalAlias(IdTy,
                                               llvm::GlobalValue::InternalLinkage, ".objc_class_ref" +
                                               Class->getNameAsString(), NULL, &TheModule);
       }
-      printf("Class ptr alias(%p) %s.....\n", ClassPtrAlias, Class->getNameAsString().c_str());
       ReceiverClass = ClassPtrAlias;
     }
   }
@@ -3768,10 +3822,12 @@ llvm::StructType *CGObjCPointerSelectorBase::GetMethodStructureType(void) {
 void
 CGObjCPointerSelectorBase::GenerateMethodStructureElements(std::vector<llvm::Constant*> &Elements,
                                                            llvm::Constant *Method,
-                                                           llvm::Constant *SelectorName,
-                                                           llvm::Constant *MethodTypes) {
-  Elements.push_back(SelectorName);
-  Elements.push_back(MethodTypes);
+                                                           llvm::Constant *SelectorNameConst,
+                                                           const std::string &SelectorName,
+                                                           llvm::Constant *MethodTypesConst,
+                                                           const std::string &SelectorTypes) {
+  Elements.push_back(SelectorNameConst);
+  Elements.push_back(MethodTypesConst);
   Method = llvm::ConstantExpr::getBitCast(Method, IMPTy);
   Elements.push_back(Method);
 }
@@ -3790,15 +3846,21 @@ llvm::StructType * CGObjCKern::GetMethodStructureType(void) {
 void
 CGObjCKern::GenerateMethodStructureElements(std::vector<llvm::Constant*> &Elements,
                                             llvm::Constant *Method,
-                                            llvm::Constant *SelectorName,
-                                            llvm::Constant *MethodTypes) {
+                                            llvm::Constant *SelectorNameConst,
+                                            const std::string &SelectorName,
+                                            llvm::Constant *MethodTypesConst,
+                                            const std::string &SelectorTypes) {
+  
+  // This forces the emission of the selector, hence performing a type check
+  GetSelectorByName(SelectorName, SelectorTypes);
+  
   llvm::Constant *ZeroSelector = llvm::ConstantInt::get(SelectorTy, 0);
   llvm::Constant *ZeroVersion = llvm::ConstantInt::get(IntTy, 0);
   
   Method = llvm::ConstantExpr::getBitCast(Method, IMPTy);
   Elements.push_back(Method);
-  Elements.push_back(SelectorName);
-  Elements.push_back(MethodTypes);
+  Elements.push_back(SelectorNameConst);
+  Elements.push_back(MethodTypesConst);
   Elements.push_back(ZeroSelector); // a 0 of SelectorType
   Elements.push_back(ZeroVersion);
 }
@@ -3918,7 +3980,6 @@ llvm::Constant *CGObjCPointerSelectorBase::GenerateClassStructure(
   // be ignored.
   
   
-  printf("Generating class structure %s\n", Name);
   llvm::StructType *ClassTy = llvm::StructType::get(
                                                     PtrToInt8Ty,        // isa
                                                     PtrToInt8Ty,        // super_class
@@ -3999,8 +4060,6 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
                                                    llvm::Constant *Properties,
                                                    bool isMeta) {
   
-  printf("ObjCKern::Generating class structure %s\n", Name);
-  
   // Fill in the structure
   std::vector<llvm::Constant*> Elements;
   
@@ -4008,7 +4067,6 @@ llvm::Constant *CGObjCKern::GenerateClassStructure(
   Elements.push_back(llvm::ConstantExpr::getBitCast(MetaClass, IdTy));
   
   // .superclass
-  SuperClass->getType()->dump();
   Elements.push_back(llvm::ConstantExpr::getBitCast(SuperClass, IdTy));
   
   // .dtable
@@ -4090,9 +4148,6 @@ llvm::Constant *CGObjCKern::GetClassStructureRef(const std::string &name,
 		std::string SuperclassSymbolName = GetClassSymbolName(name, isMeta);
 		
 		Class = TheModule.getGlobalVariable(SuperclassSymbolName);
-		printf("Superclass %ssymbol: %s\n\n", isMeta ? "meta " : "",
-           SuperclassSymbolName.c_str());
-		
 		if (Class == NULL){
 			Class = new llvm::GlobalVariable(TheModule,
                                        PtrTy,
@@ -4107,8 +4162,6 @@ llvm::Constant *CGObjCKern::GetClassStructureRef(const std::string &name,
 
 void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
   ASTContext &Context = CGM.getContext();
-  
-  printf("\nObjCKern::Generating class %s!\n", OID->getNameAsString().c_str());
   
   // Get the superclass name.
   const ObjCInterfaceDecl * SuperClassDecl = OID->getClassInterface()->getSuperClass();
@@ -4213,30 +4266,36 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
   
   // Collect information about class methods
   SmallVector<Selector, 16> ClassMethodSels;
-  SmallVector<llvm::Constant*, 16> ClassMethodTypes;
+  SmallVector<llvm::Constant*, 16> ClassMethodTypesConst;
+  SmallVector<std::string, 16> ClassMethodTypes;
   for (ObjCImplementationDecl::classmeth_iterator
        iter = OID->classmeth_begin(), endIter = OID->classmeth_end();
        iter != endIter ; iter++) {
     ClassMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     Context.getObjCEncodingForMethodDecl((*iter),TypeStr);
-    ClassMethodTypes.push_back(MakeConstantString(TypeStr));
+    
+    ClassMethodTypes.push_back(TypeStr);
+    ClassMethodTypesConst.push_back(MakeConstantString(TypeStr));
   }
   
   // Collect information about instance methods
   SmallVector<Selector, 16> InstanceMethodSels;
-  SmallVector<llvm::Constant*, 16> InstanceMethodTypes;
+  SmallVector<llvm::Constant*, 16> InstanceMethodTypesConst;
+  SmallVector<std::string, 16> InstanceMethodTypes;
   for (ObjCImplementationDecl::instmeth_iterator
        iter = OID->instmeth_begin(), endIter = OID->instmeth_end();
        iter != endIter ; iter++) {
     InstanceMethodSels.push_back((*iter)->getSelector());
     std::string TypeStr;
     Context.getObjCEncodingForMethodDecl((*iter),TypeStr);
-    InstanceMethodTypes.push_back(MakeConstantString(TypeStr));
+    
+    InstanceMethodTypes.push_back(TypeStr);
+    InstanceMethodTypesConst.push_back(MakeConstantString(TypeStr));
   }
   
   llvm::Constant *Properties = GeneratePropertyList(OID, InstanceMethodSels,
-                                                    InstanceMethodTypes);
+                                                    InstanceMethodTypesConst);
   
   // Collect the names of referenced protocols
   SmallVector<std::string, 16> Protocols;
@@ -4245,16 +4304,6 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
        E = ClassDecl->protocol_end(); I != E; ++I)
     Protocols.push_back((*I)->getNameAsString());
   
-  /*
-   // Get the superclass pointer. TODO use pointer to global var
-   llvm::Constant *SuperClass;
-   if (!SuperClassName.empty()) {
-   SuperClass = MakeConstantString(SuperClassName, ".super_class_name");
-   } else {
-   SuperClass = llvm::ConstantPointerNull::get(PtrToInt8Ty);
-   }
-   */
-  
   // Empty vector used to construct empty method lists
   SmallVector<llvm::Constant*, 1>  empty;
   
@@ -4262,11 +4311,13 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
   llvm::Constant *MethodList = GenerateMethodList(ClassName, // Class
                                                   "", // Category
                                                   InstanceMethodSels, // Sels
-                                                  InstanceMethodTypes, // Types
+                                                  InstanceMethodTypesConst, // Types
+                                                  InstanceMethodTypes, // Types as strings
                                                   false); // Class Method list?
   llvm::Constant *ClassMethodList = GenerateMethodList(ClassName,
                                                        "",
                                                        ClassMethodSels,
+                                                       ClassMethodTypesConst,
                                                        ClassMethodTypes,
                                                        true);
   llvm::Constant *IvarList = GenerateIvarList(IvarNames,
@@ -4303,9 +4354,6 @@ void CGObjCKern::GenerateClass(const ObjCImplementationDecl *OID) {
     // Get the correct ivar field
     llvm::Constant *offsetValue = llvm::ConstantExpr::getGetElementPtr(IvarList,
                                                                        offsetPointerIndexes);
-    
-    printf("\nOffset value for ivar %s: \n", IVD->getNameAsString().c_str());
-    offsetValue->dump();
     
     // Get the existing variable, if one exists.
     llvm::GlobalVariable *offset = TheModule.getNamedGlobal(Name);
@@ -4424,23 +4472,22 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
          e = Types.end() ; i!=e ; i++) {
       
       if (i != Types.begin()){
-        // TODO make it an error
         // We only support one type in kernel
-		printf("Trying to register selector %s for the second time with different"
-			   " type. Initial types: %s Types now: %s\n",
-			   iter->first.getAsString().c_str(),
-			   Types.begin()->first.c_str(), i->first.c_str());
-        llvm_unreachable("Same selector with different selectors isn't supported"
-						 " in the kernel runtime.");
+        llvm::outs() << "Trying to register selector '" <<
+          iter->first <<
+          "' for the second time with different type. Initial types: " <<
+          Types.begin()->first << " Types now: " << i->first << "\n";
+        CGM.Error(clang::SourceLocation(),
+                  "Same selector with different selectors isn't supported"
+                  " in the kernel runtime.");
       }
       
       if (i->first.empty())
         llvm_unreachable("Selector has no type!");
       
       
-      std::string Name = iter->first.getAsString();
+      std::string Name = iter->first;
       std::string Types = i->first;
-      printf("Creating a selector reference [%s; %s]\n", Name.c_str(), i->first.c_str());
       
       Elements.push_back(MakeConstantString(Name));
       Elements.push_back(MakeConstantString(Types));
@@ -4513,8 +4560,6 @@ llvm::Function *CGObjCKern::ModuleInitFunction(){
 #endif
   
   CGM.AddUsedGlobal(ModuleList);
-  
-  printf("============================creating module structure for %s\n", TheModule.getModuleIdentifier().c_str());
   
 #if __APPLE__
 	// TODO - actually return NULL and let the loader handle this.
