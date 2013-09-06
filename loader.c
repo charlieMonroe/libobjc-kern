@@ -387,26 +387,6 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	}
 	objc_dealloc(classes, M_CLASS_TYPE);
 	
-	
-	/*
-	 * Check the hooks and restore them with the default ones.
-	 */
-	if (objc_module_for_pointer(objc_proxy_lookup) == kernel_module){
-		objc_proxy_lookup = objc_proxy_lookup_default;
-	}
-	if (objc_module_for_pointer(__objc_msg_forward3) == kernel_module){
-		__objc_msg_forward3 = objc_msg_forward3_default;
-	}
-	if (objc_module_for_pointer(objc_plane_lookup) == kernel_module){
-		objc_plane_lookup = objc_msg_lookup_default;
-	}
-	if (objc_module_for_pointer(objc_class_lookup_hook) == kernel_module){
-		objc_class_lookup_hook = __objc_class_lookup_default_hook;
-	}
-	if (objc_module_for_pointer(objc_unloaded_module_method) == kernel_module){
-		objc_unloaded_module_method = (IMP)__objc_unloaded_module_implementation_called;
-	}
-	
 	return YES;
 }
 
@@ -459,6 +439,25 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	BOOL result = _objc_unload_modules(begin, end, kernel_module);
 	MOD_SUNLOCK;
 	
+  /*
+	 * Check the hooks and restore them with the default ones.
+	 */
+	if (objc_module_for_pointer(objc_proxy_lookup) == kernel_module){
+		objc_proxy_lookup = objc_proxy_lookup_default;
+	}
+	if (objc_module_for_pointer(__objc_msg_forward3) == kernel_module){
+		__objc_msg_forward3 = objc_msg_forward3_default;
+	}
+	if (objc_module_for_pointer(objc_plane_lookup) == kernel_module){
+		objc_plane_lookup = objc_msg_lookup_default;
+	}
+	if (objc_module_for_pointer(objc_class_lookup_hook) == kernel_module){
+		objc_class_lookup_hook = __objc_class_lookup_default_hook;
+	}
+	if (objc_module_for_pointer(objc_unloaded_module_method) == kernel_module){
+		objc_unloaded_module_method = (IMP)__objc_unloaded_module_implementation_called;
+	}
+  
 	objc_classes_dump();
 	
 	return result;
