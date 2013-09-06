@@ -32,6 +32,7 @@ You will find a few subdirectories in `libobj-kern`:
 - __kernobjc__ - a folder with public headers.
 - __LanguageKitRuntime__ - the runtime from GNUstep's LanguageKit, slightly modified.
 - __os__ - a folder with `kernel.h` and `user.h` files that are used on whether the runtime is being compiled for the kernel space or user space (I've been testing some features in user land since the debugging is much easier).
+- __Smalltalk__ - a folder containing stuff necessary to run Smalltalk in the kernel (just like the LanguageKit's runtime, slightly modified version of the GNUstep's code).
 - __test__ - a module that tests basic runtime capabilities.
 - __test-foundation__ - a test module that tests that the Foundation classes work.
 
