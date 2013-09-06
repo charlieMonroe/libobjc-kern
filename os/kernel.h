@@ -140,12 +140,12 @@ static inline void *objc_module_for_pointer(void *ptr){
 
 /* Returns 1 for YES, 0 for NO. */
 static inline int objc_pointer_is_from_module(void *ptr, void *module){
-	linker_file_t result = module_file(module);
-	if (result == NULL){
+	linker_file_t file = module_file(module);
+	if (file == NULL){
 		return 0;
 	}
-	return (result->address >= file->address
-			&& result->address < (file->address + file->size));
+	return (ptr >= file->address
+			&& ptr < (file->address + file->size));
 }
 
 
