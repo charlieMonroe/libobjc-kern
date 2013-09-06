@@ -140,7 +140,7 @@ static inline void *objc_module_for_pointer(void *ptr){
 
 /* Returns 1 for YES, 0 for NO. */
 static inline int objc_pointer_is_from_module(void *ptr, void *module){
-	linker_file_t result = module_getfile(module);
+	linker_file_t result = module_file(module);
 	if (result == NULL){
 		return 0;
 	}
