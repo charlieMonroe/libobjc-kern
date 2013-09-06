@@ -144,8 +144,8 @@ static inline int objc_pointer_is_from_module(void *ptr, void *module){
 	if (file == NULL){
 		return 0;
 	}
-	return (ptr >= file->address
-			&& ptr < (file->address + file->size));
+	return ((caddr_t)ptr >= file->address
+			&& (caddr_t)ptr < (file->address + file->size));
 }
 
 
