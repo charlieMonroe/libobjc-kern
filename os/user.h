@@ -125,3 +125,8 @@ static inline void *objc_module_for_pointer(void *ptr){
 	return NULL;
 }
 
+/* Returns 1 for YES, 0 for NO. */
+static inline int objc_pointer_is_from_module(void *ptr, void *module){
+	return 0;
+}
+

@@ -23,14 +23,14 @@ static inline size_t module_get_size(void *module){
 }
 static inline BOOL module_contains_IMP(void *module, void *IMP){
 	return (IMP >= module_get_start(module))
-			&& (IMP < module_get_start(module) + module_get_size(module));
+	&& (IMP < module_get_start(module) + module_get_size(module));
 }
 #else
 static inline BOOL module_contains_IMP(void *module, void *IMP){
 	struct module *kernel_module = (struct module*)module;
 	struct linker_file *file = module_file(kernel_module);
 	return ((char*)IMP >= file->address)
-			&& ((char*)IMP < file->address + file->size);
+	&& ((char*)IMP < file->address + file->size);
 }
 #endif
 
@@ -54,7 +54,7 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 	}
 	
 	objc_debug_log("Unloading IMPs in class %s\n", class_getName(cl));
-
+	
 	for (objc_method_list *list = cl->methods; list != NULL; list = list->next){
 		objc_debug_log("\t [%p]\n", list);
 		for (int i = 0; i < list->size; ++i){
@@ -64,7 +64,7 @@ _objc_unload_IMPs_in_class(Class cl, void *kernel_module){
 				IMP old_imp = m->implementation;
 				m->implementation = objc_unloaded_module_method;
 				
-				/* Since the selector name and types can actually be also 
+				/* Since the selector name and types can actually be also
 				 * allocated in the module, we better update the strings
 				 * as well.
 				 */
@@ -119,7 +119,7 @@ _objc_unload_classes_in_branch(Class branch, void *kernel_module)
 		return;
 	}
 	
-	/* It is important to save the next pointer before calling ourselves 
+	/* It is important to save the next pointer before calling ourselves
 	 * recursively since it is possible the class will be already deallocated
 	 * when we return back to this function.
 	 */
@@ -182,7 +182,7 @@ _objc_can_unload_protocol(Protocol *p, Class root_class, void *kernel_module)
 {
 	for (Class c = root_class; c != Nil; c = c->sibling_list){
 		if (c->kernel_module == kernel_module){
-			/* 
+			/*
 			 * We can safely assume that if the class is from this module,
 			 * it doesn't matter if the protocol is adopted on this class
 			 * or its subclasses since we've already run the class check.
@@ -237,7 +237,7 @@ _objc_module_check_dependencies_for_unloading(struct objc_loader_module *module,
 		}
 	}
 	
-	/* 
+	/*
 	 * Now try protocols. These are a little bit harder. We need to go through
 	 * all the classes and see if any of the classes adopts the protocol since
 	 * protocol adoption can be done at run-time.
@@ -256,7 +256,7 @@ _objc_module_check_dependencies_for_unloading(struct objc_loader_module *module,
 
 PRIVATE void
 _objc_load_module(struct objc_loader_module *module,
-							   void *kernel_module)
+				  void *kernel_module)
 {
 	if (!objc_runtime_initialized){
 		objc_runtime_init();
@@ -334,8 +334,8 @@ PRIVATE void _objc_load_modules(struct objc_loader_module **begin,
 
 PRIVATE BOOL
 _objc_unload_modules(struct objc_loader_module **begin,
-								  struct objc_loader_module **end,
-								  void *kernel_module)
+					 struct objc_loader_module **end,
+					 void *kernel_module)
 {
 	OBJC_LOCK_RUNTIME_FOR_SCOPE();
 	
@@ -353,7 +353,7 @@ _objc_unload_modules(struct objc_loader_module **begin,
 	
 	objc_debug_log("No dependencies, unloading classes...\n");
 	
-	/* 
+	/*
 	 * At this point, we can be certain that it is safe to unload all the
 	 * classes and protocols.
 	 */
@@ -439,25 +439,25 @@ _objc_unload_kernel_module(struct module *kernel_module){
 	BOOL result = _objc_unload_modules(begin, end, kernel_module);
 	MOD_SUNLOCK;
 	
-  /*
+	/*
 	 * Check the hooks and restore them with the default ones.
 	 */
-	if (objc_module_for_pointer(objc_proxy_lookup) == kernel_module){
+	if (objc_pointer_is_from_module(objc_proxy_lookup, kernel_module)){
 		objc_proxy_lookup = objc_proxy_lookup_default;
 	}
-	if (objc_module_for_pointer(__objc_msg_forward3) == kernel_module){
+	if (objc_pointer_is_from_module(__objc_msg_forward3, kernel_module)){
 		__objc_msg_forward3 = objc_msg_forward3_default;
 	}
-	if (objc_module_for_pointer(objc_plane_lookup) == kernel_module){
+	if (objc_pointer_is_from_module(objc_plane_lookup, kernel_module)){
 		objc_plane_lookup = objc_msg_lookup_default;
 	}
-	if (objc_module_for_pointer(objc_class_lookup_hook) == kernel_module){
+	if (objc_pointer_is_from_module(objc_class_lookup_hook, kernel_module)){
 		objc_class_lookup_hook = __objc_class_lookup_default_hook;
 	}
-	if (objc_module_for_pointer(objc_unloaded_module_method) == kernel_module){
+	if (objc_pointer_is_from_module(objc_unloaded_module_method, kernel_module)){
 		objc_unloaded_module_method = (IMP)__objc_unloaded_module_implementation_called;
 	}
-  
+	
 	objc_classes_dump();
 	
 	return result;
