@@ -208,7 +208,7 @@ void CodeGenBlock::SetReturn(Value* RetVal)
 	/// simply throw the actual return value.
 	llvm::Value *returnFn = CGM->TheModule->getOrInsertFunction("objc_exception_throw",
 		types.idTy, (void *)0);
-	Builder.CreateCall2(returnFn, Builder.CreateBitCast(RetVal, types.idTy));
+	Builder.CreateCall1(returnFn, Builder.CreateBitCast(RetVal, types.idTy));
 }
 
 void CodeGenBlock::SetBlockReturn(Value* RetVal) 
