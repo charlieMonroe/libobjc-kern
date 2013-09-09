@@ -28,3 +28,6 @@ x86
 # SVN
 .svn
 build
+
+# Smalltalk
+*.bc
