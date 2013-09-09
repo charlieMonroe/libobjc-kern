@@ -24,10 +24,10 @@ I strongly discourage anyone from using protocols within the kernel as well sinc
 
 ### Installing the runtime
 
-To install the runtime you need to have both `git` and `subversion` installed (the subversion is for getting llvm+clang). Enter the folder you want to install the runtime to and use `git clone https://github.com/charlieMonroe/libobjc-kern.git` - this will clone the repository into a `libobj-kern` folder.
+To install the runtime you need to have both `git` and `subversion` installed (the subversion is for getting llvm+clang, unless you are going to use the clang binary included). Enter the folder you want to install the runtime to and use `git clone https://github.com/charlieMonroe/libobjc-kern.git` - this will clone the repository into a `libobj-kern` folder.
 
 You will find a few subdirectories in `libobj-kern`:
-- __clang__ - this contains some source files from clang that needed to be modified.
+- __clang__ - this contains some source files from clang that needed to be modified as well as a pre-built clang binary.
 - __Foundation__ - a few classes from the Foundation framework that you can used for compatibility reasons. It gets loaded as a separate module, so you don't need to use them.
 - __kernobjc__ - a folder with public headers.
 - __LanguageKitRuntime__ - the runtime from GNUstep's LanguageKit, slightly modified.
@@ -36,11 +36,13 @@ You will find a few subdirectories in `libobj-kern`:
 - __test__ - a module that tests basic runtime capabilities.
 - __test-foundation__ - a test module that tests that the Foundation classes work.
 
-First, you will need to build your own compiler. Use this guide to check out clang: http://clang.llvm.org/get_started.html - but don't compile it yet, since you need to update the source with files in the `libobjc-kern/clang` directory first.
+You need to be using a special build of clang. There is a pre-built binary included (`clang/clang.tgz` - you need to unarchive it), built on FreeBSD 10 - it may not work on your system. If it works, you can skip on the next two paragraphs.
+
+If it doesn't work on your system, you need to compile it. Use this guide to check out clang: http://clang.llvm.org/get_started.html - but don't compile it yet, since you need to update the source with files in the `libobjc-kern/clang` directory first.
 
 There's a `Install.sh` script that installs these files, however, you may need to modify some of them since the LLVM project changes quite quickly and they may be already dated. The installation script assumes that there is a `llvm` directory in the same directory as the `libobjkern` directory, however, you can specify your own path as an argument.
 
-Unfortunately, you need to go further than just building the compiler, you need to replace the default `cc` with it, and not just by defining the `CC` env variable as that applies only to `.c` files according to the FreeBSD kernel module makefiles - everything else falls back to `cc` - the easiest way is to do the following:
+Unfortunately, you need to go further than just building the compiler, you need to replace the default `cc` with it, and not just by defining the `CC` env variable as that applies only to `.c` files according to the FreeBSD kernel module makefiles (which `.m` files aren't) - everything else falls back to `cc` - the easiest way is to do the following:
 
 ```
 sudo mv /usr/bin/cc /usr/bin/_cc
@@ -205,6 +207,10 @@ After this, the runtime goes through all the methods on the classes left and see
 This behavior can be modified using a `objc_unloaded_module_method` hook that allows you to specify your own function to be called when an unloaded method is called.
 
 Note that the runtime automatically restores default hooks when you unload a module that implements these hooks.
+
+```
+IMPORTANT: Make sure that no instances of the classes implemented in this module are left behind! The runtime can check all the classes, but cannot be responsible for any instances. If there are some globals, make sure you release them.
+```
 
 ### Freeing memory from `*_copy*` functions
 

@@ -1,0 +1,24 @@
+{
+   NSViewNotSizable     = 0;
+   NSViewMinXMargin     = 1;
+   NSViewWidthSizable   = 2;
+   NSViewMaxXMargin     = 4;
+   NSViewMinYMargin     = 8;
+   NSViewHeightSizable  = 16;
+   NSViewMaxYMargin     = 32;
+
+   NSUTF8StringEncoding = 4;
+
+   NSItalicFontMask = 1;
+   NSBoldFontMask = 2;
+   NSUnboldFontMask = 4;
+   NSNonStandardCharacterSetFontMask = 8;
+   NSNarrowFontMask = 16;
+   NSExpandedFontMask = 32;
+   NSCondensedFontMask = 64;
+   NSSmallCapsFontMask = 128;
+   NSPosterFontMask = 256;
+   NSCompressedFontMask = 512;
+   NSFixedPitchFontMask = 1024;
+   NSUnitalicFontMask = 16777216;
+}
