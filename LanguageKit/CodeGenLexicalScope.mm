@@ -621,7 +621,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	/// Type of integers that are used in the buffer type
 	llvm::Type *SetJmpBufferIntTy;
 	
-	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(Context);
+	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(CGM->Context);
 	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
 	
 	/// A structure defining the exception data type
@@ -659,7 +659,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	
 	// Allocate memory for the setjmp buffer.  This needs to be kept
 	// live throughout the try and catch blocks.
-	llvm::Value *ExceptionData = Builder.CreateAlloca(ExceptionDataTy,
+	llvm::Value *ExceptionData = Builder.CreateAlloca(ExceptionDataTy, NULL,
 							  "exceptiondata.ptr");
 	
 	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
