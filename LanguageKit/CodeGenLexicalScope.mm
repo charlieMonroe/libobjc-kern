@@ -663,26 +663,24 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
 	Function *ExceptionTryEnterFn = cast<Function>(
 						   TheModule->getOrInsertFunction("objc_exception_try_enter",
-										  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));	
+										  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
 	// Enter a try block:
 	//  - Call objc_exception_try_enter to push ExceptionData on top of
 	//    the EH stack.
-	CGF.EmitNounwindRuntimeCall(ExceptionTryEnterFn,
-				    ExceptionData);
+	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
 	llvm::Constant *Zero = llvm::ConstantInt::get(Int32Ty, 0);
 	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
 	llvm::Value *SetJmpBuffer =
-	CGF.Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
+	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
 	
 	Function *SetJmpFn = cast<Function>(
 						       TheModule->getOrInsertFunction("setjmp",
 										      Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
-	CGF.EmitNounwindRuntimeCall(SetJmpFn, SetJmpBuffer,
-				    "setjmp_result");
+	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
 	SetJmpResult->setCanReturnTwice();
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
