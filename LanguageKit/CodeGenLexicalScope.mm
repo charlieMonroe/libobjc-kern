@@ -718,6 +718,9 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		}
 	}
 	
+	ExceptionBuilder.CreateBr(CleanupBB);
+	ExceptionBuilder.ClearInsertionPoint();
+	
 	/*
 	ExceptionBB =
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
