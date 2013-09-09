@@ -685,11 +685,11 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
-	llvm::BasicBlock *TryBlock = CGF.createBasicBlock("try");
-	llvm::BasicBlock *TryHandler = CGF.createBasicBlock("try.handler");
+	llvm::BasicBlock *TryBlock = BasicBlock::Create(CGM->Context, "try", CurrentFunction);
+	llvm::BasicBlock *TryHandler = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
 	llvm::Value *DidCatch =
-	CGF.Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
-	CGF.Builder.CreateCondBr(DidCatch, TryHandler, TryBlock);
+	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
+	Builder.CreateCondBr(DidCatch, TryHandler, TryBlock);
 	
 	
 	/*
