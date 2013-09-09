@@ -621,6 +621,11 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	/// Type of integers that are used in the buffer type
 	llvm::Type *SetJmpBufferIntTy;
 	
+	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
+							    Types.ConvertType(CGM.getContext().LongTy));
+	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
+							    Types.ConvertType(CGM.getContext().IntTy));
+	
 	/// A structure defining the exception data type
 	llvm::StructType *ExceptionDataTy = NULL;
 	if (llvm::Module::Pointer64){
@@ -638,8 +643,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		SetJmpBufferSize = (18);
 		SetJmpBufferIntTy = IntTy;
 	}else{
-		CGM.Error(clang::SourceLocation(),
-			  "Unknown target and hence unknown setjmp buffer size.");
+		LOG("Unknown target and hence unknown setjmp buffer size.");
 	}
 	
 	// Exceptions
