@@ -611,6 +611,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	}
 	RetBB = llvm::BasicBlock::Create(CGM->Context, "finish", CurrentFunction);
 
+	NSLog(@"%@ - %@\n", functionName, arguments);
 	
 #ifndef __APPLE__
 	#define __APPLE__ 0
@@ -689,12 +690,12 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
 	llvm::BasicBlock *TryBlock = BasicBlock::Create(CGM->Context, "try", CurrentFunction);
-	llvm::BasicBlock *TryHandler = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
+	ExceptionBB = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
-	Builder.CreateCondBr(DidCatch, TryHandler, TryBlock);
+	Builder.CreateCondBr(DidCatch, ExceptionBB, TryBlock);
 	
-	CGBuilder ExceptionBuilder(TryHandler);
+	CGBuilder ExceptionBuilder(ExceptionBB);
 	
 	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
