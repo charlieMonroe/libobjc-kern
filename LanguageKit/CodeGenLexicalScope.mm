@@ -621,12 +621,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	/// Type of integers that are used in the buffer type
 	llvm::Type *SetJmpBufferIntTy;
 	
-	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
-							    types.ConvertType(Context.LongTy));
-	llvm::IntegerType *IntTy = cast<llvm::IntegerType>(
-							    types.ConvertType(Context.IntTy));
-	llvm::IntegerType *Int8Ty = cast<llvm::IntegerType>(
-							   types.ConvertType(Context.Int8Ty));
+	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(Context);
 	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
 	
 	/// A structure defining the exception data type
@@ -637,14 +632,14 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		// On OS X it's (37 * int), though.
 		#if __APPLE__
 			SetJmpBufferSize = ((9 * 2) + 3 + 16); // From #include <setjmp.h>
-			SetJmpBufferIntTy = IntTy;
+			SetJmpBufferIntTy = types.intTy;
 		#else
 			SetJmpBufferSize = 12;
-			SetJmpBufferIntTy = LongTy;
+			SetJmpBufferIntTy = types.longTy;
 		#endif
 	}else if (llvm::Module::Pointer32){
 		SetJmpBufferSize = (18);
-		SetJmpBufferIntTy = IntTy;
+		SetJmpBufferIntTy = types.intTy;
 	}else{
 		LOG("Unknown target and hence unknown setjmp buffer size.");
 	}
@@ -677,7 +672,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
-	llvm::Constant *Zero = llvm::ConstantInt::get(IntTy, 0);
+	llvm::Constant *Zero = llvm::ConstantInt::get(types.intTy, 0);
 	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
 	llvm::Value *SetJmpBuffer =
 	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
