@@ -622,9 +622,9 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	llvm::Type *SetJmpBufferIntTy;
 	
 	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
-							    Types.ConvertType(Context.LongTy));
+							    types.ConvertType(Context.LongTy));
 	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
-							    Types.ConvertType(Context.IntTy));
+							    types.ConvertType(Context.IntTy));
 	
 	/// A structure defining the exception data type
 	llvm::StructType *ExceptionDataTy = NULL;
