@@ -697,7 +697,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	CGBuilder ExceptionBuilder(TryHandler);
 	
 	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
-	llvm::Value *GEPIndexes[] = { Zero, Zero, Two };
+	GEPIndexes[] = { Zero, Zero, Two };
 	RetVal = ExceptionBuilder.CreateGEP(ExceptionData, GEPIndexes, "exc_obj");
 	
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
