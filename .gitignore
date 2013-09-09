@@ -24,3 +24,7 @@ export_syms
 machine
 @
 x86
+
+# SVN
+.svn
+build
