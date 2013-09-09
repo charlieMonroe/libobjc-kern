@@ -574,6 +574,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		}
 		Builder.CreateStore(Constant::getNullValue(retTy), RetVal);
 	}
+	
 	/// Handle returns
 
 	// Create the real return handler
@@ -689,11 +690,10 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
-	llvm::BasicBlock *TryBlock = BasicBlock::Create(CGM->Context, "try", CurrentFunction);
 	ExceptionBB = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
-	Builder.CreateCondBr(DidCatch, ExceptionBB, TryBlock);
+	Builder.CreateCondBr(DidCatch, ExceptionBB, entryBB);
 	
 	CGBuilder ExceptionBuilder(ExceptionBB);
 	
