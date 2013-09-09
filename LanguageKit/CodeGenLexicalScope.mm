@@ -722,8 +722,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	ExceptionBuilder.ClearInsertionPoint();
 	
 	ReturnBuilder.SetInsertPoint(RetBB);
-	ReturnBuilder.CreateCondBr(ReturnBuilder.CreateLoad(inException),
-				   EHBlock, realRetBB);
+	ReturnBuilder.CreateBr(realRetBB);
 	/*
 	ExceptionBB =
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
