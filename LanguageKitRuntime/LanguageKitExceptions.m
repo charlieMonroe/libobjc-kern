@@ -220,15 +220,6 @@ void __LanguageKitTestNonLocalReturn(void *context,
 
 #endif
 
-void __LanguageKitTestNonLocalReturn(void *context,
-				     void *exception,
-				     void **retval);
-void __LanguageKitTestNonLocalReturn(void *context,
-				     void *exception,
-				     void **retval){
-	
-}
-
 void __LanguageKitInvalidTypeEncoding(id self, SEL cmd);
 void __LanguageKitInvalidTypeEncoding(id self, SEL cmd)
 {
