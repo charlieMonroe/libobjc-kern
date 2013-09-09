@@ -30,7 +30,8 @@ You will find a few subdirectories in `libobj-kern`:
 - __clang__ - this contains some source files from clang that needed to be modified as well as a pre-built clang binary.
 - __Foundation__ - a few classes from the Foundation framework that you can used for compatibility reasons. It gets loaded as a separate module, so you don't need to use them.
 - __kernobjc__ - a folder with public headers.
-- __LanguageKitRuntime__ - the runtime from GNUstep's LanguageKit, slightly modified.
+- __LanguageKitRuntime__ - the runtime from Etoile's LanguageKit, slightly modified.
+- __LanguageKit__ - a clone of the LanguageKit from Etoile, modified to ... (TODO, not finished)
 - __os__ - a folder with `kernel.h` and `user.h` files that are used on whether the runtime is being compiled for the kernel space or user space (I've been testing some features in user land since the debugging is much easier).
 - __Smalltalk__ - a folder containing stuff necessary to run Smalltalk in the kernel (just like the LanguageKit's runtime, slightly modified version of the GNUstep's code).
 - __test__ - a module that tests basic runtime capabilities.
