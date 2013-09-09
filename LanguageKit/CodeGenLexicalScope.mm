@@ -623,8 +623,11 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	
 	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
 							    types.ConvertType(Context.LongTy));
-	llvm::IntegerType *LongTy = cast<llvm::IntegerType>(
+	llvm::IntegerType *IntTy = cast<llvm::IntegerType>(
 							    types.ConvertType(Context.IntTy));
+	llvm::IntegerType *Int8Ty = cast<llvm::IntegerType>(
+							   types.ConvertType(Context.Int8Ty));
+	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
 	
 	/// A structure defining the exception data type
 	llvm::StructType *ExceptionDataTy = NULL;
@@ -647,7 +650,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	}
 	
 	// Exceptions
-	llvm::Type *StackPtrTy = llvm::ArrayType::get(CGM->Int8PtrTy, 4);
+	llvm::Type *StackPtrTy = llvm::ArrayType::get(Int8PtrTy, 4);
 	
 	llvm::Type *SetJmpType = llvm::ArrayType::get(SetJmpBufferIntTy,
 						      SetJmpBufferSize);
@@ -661,7 +664,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	
 	// Allocate memory for the setjmp buffer.  This needs to be kept
 	// live throughout the try and catch blocks.
-	llvm::Value *ExceptionData = CGF.CreateTempAlloca(ExceptionDataTy,
+	llvm::Value *ExceptionData = Builder.CreateAlloca(ExceptionDataTy,
 							  "exceptiondata.ptr");
 	
 	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
@@ -674,14 +677,14 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
-	llvm::Constant *Zero = llvm::ConstantInt::get(Int32Ty, 0);
+	llvm::Constant *Zero = llvm::ConstantInt::get(IntTy, 0);
 	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
 	llvm::Value *SetJmpBuffer =
 	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
 	
 	Function *SetJmpFn = cast<Function>(
-						       TheModule->getOrInsertFunction("setjmp",
-										      Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
+				       TheModule->getOrInsertFunction("setjmp",
+								      Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
 	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
