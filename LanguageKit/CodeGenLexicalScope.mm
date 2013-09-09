@@ -645,15 +645,16 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	}
 	
 	// Exceptions
-	llvm::Type *StackPtrTy = llvm::ArrayType::get(Int8PtrTy, 4);
-	
 	llvm::Type *SetJmpType = llvm::ArrayType::get(SetJmpBufferIntTy,
 						      SetJmpBufferSize);
 	
 	ExceptionDataTy =
 	llvm::StructType::create("struct._objc_exception_data",
 				 SetJmpType,
-				 StackPtrTy,
+				 Int8PtrTy, // Next
+				 Int8PtrTy, // Exception object
+				 Int8PtrTy, // Reserved 1
+				 Int8PtrTy, // Reserved 2
 				 NULL);
 
 	
@@ -693,6 +694,28 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
 	Builder.CreateCondBr(DidCatch, TryHandler, TryBlock);
 	
+	CGBuilder ExceptionBuilder(TryHandler);
+	
+	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
+	llvm::Value *GEPIndexes[] = { Zero, Zero, Two };
+	RetVal = ExceptionBuilder.CreateGEP(ExceptionData, GEPIndexes, "exc_obj");
+	
+	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
+	{
+		Value *retObj = ExceptionBuilder.CreateLoad(RetVal);
+		if (isLKObject(ReturnType) && @encode(LKObject)[0] != '@')
+		{
+			CGBuilder smallIntBuilder(CGM->Context);
+			splitSmallIntCase(retObj, ExceptionBuilder, smallIntBuilder);
+			CGM->assign->releaseValue(ExceptionBuilder, retObj);
+			llvm::PHINode *unused;
+			combineSmallIntCase(0, 0, unused, ExceptionBuilder, smallIntBuilder);
+		}
+		else
+		{
+			CGM->assign->releaseValue(ExceptionBuilder, retObj);
+		}
+	}
 	
 	/*
 	ExceptionBB =
