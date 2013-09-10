@@ -278,14 +278,14 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 {
 	NSString *symbolName = [(isMeta ? @"_OBJC_METACLASS_": @"_OBJC_CLASS_") stringByAppendingString:ClassName];
-	llvm::Constant *Class = TheModule.getGlobalVariable(symbolName);
+	llvm::Constant *Class = TheModule.getGlobalVariable([symbolName UTF8String]);
 	if (Class == NULL){
 		Class = new llvm::GlobalVariable(TheModule,
 										 IdTy,
 										 false,
 										 llvm::GlobalValue::ExternalLinkage,
 										 0,
-										 symbolName);
+										 [symbolName UTF8String]);
 	}
 	
 	return Class;
@@ -321,12 +321,9 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 		{
 			if (i != Types.begin()){
 				// This really means that there are two selectors with different types
-				llvm::outs() << "Trying to register selector '" << SelName <<
-				"' for the second time with different type. Initial types: " <<
-				Types.begin()->first << " Types now: " << i->first << "\n";
-				CGM.Error(clang::SourceLocation(),
-						  "Same selector with different selectors isn't supported"
-						  " in the kernel runtime.");
+				[NSException raise: @"LKCodeGenException"
+							format: @"Trying to register selector '%@' for the second time with different type. Initial types: %@ Types now: %@",
+				 SelName, Types.begin()->first, i->first];
 			}
 			return i->second;
 		}
