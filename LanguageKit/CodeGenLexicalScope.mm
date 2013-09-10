@@ -153,7 +153,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			// Box float/double
 			// TODO: On 64-bit platforms hide floats inside pointers, leave
 			// doubles boxed
-			Value *BoxedFloatClass = Runtime->LookupClass(*B, @"BoxedFloat");
+			Value *BoxedFloatClass = Runtime->LookupClass(@"BoxedFloat", false);
 			NSString *castSelName;
 			if (type == 'f')
 			{
@@ -173,13 +173,13 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 		}
 		case ':':
 		{
-			Value *SymbolClass = Runtime->LookupClass(*B, @"Symbol");
+			Value *SymbolClass = Runtime->LookupClass(@"Symbol", false);
 			return Runtime->GenerateMessageSend(*B, NULL,
 					SymbolClass, @"SymbolForSelector:", NULL, V);
 		}
 		case '^':
 		{
-			Value *NSValueClass = Runtime->LookupClass(*B, @"NSValue");
+			Value *NSValueClass = Runtime->LookupClass(@"NSValue", false);
 			Value *boxed = Runtime->GenerateMessageSend(*B,
 					NULL, NSValueClass, @"valueWithPointer:", NULL, V);
 			if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
@@ -225,7 +225,7 @@ Value *CodeGenSubroutine::BoxValue(CGBuilder *B, Value *V, NSString *typestr)
 			}
 			if (passValue)
 			{
-				Value *NSValueClass = Runtime->LookupClass(*B, @"NSValue");
+				Value *NSValueClass = Runtime->LookupClass(@"NSValue", false);
 				Value *boxed = Runtime->GenerateMessageSend(*B,
 						NULL, NSValueClass, castSelName, NULL, V);
 				if (CallInst *call = dyn_cast<llvm::CallInst>(boxed))
@@ -1102,7 +1102,7 @@ Value *CodeGenSubroutine::LoadSelf(void)
 
 Value *CodeGenSubroutine::LoadClass(NSString *classname)
 {
-	return CGM->getRuntime()->LookupClass(Builder, classname);
+	return CGM->getRuntime()->LookupClass(classname, false);
 }
 
 Value *CodeGenSubroutine::LoadValueOfTypeAtOffsetFromObject(

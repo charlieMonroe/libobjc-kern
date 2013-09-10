@@ -446,7 +446,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 
 	NSUInteger length = [String length];
 	std::vector<llvm::Constant*> Ivars;
-	Ivars.push_back(NULLPtr);
+	Ivars.push_back(LookupClass(@"_KKConstString", false));
 	Ivars.push_back(MakeConstantString(String));
 	Ivars.push_back(ConstantInt::get(IntTy, length));
 	llvm::Constant *ObjCStr = MakeGlobal(
