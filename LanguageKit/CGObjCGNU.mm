@@ -31,7 +31,10 @@
 
 #include "LLVMCompat.h"
 
-#import <Foundation/NSString.h>
+extern "C" {
+#import <Foundation/Foundation.h>
+#import "../LanguageKit.h"
+}
 
 using namespace llvm;
 using namespace std;
@@ -1222,13 +1225,9 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			
 			if (i != Types.begin()){
 				// We only support one type in kernel
-				llvm::outs() << "Trying to register selector '" <<
-				iter->first <<
-				"' for the second time with different type. Initial types: " <<
-				Types.begin()->first << " Types now: " << i->first << "\n";
-				CGM.Error(clang::SourceLocation(),
-						  "Same selector with different selectors isn't supported"
-						  " in the kernel runtime.");
+				[NSException raise: @"LKCodeGenException"
+							format: @"Trying to register selector '%@' for the second time with different type. Initial types: %@ Types now: %@",
+				 iter->first, Types.begin()->first, i->first];
 			}
 			
 			if ([i->first isEqualToString:@""])
