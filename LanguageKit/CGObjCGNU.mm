@@ -50,7 +50,7 @@ class CGObjCGNU : public CGObjCRuntime {
 private:
 	llvm::Module &TheModule;
 	LLVMStructTy *SelStructTy;
-	LLVMType *SelectorTy;
+	llvm::IntegerType *SelectorTy;
 	LLVMType *PtrToInt8Ty;
 	LLVMType *IMPTy;
 	LLVMType *IdTy;
