@@ -139,7 +139,7 @@ public:
 	                                              llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
-	virtual llvm::Value *LookupClass(NSString *ClassName, bool isMeta);
+	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
 	                                 llvm::Value *SelTypes);
@@ -275,10 +275,10 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 
 // This has to perform the lookup every time, since posing and related
 // techniques can modify the name -> class mapping.
-llvm::Value *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
+llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 {
 	NSString *symbolName = [(isMeta ? @"_OBJC_METACLASS_": @"_OBJC_CLASS_") stringByAppendingString:ClassName];
-	llvm::Value *Class = TheModule.getGlobalVariable(symbolName);
+	llvm::Constant *Class = TheModule.getGlobalVariable(symbolName);
 	if (Class == NULL){
 		Class = new llvm::GlobalVariable(TheModule,
 										 IdTy,
@@ -844,7 +844,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 
 		IvarOffsetValues.push_back(new llvm::GlobalVariable(TheModule, IntTy,
 					false, llvm::GlobalValue::ExternalLinkage,
-					llvm::ConstantInt::get(LLVMType::getSizeTy, IvarOffsets[i]),
+					llvm::ConstantInt::get(SizeTy, IvarOffsets[i]),
 					std::string("__objc_ivar_offset_value_") + className +'.' +
 					[IvarNames[i] UTF8String]));
 	}
@@ -1234,7 +1234,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 						  " in the kernel runtime.");
 			}
 			
-			if (i->first.empty())
+			if ([i->first isEqualToString:@""])
 				llvm_unreachable("Selector has no type!");
 			
 			

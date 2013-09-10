@@ -167,7 +167,7 @@ public:
 	                                     bool isSRet=false,
                                          bool isVarArg=false) = 0;
 	/// Look up the class for the specified name
-	virtual llvm::Value *LookupClass(NSString *ClassName, bool isMeta) =0;
+	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta) =0;
 	// Define class variables for a specific class
 	virtual void DefineClassVariables(
 			NSString* ClassName,
