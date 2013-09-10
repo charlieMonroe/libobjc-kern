@@ -51,9 +51,10 @@ private:
 	LLVMType *PtrToInt8Ty;
 	LLVMType *IMPTy;
 	LLVMType *IdTy;
-	LLVMType *IntTy;
+	llvm::IntegerType *IntTy;
 	LLVMType *PtrTy;
-	LLVMType *LongTy;
+	llvm::IntegerType *LongTy;
+	llvm::IntegerType *SizeTy;
 	LLVMType *PtrToIntTy;
 	std::vector<llvm::Constant*> Classes;
 	std::vector<llvm::Constant*> Categories;
@@ -257,6 +258,9 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 	IMPArgs.push_back(IdTy);
 	IMPArgs.push_back(SelectorTy);
 	IMPTy = llvm::FunctionType::get(IdTy, IMPArgs, true);
+	
+	// TODO
+	SizeTy = LongTy;
 
 }
 
@@ -760,7 +764,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		Context,
 		PtrToInt8Ty, // Name
 		PtrToInt8Ty, // Type
-		LLVMType::getSizeTy(Context), // Size
+		SizeTy, // Size
 		IntTy, // Offset
 		LLVMType::getInt8Ty(Context), // Align
 		(void *)0);
@@ -772,7 +776,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		Elements.clear();
 		Elements.push_back(MakeConstantString(IvarNames[i]));
 		Elements.push_back(MakeConstantString(IvarTypes[i]));
-		Elements.push_back(ConstantInt::get(LLVMType::getSizeTy(Context), 0));
+		Elements.push_back(ConstantInt::get(SizeTy, 0));
 		Elements.push_back(ConstantInt::get(IntTy, IvarOffsets[i]));
 		Elements.push_back(ConstantInt::get(LLVMType::getInt8Ty(Context), 0));
 		Ivars.push_back(llvm::ConstantStruct::get(ObjCIvarTy, Elements));
@@ -796,7 +800,7 @@ llvm::Constant *CGObjCGNU::GenerateIvarList(
 		MakeGlobal(ObjCIvarListTy, Elements, ".objc_ivar_list");
 
 	// Generate the non-fragile ABI offset variables.
-	LLVMType *IndexTy = LLVMType::getSizeTy(Context);
+	LLVMType *IndexTy = SizeTy;
 	llvm::Constant *offsetPointerIndexes[] = {Zeros[0],
 		llvm::ConstantInt::get(IndexTy, 1), 0,
 		llvm::ConstantInt::get(IndexTy, 2) };
@@ -896,7 +900,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		PtrTy,                  // unresolved_next
 		PtrTy,                  // extra_space
 		PtrTy,                  // kernel_module
-		LLVMType::getSizeTy(Context), // Instance size
+		SizeTy, // Instance size
 		IntTy,                 // version
 		(void *)0);
 	
@@ -977,11 +981,11 @@ llvm::Constant *CGObjCGNU::GenerateProtocolMethodList(
 			MethodNames.size());
 	llvm::Constant *Array = llvm::ConstantArray::get(ObjCMethodArrayTy, Methods);
 	llvm::StructType *ObjCMethodDescListTy = GetStructType(Context,
-														   LLVMType::getSizeTy(Context),
+														   SizeTy,
 														   ObjCMethodArrayTy,
 														   (void *)0);
 	Methods.clear();
-	Methods.push_back(ConstantInt::get(LLVMType::getSizeTy(Context), MethodNames.size()));
+	Methods.push_back(ConstantInt::get(SizeTy, MethodNames.size()));
 	Methods.push_back(Array);
 	return MakeGlobal(ObjCMethodDescListTy, Methods, ".objc_method_list");
 }
@@ -995,7 +999,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 	llvm::StructType *ProtocolListTy = GetStructType(
 		Context,
 		PtrTy, //Should be a recurisve pointer, but it's always NULL here.
-		LLVMType::getSizeTy(Context),
+		SizeTy,
 		ProtocolArrayTy,
 		(void *)0);
 	std::vector<llvm::Constant*> Elements; 
@@ -1010,7 +1014,7 @@ llvm::Constant *CGObjCGNU::GenerateProtocolList(
 		Elements);
 	Elements.clear();
 	Elements.push_back(NULLPtr);
-	Elements.push_back(ConstantInt::get(LLVMType::getSizeTy(Context), Protocols.size()));
+	Elements.push_back(ConstantInt::get(SizeTy, Protocols.size()));
 	Elements.push_back(ProtocolArray);
 	return MakeGlobal(ProtocolListTy, Elements, ".objc_protocol_list");
 }
@@ -1150,7 +1154,7 @@ void CGObjCGNU::GenerateClass(
 	llvm::Value *SuperClassMeta = SuperClassName == nil ? NULLPtr : LookupClass(SuperClassName, true);
 	
 	//Generate metaclass for class methods
-	llvm::Constant *MetaClassStruct = GenerateClassStructure(SuperClassMeta, SuperClassMeta, 0, ClassName, 0, ConstantInt::get(LLVMType::getSizeTy(Context), 0), GenerateIvarList(ClassName, empty, empty, empty2, ignored), ClassMethodList, NULLPtr, NULLPtr, true);
+	llvm::Constant *MetaClassStruct = GenerateClassStructure(SuperClassMeta, SuperClassMeta, 0, ClassName, 0, ConstantInt::get(SizeTy, 0), GenerateIvarList(ClassName, empty, empty, empty2, ignored), ClassMethodList, NULLPtr, NULLPtr, true);
 	// Generate the class structure
 	llvm::Constant *ClassStruct = GenerateClassStructure(MetaClassStruct,
 		SuperClass, 0, ClassName, 0,
