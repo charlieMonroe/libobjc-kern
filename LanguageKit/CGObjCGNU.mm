@@ -1229,8 +1229,8 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 				llvm_unreachable("Selector has no type!");
 			
 			
-			std::string Name = iter->first;
-			std::string Types = i->first;
+			NSString *Name = iter->first;
+			NSString *Types = i->first;
 			
 			Elements.push_back(MakeConstantString(Name));
 			Elements.push_back(MakeConstantString(Types));
