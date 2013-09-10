@@ -208,6 +208,16 @@ public:
 		llvm::ArrayType *ArrayTy = llvm::ArrayType::get(Ty, V.size());
 		return MakeGlobal(ArrayTy, V, Name, linkage);
 	}
+	
+	llvm::GlobalVariable *MakeGlobal(llvm::ArrayType *Ty,
+									 ArrayRef<llvm::Constant *> V,
+									 StringRef Name="",
+									 llvm::GlobalValue::LinkageTypes linkage
+									 =llvm::GlobalValue::InternalLinkage) {
+		llvm::Constant *C = llvm::ConstantArray::get(Ty, V);
+		return new llvm::GlobalVariable(TheModule, Ty, false,
+										linkage, C, Name);
+	}
 };
 } // end anonymous namespace
 
