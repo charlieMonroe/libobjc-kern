@@ -1159,8 +1159,8 @@ void CGObjCGNU::GenerateClass(
 	llvm::Constant *IvarList = GenerateIvarList(ClassName, IvarNames,
 			IvarTypes, IvarOffsets, IvarOffsetValues);
 	
-	llvm::Value *SuperClass = SuperClassName == nil ? NULLPtr : LookupClass(SuperClassName, false);
-	llvm::Value *SuperClassMeta = SuperClassName == nil ? NULLPtr : LookupClass(SuperClassName, true);
+	llvm::Constant *SuperClass = SuperClassName == nil ? NULLPtr : LookupClass(SuperClassName, false);
+	llvm::Constant *SuperClassMeta = SuperClassName == nil ? NULLPtr : LookupClass(SuperClassName, true);
 	
 	//Generate metaclass for class methods
 	llvm::Constant *MetaClassStruct = GenerateClassStructure(SuperClassMeta, SuperClassMeta, 0, ClassName, 0, ConstantInt::get(SizeTy, 0), GenerateIvarList(ClassName, empty, empty, empty2, ignored), ClassMethodList, NULLPtr, NULLPtr, true);
@@ -1289,14 +1289,14 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	Elements.clear();
 	
 	// Now we need to create the loader module
-	Elements.push_back(MakeConstantString(TheModule.getModuleIdentifier())); // Name
+	Elements.push_back(MakeConstantString([NSString stringWithUTF8String:TheModule.getModuleIdentifier().c_str()])); // Name
 	Elements.push_back(SymbolTable);
 	Elements.push_back(llvm::ConstantInt::get(IntTy, (int)0x301));
 	
-	llvm::GlobalVariable *ModuleStruct = MakeGlobal(ModuleStructTy,
+	llvm::Constant *ModuleStruct = MakeGlobal(ModuleStructTy,
 													Elements,
 													".objc_module");
-	llvm::GlobalVariable *ModuleList = new llvm::GlobalVariable(TheModule,
+	llvm::Constant *ModuleList = new llvm::GlobalVariable(TheModule,
 																PtrTy,
 																false,
 																llvm::GlobalValue::InternalLinkage,
