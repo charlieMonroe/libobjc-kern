@@ -1278,7 +1278,7 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 	Elements.push_back(llvm::ConstantInt::get(Int16Ty, ExistingProtocols.size()));
 	
 	std::vector<llvm::Constant*> Protocols;
-	for (llvm::StringMap<llvm::Constant*>::iterator i = ExistingProtocols.begin();
+	for (object_map<NSString*, llvm::Constant*>::iterator i = ExistingProtocols.begin();
 		 i != ExistingProtocols.end(); ++i){
 		Protocols.push_back(i->second);
 	}
