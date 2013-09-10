@@ -368,7 +368,7 @@ Value *CodeGenModule::GenericConstant(CGBuilder &Builder,
 		return llvm::ConstantExpr::getIntToPtr(llvm::ConstantInt::get(types->intPtrTy, (uintptr_t)(__bridge_retained void*)[constant copy]),
 			types->idTy);
 	}
-	Value *Class = Runtime->LookupClass(InitialiseBuilder, className);
+	Value *Class = Runtime->LookupClass(className, false);
 
 	Value *V = MakeConstantString(arg);
 
@@ -668,7 +668,8 @@ void CodeGenModule::compile(void)
 		//EB.setUseMCJIT(true);
 		EB.setRelocationModel(Reloc::Static);
 		TargetOptions TO;
-		TO.JITExceptionHandling = 1;
+		
+		// TO.JITExceptionHandling = 1;
 		// Note: mathk, turn on debug info generation here too!
 		EB.setTargetOptions(TO);
 		EE = EB.create();
