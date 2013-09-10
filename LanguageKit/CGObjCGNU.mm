@@ -196,6 +196,15 @@ public:
 	virtual llvm::Value *AddressOfClassVariable(CGBuilder &Builder, 
 	                                            NSString *ClassName,
 	                                            NSString *CvarName);
+	
+	llvm::GlobalVariable *MakeGlobalArray(llvm::Type *Ty,
+										  ArrayRef<llvm::Constant *> V,
+										  StringRef Name="",
+										  llvm::GlobalValue::LinkageTypes linkage
+										  =llvm::GlobalValue::InternalLinkage) {
+		llvm::ArrayType *ArrayTy = llvm::ArrayType::get(Ty, V.size());
+		return MakeGlobal(ArrayTy, V, Name, linkage);
+	}
 };
 } // end anonymous namespace
 
