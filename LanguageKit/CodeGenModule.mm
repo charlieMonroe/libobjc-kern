@@ -241,7 +241,7 @@ CodeGenMethod::CodeGenMethod(NSString *methodName,
 	// front ends to name self, rather than have it magic (so EScript, for
 	// example, could use this instead of self)
 #warning TODO
-	[cmdSymbol setTypeEncoding: @"@"];
+	[cmdSymbol setTypeEncoding: @":"];
 	// TODO: Add a mechanism for front ends to expose this to the language.
 	NSMutableArray *realArguments =
 		[NSMutableArray arrayWithObjects: selfSymbol, cmdSymbol, nil];
