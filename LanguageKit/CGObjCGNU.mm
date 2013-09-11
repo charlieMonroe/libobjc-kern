@@ -307,8 +307,8 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 }
 
 llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
-															NSString *TypeEncoding){
-	if (TypeEncoding == nil || [TypeEncoding isEqualToString:@""]){
+															NSString *SelTypes){
+	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		llvm_unreachable("No untyped selectors support in kernel runtime.");
 	}
 	
