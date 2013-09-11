@@ -417,6 +417,11 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
                                       const std::string &Name,
                                       bool isPublic)
 {
+	
+	printf("\n=====\n"); Ty->dump(); printf("\n");
+	for (std::vector<llvm::Constant*>::iterator i = V.begin(); i != V.end(); ++i){
+		(*i)->getType()->dump();
+	}
 	llvm::Constant *C = llvm::ConstantStruct::get(Ty, V);
 	return new llvm::GlobalVariable(TheModule, Ty, false,
 		(isPublic ? llvm::GlobalValue::ExternalLinkage :
