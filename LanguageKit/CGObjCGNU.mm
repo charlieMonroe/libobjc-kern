@@ -1275,16 +1275,16 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			Elements.push_back(MakeConstantString(Name));
 			Elements.push_back(MakeConstantString(Types));
 			
-			Elements(0)->getType()->dump();
+			Elements[0]->getType()->dump();
 			printf(" ");
-			Elements(1)->getType()->dump();
+			Elements[1]->getType()->dump();
 			printf(" ");
 			
 			// Second is the global variable - we supply a pointer to it to the
 			// runtime which then fixes it
 			Elements.push_back(i->second);
 			
-			Elements(2)->getType()->dump();
+			Elements[2]->getType()->dump();
 			printf(" ");
 			
 			Selectors.push_back(llvm::ConstantStruct::get(SelRefStructTy, Elements));
