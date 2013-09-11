@@ -301,16 +301,15 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 															NULL
 															);
 	
-	ClassTy = GetStructType(
-											  Context,
-											  IdTy,            // class_pointer
-											  IdTy,            // super_class
+	ClassTy = llvm::StructType::get(
+											  IdTy,						// class_pointer
+											  IdTy,					// super_class
 											  PtrToInt8Ty,			// dtable
 											  FlagsStructTy,			// flags
 											  PtrTy,				// methods
 											  PtrToInt8Ty,            // name
-											  PtrTy,		// ivar_offsets
-											  PtrTy,       // ivars
+											  PtrTy,					// ivar_offsets
+											  PtrTy,					// ivars
 											  PtrTy,                  // protocols
 											  PtrTy,                  // properties (not used by LK yet)
 											  PtrTy,                  // subclass_list
@@ -319,9 +318,9 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 											  PtrTy,                  // unresolved_next
 											  PtrTy,                  // extra_space
 											  PtrTy,                  // kernel_module
-											  SizeTy, // Instance size
+											  SizeTy,				 // Instance size
 											  IntTy,                 // version
-											  (void *)0);
+											  NULL);
 
 }
 
