@@ -67,7 +67,7 @@ private:
 	std::vector<llvm::Constant*> Categories;
 	std::vector<llvm::Constant*> ConstantStrings;
 	object_map<NSString*, llvm::Constant*> ExistingProtocols;
-	typedef std::pair<NSString*, llvm::GlobalAlias*> TypedSelector;
+	typedef std::pair<NSString*, llvm::GlobalVariable*> TypedSelector;
 	typedef object_map<NSString*, SmallVector<TypedSelector, 2> > SelectorMap;
 	SelectorMap SelectorTable;
 	// Some zeros used for GEPs in lots of places.
@@ -147,7 +147,7 @@ public:
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta);
-	virtual llvm::GlobalAlias *GetSelectorByName(NSString *SelName,
+	virtual llvm::GlobalVariable *GetSelectorByName(NSString *SelName,
 													   NSString *TypeEncoding);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
@@ -342,7 +342,7 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 	return llvm::ConstantExpr::getBitCast(Class, IdTy);
 }
 
-llvm::GlobalAlias *CGObjCGNU::GetSelectorByName(NSString *SelName,
+llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
 															NSString *SelTypes){
 	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		llvm_unreachable("No untyped selectors support in kernel runtime.");
@@ -352,7 +352,7 @@ llvm::GlobalAlias *CGObjCGNU::GetSelectorByName(NSString *SelName,
 	// a list that the runtime will initialise later.
 	
 	SmallVector<TypedSelector, 2> &Types = SelectorTable[SelName];
-	llvm::GlobalAlias *SelValue = 0;
+	llvm::GlobalVariable *SelValue = 0;
 	
 	// Check if we've already cached this selector
 	for (SmallVectorImpl<TypedSelector>::iterator i = Types.begin(),
