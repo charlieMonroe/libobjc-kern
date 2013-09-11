@@ -589,12 +589,12 @@ llvm::Value *CGObjCRuntime::callIMP(
 	llvm::StructType *ExceptionDataTy = NULL;
 	if (llvm::Module::Pointer64){
 		SetJmpBufferSize = 12;
-		SetJmpBufferIntTy = types.longTy;
+		SetJmpBufferIntTy = LongTy;
 	}else if (llvm::Module::Pointer32){
 		SetJmpBufferSize = (18);
-		SetJmpBufferIntTy = types.intTy;
+		SetJmpBufferIntTy = IntTy;
 	}else{
-		LOG("Unknown target and hence unknown setjmp buffer size.");
+		printf("Unknown target and hence unknown setjmp buffer size.\n");
 		abort();
 	}
 	
@@ -628,7 +628,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
-	llvm::Constant *Zero = llvm::ConstantInt::get(types.intTy, 0);
+	llvm::Constant *Zero = llvm::ConstantInt::get(IntTy, 0);
 	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
 	llvm::Value *SetJmpBuffer =
 	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
@@ -645,8 +645,8 @@ llvm::Value *CGObjCRuntime::callIMP(
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
-	llvm::BasicBlock *ExcBB = BasicBlock::Create(CGM->Context, "exc.handler", CurrentFunction);
-	llvm::BasicBlock *TryBB = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
+	llvm::BasicBlock *ExcBB = BasicBlock::Create(Context, "exc.handler", CurrentFunction);
+	llvm::BasicBlock *TryBB = BasicBlock::Create(Context, "try.handler", CurrentFunction);
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
 	Builder.CreateCondBr(DidCatch, ExcBB, TryBB);
@@ -674,7 +674,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
 	ret = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
 	
-	if (retTy != Type::getVoidTy(CGM->Context))
+	if (retTy != Type::getVoidTy(Context))
 	{
 		if (isSRet)
 		{
