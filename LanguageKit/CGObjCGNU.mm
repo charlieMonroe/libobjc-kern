@@ -469,6 +469,12 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
 			V[i]->getType()->dump();
 			Ty->getElementType(i)->dump();
 		}
+		if (!V[i]->getType()->isOpaque()){
+			printf("V[%i] not opaque\n", i);
+		}
+		if (!Ty->getElementType(i)->isOpaque()){
+			printf("Ty->getElementType[%i] not opaque\n", i);
+		}
    }
 	
 	llvm::Constant *C = llvm::ConstantStruct::get(Ty, V);
