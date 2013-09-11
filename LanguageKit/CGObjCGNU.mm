@@ -296,14 +296,14 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 	llvm::Constant *Class = TheModule.getGlobalVariable([symbolName UTF8String]);
 	if (Class == NULL){
 		Class = new llvm::GlobalVariable(TheModule,
-										 IdTy,
+										 SelStructTy, /* It should really by the class structure, but it shouldn't really matter since we are casting it to IdTy later on anyway. */
 										 false,
 										 llvm::GlobalValue::ExternalLinkage,
 										 0,
 										 [symbolName UTF8String]);
 	}
 	
-	return Class;
+	return llvm::ConstantExpr::getBitCast(Class, IdTy);
 }
 
 llvm::GlobalAlias *CGObjCGNU::GetSelectorByName(NSString *SelName,
