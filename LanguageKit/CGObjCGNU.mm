@@ -1292,12 +1292,24 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			NSString *Name = iter->first;
 			NSString *Types = i->first;
 			
+			printf("\n**********\n");
+			SelRefStructTy->dump();
+			printf("\n");
+			
 			Elements.push_back(MakeConstantString(Name));
 			Elements.push_back(MakeConstantString(Types));
+			
+			Elements(0)->dump();
+			printf(" ");
+			Elements(1)->dump();
+			printf(" ");
 			
 			// Second is the global variable - we supply a pointer to it to the
 			// runtime which then fixes it
 			Elements.push_back(i->second);
+			
+			Elements(2)->dump();
+			printf(" ");
 			
 			Selectors.push_back(llvm::ConstantStruct::get(SelRefStructTy, Elements));
 			
