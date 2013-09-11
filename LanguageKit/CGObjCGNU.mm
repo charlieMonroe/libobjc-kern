@@ -350,7 +350,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 	Types.push_back(TypedSelector(SelTypes, SelValue));
 
 
-	return Builder.CreateStructGEP(SelValue, Zeros[0]);
+	return Builder.CreateLoad(Builder.CreateGEP(SelValue, 0));
 }
 /// Dynamically looks up the selector for the specified name / type pair.
 llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,

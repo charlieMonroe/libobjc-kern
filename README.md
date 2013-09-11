@@ -31,7 +31,7 @@ You will find a few subdirectories in `libobj-kern`:
 - __Foundation__ - a few classes from the Foundation framework that you can used for compatibility reasons. It gets loaded as a separate module, so you don't need to use them.
 - __kernobjc__ - a folder with public headers.
 - __LanguageKitRuntime__ - the runtime from Etoile's LanguageKit, slightly modified.
-- __LanguageKit__ - a clone of the LanguageKit from Etoile, modified to ... (TODO, not finished)
+- __LanguageKit__ - a folder containing modified source files from Etoile's LanguageKit CodeGen framework, which is used to create `edlc` - see the section on Smalltalk
 - __os__ - a folder with `kernel.h` and `user.h` files that are used on whether the runtime is being compiled for the kernel space or user space (I've been testing some features in user land since the debugging is much easier).
 - __Smalltalk__ - a folder containing stuff necessary to run Smalltalk in the kernel (just like the LanguageKit's runtime, slightly modified version of the GNUstep's code).
 - __test__ - a module that tests basic runtime capabilities.
@@ -228,6 +228,44 @@ The runtime usually doesn't perform any allocations or locking when sending mess
 To force the class initialization on module load, simply implement a `+load` method on the class - the runtime will then immediately send the `+load` message to the class, thus forcing initialization.
 
 Another point where any locking or allocations are performed is the `@synchronize` statement (or calling `objc_sync_enter`), which uses associated objects, which are implemented just like in GNUstep runtime by creating a fake class and installing a lock on there. This also means that associated objects can perform allocations and use some locks.
+
+### Smalltalk
+
+```
+Note that the LanguageKit isn't complete and currently the edlc process crashes when launched.
+```
+
+An extension to this project is getting Smalltalk into the kernel. The Smalltalk runtime in included as well and it uses the ObjC runtime for all its features.
+
+The Smalltalk files first need to be compiled using `edlc` compiled with the modified LanguageKit (see the source files in the `LanguageKit` directory. For example,
+
+`edlc -f test.st -c`
+
+will compile the `test.st` source file into `output.bc`. This is the LLVM byte code file that further needs to be compiled to either C code, or assembly using `llc`, the LLVM static compiler.
+
+The result is a `.c` or `.s` file that you need to include in your `Makefile`.
+
+Your kernel module needs to delcare dependencies on the following modules: `libobjc`, `objc_foundation`, `objc_langkit` and `smalltalk_runtime` - all of these modules are included in this repository. You can take a look at `smalltalk-test/module.c` for a more concrete example.
+
+Generally, to run the Smalltalk program, you need to do the following (assuming you have compiled the Smalltalk source files into either assembly, or C and added those into the `Makefile`):
+
+```
+# Assuming your pwd is this repository
+
+sudo make load
+
+cd Foundation
+sudo make load
+
+cd ../LanguageKitRuntime
+sudo make load
+
+cd ../Smalltak
+sudo make load
+
+cd ${your_module_dir}
+sudo make load
+```
 
 ### Porting
 
