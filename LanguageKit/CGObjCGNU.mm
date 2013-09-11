@@ -143,6 +143,8 @@ public:
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta);
+	virtual llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
+													   NSString *TypeEncoding);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
 	                                 llvm::Value *SelTypes);
@@ -304,28 +306,18 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 	return Class;
 }
 
-/// Statically looks up the selector for the specified name / type pair.
-llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
-                                    NSString *SelName,
-                                    NSString *SelTypes)
-{
-	if ([SelTypes isEqualToString:@""]){
-		/* If not types, fall back to the RT function. */
-		
-		llvm::Value *ConstSelName = MakeConstantString(SelName);
-		llvm::Constant *SelectorLookupFn =
-		TheModule.getOrInsertFunction("sel_getNamed", SelectorTy, PtrToInt8Ty,
-									  (void *)0);
-		return Builder.CreateCall(SelectorLookupFn, ConstSelName);
+llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
+															NSString *TypeEncoding){
+	if (TypeEncoding == nil || [TypeEncoding isEqualToString:@""]){
+		llvm_unreachable("No untyped selectors support in kernel runtime.");
 	}
-
-
+	
 	// For static selectors, we return an alias for now then store them all in
 	// a list that the runtime will initialise later.
-
+	
 	SmallVector<TypedSelector, 2> &Types = SelectorTable[SelName];
 	llvm::GlobalAlias *SelValue = 0;
-
+	
 	// Check if we've already cached this selector
 	for (SmallVectorImpl<TypedSelector>::iterator i = Types.begin(),
 	     e = Types.end() ; i!=e ; i++)
@@ -341,14 +333,35 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 			return i->second;
 		}
 	}
-
+	
 	// If not, create a new one.
 	SelValue = new llvm::GlobalAlias(SelectorTy,
 	                                 llvm::GlobalValue::PrivateLinkage,
 	                                 string(".objc_selector_")+[SelName UTF8String], NULL,
 	                                 &TheModule);
 	Types.push_back(TypedSelector(SelTypes, SelValue));
+	
+	return SelValue;
+}
 
+/// Statically looks up the selector for the specified name / type pair.
+llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
+                                    NSString *SelName,
+                                    NSString *SelTypes)
+{
+	if ([SelTypes isEqualToString:@""]){
+		/* If not types, fall back to the RT function. */
+		
+		llvm::Value *ConstSelName = MakeConstantString(SelName);
+		llvm::Constant *SelectorLookupFn =
+		TheModule.getOrInsertFunction("sel_getNamed", SelectorTy, PtrToInt8Ty,
+									  (void *)0);
+		return Builder.CreateCall(SelectorLookupFn, ConstSelName);
+	}
+
+	llvm::GlobalVariable *SelValue = GetSelectorByName(SelName, SelTypes);
+	
+	printf("SelValue: %p\n", SelValue);
 
 	return Builder.CreateLoad(Builder.CreateGEP(SelValue, 0));
 }
