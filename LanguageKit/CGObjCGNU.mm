@@ -459,6 +459,19 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
 	for (std::vector<llvm::Constant*>::iterator i = V.begin(); i != V.end(); ++i){
 		(*i)->getType()->dump();
 	}
+	
+	if (!Ty->isOpaque()){
+		printf("Type not opaque *****\n");
+	}
+	
+	for (unsigned i = 0, e = V.size(); i != e; ++i){
+		if (V[i]->getType() != T->getElementType(i)){
+			printf("Types do not match at index [%i]\n", i);
+			V[i]->getType()->dump();
+			T->getElementType(i)->dump();
+		}
+   }
+	
 	llvm::Constant *C = llvm::ConstantStruct::get(Ty, V);
 	return new llvm::GlobalVariable(TheModule, Ty, false,
 		(isPublic ? llvm::GlobalValue::ExternalLinkage :
