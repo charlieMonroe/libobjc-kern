@@ -143,7 +143,7 @@ public:
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta);
-	virtual llvm::GlobalVariable *GetSelectorByName(NSString *SelName,
+	virtual llvm::GlobalAlias *GetSelectorByName(NSString *SelName,
 													   NSString *TypeEncoding);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
@@ -306,7 +306,7 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 	return Class;
 }
 
-llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
+llvm::GlobalAlias *CGObjCGNU::GetSelectorByName(NSString *SelName,
 															NSString *SelTypes){
 	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		llvm_unreachable("No untyped selectors support in kernel runtime.");
@@ -359,7 +359,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 		return Builder.CreateCall(SelectorLookupFn, ConstSelName);
 	}
 
-	llvm::GlobalVariable *SelValue = GetSelectorByName(SelName, SelTypes);
+	llvm::GlobalAlias *SelValue = GetSelectorByName(SelName, SelTypes);
 	
 	printf("SelValue: %p\n", SelValue);
 
