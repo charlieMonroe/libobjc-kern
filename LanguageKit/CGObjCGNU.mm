@@ -654,8 +654,8 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
-	llvm::BasicBlock *ExcBB = BasicBlock::Create(Context, "exc.handler", CurrentFunction);
-	llvm::BasicBlock *TryBB = BasicBlock::Create(Context, "try.handler", CurrentFunction);
+	llvm::BasicBlock *ExcBB = BasicBlock::Create(Context, "exc.handler", Builder.GetInsertPoint()->getParent());
+	llvm::BasicBlock *TryBB = BasicBlock::Create(Context, "try.handler", Builder.GetInsertPoint()->getParent());
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
 	Builder.CreateCondBr(DidCatch, ExcBB, TryBB);
@@ -679,11 +679,11 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Catch BB
 	CGBuilder ExceptionBuilder(ExcBB);
 	
-	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
+	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
 	ret = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
 	
-	if (retTy != Type::getVoidTy(Context))
+	if (ReturnTy != Type::getVoidTy(Context))
 	{
 		if (isSRet)
 		{
