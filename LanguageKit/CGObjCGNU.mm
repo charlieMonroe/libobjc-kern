@@ -738,6 +738,10 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 if (isClassMessage) { NSLog(@"Sending class message [%@ %@]", ReceiverClass, selName); }
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
 	
+	llvm::Value *tmp = CGF.CreateTempAlloca(SelValue->getType());
+	CGF.Builder.CreateStore(SelValue, tmp);
+	Selector = tmp;
+	
 	char ret = [selTypes characterAtIndex: 0];
 	const char *msgFuncName = "objc_msgSend";
 	switch (ret)
