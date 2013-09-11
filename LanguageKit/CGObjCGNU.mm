@@ -406,8 +406,8 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 	
 	printf("SelValue: %p\n", SelValue);
 
-	return SelValue;
-	// return Builder.CreateLoad(Builder.CreateGEP(SelValue, Zeros[0]));
+	// return SelValue;
+	return Builder.CreateLoad(Builder.CreateGEP(SelValue, Zeros[0]));
 }
 /// Dynamically looks up the selector for the specified name / type pair.
 llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
@@ -738,7 +738,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 {
 if (isClassMessage) { NSLog(@"Sending class message [%@ %@]", ReceiverClass, selName); }
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	char ret = [selTypes characterAtIndex: 0];
 	const char *msgFuncName = "objc_msgSend";
