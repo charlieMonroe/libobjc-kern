@@ -453,30 +453,6 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
                                       const std::string &Name,
                                       bool isPublic)
 {
-	
-	printf("\n=====\n"); Ty->dump(); printf("\n");
-	for (std::vector<llvm::Constant*>::iterator i = V.begin(); i != V.end(); ++i){
-		(*i)->getType()->dump();
-	}
-	
-	if (!Ty->isOpaque()){
-		printf("Type not opaque *****\n");
-	}
-	
-	for (unsigned i = 0, e = V.size(); i != e; ++i){
-		if (V[i]->getType() != Ty->getElementType(i)){
-			printf("Types do not match at index [%i]\n", i);
-			V[i]->getType()->dump();
-			Ty->getElementType(i)->dump();
-		}
-		if (!V[i]->getType()->isOpaque()){
-			printf("V[%i] not opaque\n", i);
-		}
-		if (!Ty->getElementType(i)->isOpaque()){
-			printf("Ty->getElementType[%i] not opaque\n", i);
-		}
-   }
-	
 	llvm::Constant *C = llvm::ConstantStruct::get(Ty, V);
 	return new llvm::GlobalVariable(TheModule, Ty, false,
 		(isPublic ? llvm::GlobalValue::ExternalLinkage :
@@ -1299,16 +1275,16 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			Elements.push_back(MakeConstantString(Name));
 			Elements.push_back(MakeConstantString(Types));
 			
-			Elements(0)->dump();
+			Elements(0)->getType()->dump();
 			printf(" ");
-			Elements(1)->dump();
+			Elements(1)->getType()->dump();
 			printf(" ");
 			
 			// Second is the global variable - we supply a pointer to it to the
 			// runtime which then fixes it
 			Elements.push_back(i->second);
 			
-			Elements(2)->dump();
+			Elements(2)->getType()->dump();
 			printf(" ");
 			
 			Selectors.push_back(llvm::ConstantStruct::get(SelRefStructTy, Elements));
