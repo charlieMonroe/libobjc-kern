@@ -363,7 +363,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 	
 	printf("SelValue: %p\n", SelValue);
 
-	return Builder.CreateLoad(Builder.CreateGEP(SelValue, 0));
+	return Builder.CreateLoad(Builder.CreateGEP(SelValue, Zeros[0]));
 }
 /// Dynamically looks up the selector for the specified name / type pair.
 llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
