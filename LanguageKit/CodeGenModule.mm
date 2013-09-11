@@ -517,27 +517,8 @@ void CodeGenModule::EndModule(void)
 	InitialiseBuilder.CreateCall(TheModule->getOrInsertFunction("objc_autoreleasePoolPop",
 				types->voidTy, types->ptrToVoidTy, (void *)0), initializerPool);
 	InitialiseBuilder.CreateRetVoid();
-	// Set the module init function to be a global ctor
-	llvm::Function *init = Runtime->ModuleInitFunction();
-	llvm::StructType* CtorStructTy = GetStructType(Context, 
-		llvm::Type::getInt32Ty(Context), init->getType(), (void *)0);
-
-	std::vector<llvm::Constant*> Ctors;
-
-	std::vector<llvm::Constant*> S;
-	S.push_back(ConstantInt::get(llvm::Type::getInt32Ty(Context), 0xffff, false));
-	S.push_back(init);
-	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
-	// Add the constant initialisation function
-	S.clear();
-	S.push_back(ConstantInt::get(llvm::Type::getInt32Ty(Context), 0xffff, false));
-	S.push_back(LiteralInitFunction);
-	Ctors.push_back(llvm::ConstantStruct::get(CtorStructTy, S));
-
-	llvm::ArrayType *AT = llvm::ArrayType::get(CtorStructTy, Ctors.size());
-	new llvm::GlobalVariable(*TheModule, AT, false,
-			llvm::GlobalValue::AppendingLinkage, llvm::ConstantArray::get(AT,
-			Ctors), "llvm.global_ctors");
+	
+	Runtime->ModuleInitFunction();
 
 	PassManager pm;
 	pm.add(createVerifierPass());
