@@ -143,7 +143,7 @@ public:
 	                                              bool isClassMessage,
 	                                              llvm::BasicBlock *CleanupBlock);
 	virtual llvm::Constant *LookupClass(NSString *ClassName, bool isMeta);
-	virtual llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
+	virtual llvm::GlobalVariable *GetSelectorByName(NSString *SelName,
 													   NSString *TypeEncoding);
 	virtual llvm::Value *GetSelector(CGBuilder &Builder,
 	                                 llvm::Value *SelName,
