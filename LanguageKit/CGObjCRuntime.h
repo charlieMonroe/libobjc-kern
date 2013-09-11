@@ -62,14 +62,14 @@ public:
 	/**
 	 * Calls an Objective-C method via its pointer.
 	 */
-	llvm::Value *callIMP(CGBuilder &Builder,
+	virtual llvm::Value *callIMP(CGBuilder &Builder,
 	                     llvm::Value *imp,
 	                     NSString *typeEncoding,
 	                     llvm::Value *Receiver,
 	                     llvm::Value *Selector,
 	                     llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 	                     llvm::BasicBlock *CleanupBlock,
-	                     llvm::MDNode *metadata);
+	                     llvm::MDNode *metadata) = 0;
   /// Generate an Objective-C message send operation
   virtual llvm::Value *GenerateMessageSend(CGBuilder &Builder,
                                            llvm::Value *Sender,

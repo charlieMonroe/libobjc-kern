@@ -169,6 +169,15 @@ public:
 	                                  NSString *className,
 	                                  NSString *ivarName,
 	                                  int offsetGuess);
+	
+	virtual llvm::Value *callIMP(CGBuilder &Builder,
+								 llvm::Value *imp,
+								 NSString *typeEncoding,
+								 llvm::Value *Receiver,
+								 llvm::Value *Selector,
+								 llvm::SmallVectorImpl<llvm::Value*> &ArgV,
+								 llvm::BasicBlock *CleanupBlock,
+								 llvm::MDNode *metadata)
 	virtual void GenerateCategory(
 		NSString *ClassName, NSString *CategoryName,
 		StringVector  &InstanceMethodNames,
@@ -517,7 +526,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
 	return ObjCStr;
 }
-llvm::Value *CGObjCRuntime::callIMP(
+llvm::Value *CGObjCGNU::callIMP(
                             CGBuilder &Builder,
                             llvm::Value *imp,
                             NSString *typeEncoding,
