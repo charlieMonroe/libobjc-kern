@@ -459,11 +459,19 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 
 	NSUInteger length = [String length];
 	std::vector<llvm::Constant*> Ivars;
-	Ivars.push_back(LookupClass(@"_KKConstString", false));
-	Ivars.push_back(MakeConstantString(String));
-	Ivars.push_back(ConstantInt::get(IntTy, length));
+	
+	llvm::Constant *Class = LookupClass(@"_KKConstString", false);
+	Class->getType()->dump();
+	
+	llvm::Constant *ConstString = MakeConstantString(String);
+	ConstString->getType()->dump();
+	
+	Ivars.push_back(Class); // isa
+	Ivars.push_back(ConstantInt::get(IntTy, 0)); // retain count
+	Ivars.push_back(ConstString); // str
+	Ivars.push_back(ConstantInt::get(IntTy, length)); // len
 	llvm::Constant *ObjCStr = MakeGlobal(
-		GetStructType(Context, IdTy, PtrToInt8Ty, IntTy,
+		GetStructType(Context, IdTy, IntTy, PtrToInt8Ty, IntTy,
 		(void *)0), Ivars, ".objc_str");
 	ConstantStrings.push_back(
 		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
