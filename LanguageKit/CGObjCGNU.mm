@@ -569,51 +569,135 @@ llvm::Value *CGObjCRuntime::callIMP(
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	/// Setjmp buffer type is an array of this size
+	uint64_t SetJmpBufferSize;
+	/// Type of integers that are used in the buffer type
+	llvm::Type *SetJmpBufferIntTy;
+	
+	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(CGM->Context);
+	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
+	
+	/// A structure defining the exception data type
+	llvm::StructType *ExceptionDataTy = NULL;
+	if (llvm::Module::Pointer64){
+		SetJmpBufferSize = 12;
+		SetJmpBufferIntTy = types.longTy;
+	}else if (llvm::Module::Pointer32){
+		SetJmpBufferSize = (18);
+		SetJmpBufferIntTy = types.intTy;
+	}else{
+		LOG("Unknown target and hence unknown setjmp buffer size.");
+		abort();
+	}
+	
+	// Exceptions
+	llvm::Type *SetJmpType = llvm::ArrayType::get(SetJmpBufferIntTy,
+												  SetJmpBufferSize);
+	
+	ExceptionDataTy =
+	llvm::StructType::create("struct._objc_exception_data",
+							 SetJmpType,
+							 Int8PtrTy, // Next
+							 Int8PtrTy, // Exception object
+							 Int8PtrTy, // Reserved 1
+							 Int8PtrTy, // Reserved 2
+							 NULL);
+	
+	
+	// Allocate memory for the setjmp buffer.  This needs to be kept
+	// live throughout the try and catch blocks.
+	llvm::Value *ExceptionData = Builder.CreateAlloca(ExceptionDataTy, NULL,
+													  "exceptiondata.ptr");
+	
+	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
+	Function *ExceptionTryEnterFn = cast<Function>(
+												   TheModule->getOrInsertFunction("objc_exception_try_enter",
+																				  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
+	
+	// Enter a try block:
+	//  - Call objc_exception_try_enter to push ExceptionData on top of
+	//    the EH stack.
+	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
+	
+	//  - Call setjmp on the exception data buffer.
+	llvm::Constant *Zero = llvm::ConstantInt::get(types.intTy, 0);
+	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
+	llvm::Value *SetJmpBuffer =
+	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
+	
+	Function *SetJmpFn = cast<Function>(
+										TheModule->getOrInsertFunction("setjmp",
+																	   Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
+	
+	llvm::CallInst *SetJmpResult =
+	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
+	SetJmpResult->setCanReturnTwice();
+	
 	llvm::Value *ret = 0;
-	if (0 != CleanupBlock)
-	{
-		llvm::BasicBlock *continueBB =
-			llvm::BasicBlock::Create(Context, "invoke_continue",
-					Builder.GetInsertBlock()->getParent());
-		llvm::InvokeInst *inv = IRBuilderCreateInvoke(&Builder, imp, continueBB, CleanupBlock,
-			callArgs);
-		if (0 != metadata)
-		{
-			inv->setMetadata(msgSendMDKind, metadata);
-		}
-		Builder.SetInsertPoint(continueBB);
-		inv->setAttributes(attributes);
-		ret = inv;
+	
+	// If setjmp returned 0, enter the protected block; otherwise,
+	// branch to the handler.
+	llvm::BasicBlock *ExcBB = BasicBlock::Create(CGM->Context, "exc.handler", CurrentFunction);
+	llvm::BasicBlock *TryBB = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
+	llvm::Value *DidCatch =
+	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
+	Builder.CreateCondBr(DidCatch, ExcBB, TryBB);
+	
+	
+	// Try BB
+	CGBuilder TryBuilder(TryBB);
+	
+	llvm::CallInst *inv = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
+	if (0 != metadata){
+		inv->setMetadata(msgSendMDKind, metadata);
 	}
-	else
+	
+	Function *ExceptionTryExitFn = cast<Function>(
+												   TheModule->getOrInsertFunction("objc_exception_try_exit",
+																				  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
+	
+	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
+	
+	
+	// Catch BB
+	CGBuilder ExceptionBuilder(ExcBB);
+	
+	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
+	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
+	ret = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
+	
+	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
 	{
-		llvm::CallInst *call = IRBuilderCreateCall(&Builder, imp, callArgs);
-		if (0 != metadata)
+		if (isSRet)
 		{
-			call->setMetadata(msgSendMDKind, metadata);
+			ret = Builder.CreateLoad(sret);
 		}
-		call->setAttributes(attributes);
-		ret = call;
-	}
-	if (isSRet)
-	{
-		ret = Builder.CreateLoad(sret);
-	}
-	if (ret->getType() != ReturnTy)
-	{
-		if (ret->getType()->canLosslesslyBitCastTo(ReturnTy))
+		if (ret->getType() != ReturnTy)
 		{
-			ret = Builder.CreateBitCast(ret, ReturnTy);
-		}
-		else
-		{
-			llvm::Value *tmp = Builder.CreateAlloca(ReturnTy);
-			llvm::Value *storePtr =
+			if (ret->getType()->canLosslesslyBitCastTo(ReturnTy))
+			{
+				ret = Builder.CreateBitCast(ret, ReturnTy);
+			}
+			else
+			{
+				llvm::Value *tmp = Builder.CreateAlloca(ReturnTy);
+				llvm::Value *storePtr =
 				Builder.CreateBitCast(tmp, llvm::PointerType::getUnqual(ret->getType()));
-			Builder.CreateStore(ret, storePtr);
-			ret = Builder.CreateLoad(tmp);
+				Builder.CreateStore(ret, storePtr);
+				ret = Builder.CreateLoad(tmp);
+			}
 		}
 	}
+	
+	ExceptionBuilder.ClearInsertionPoint();
 	return ret;
 }
 
