@@ -371,10 +371,16 @@ llvm::GlobalAlias *CGObjCGNU::GetSelectorByName(NSString *SelName,
 	}
 	
 	// If not, create a new one.
-	SelValue = new llvm::GlobalAlias(SelectorTy,
-	                                 llvm::GlobalValue::PrivateLinkage,
-	                                 string(".objc_selector_")+[SelName UTF8String], NULL,
-	                                 &TheModule);
+	SelValue = new llvm::GlobalVariable(TheModule,
+										SelectorTy,
+										false, // Const
+										llvm::GlobalValue::LinkerPrivateLinkage, // Link
+										llvm::ConstantInt::get(SelectorTy, 0), // Init
+										string(".objc_selector_")+[SelName UTF8String],
+										NULL,
+										llvm::GlobalVariable::NotThreadLocal,
+										NULL,
+										true);
 	Types.push_back(TypedSelector(SelTypes, SelValue));
 	
 	return SelValue;
