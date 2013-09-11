@@ -992,7 +992,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	Elements.push_back(NullP); // extra_space
 	Elements.push_back(NullP); // kernel_module
 	Elements.push_back(InstanceSize); // instance_size
-	Elements.push_back(Zero); // version
+	Elements.push_back(llvm::ConstantInt::get(IntTy, 0)); // version
 	
 	// Create an instance of the structure
 	return MakeGlobal(ClassTy, Elements, 
