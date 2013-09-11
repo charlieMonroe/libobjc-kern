@@ -393,8 +393,6 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 {
 	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		/* If not types, fall back to the RT function. */
-		printf("Unknown types, returning result of function call %s \n", [SelName UTF8String]);
-		
 		llvm::Value *ConstSelName = MakeConstantString(SelName);
 		llvm::Constant *SelectorLookupFn =
 		TheModule.getOrInsertFunction("sel_getNamed", SelectorTy, PtrToInt8Ty,
@@ -404,8 +402,6 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 
 	llvm::GlobalVariable *SelValue = GetSelectorByName(SelName, SelTypes);
 	
-	printf("SelValue: %p\n", SelValue);
-
 	// return SelValue;
 	return Builder.CreateLoad(Builder.CreateGEP(SelValue, Zeros[0]));
 }
@@ -569,7 +565,6 @@ llvm::Value *CGObjCRuntime::callIMP(
 		LLVMType *argTy = fTy->getParamType(i);
 		if (callArgs[i]->getType() != argTy)
 		{
-			printf("\n^^^^^\n");
 			callArgs[i]->getType()->dump(); argTy->dump();
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
@@ -1278,25 +1273,13 @@ llvm::Function *CGObjCGNU::ModuleInitFunction()
 			
 			NSString *Name = iter->first;
 			NSString *Types = i->first;
-			
-			printf("\n**********\n");
-			SelRefStructTy->dump();
-			printf("\n");
-			
+
 			Elements.push_back(MakeConstantString(Name));
 			Elements.push_back(MakeConstantString(Types));
-			
-			Elements[0]->getType()->dump();
-			printf(" ");
-			Elements[1]->getType()->dump();
-			printf(" ");
 			
 			// Second is the global variable - we supply a pointer to it to the
 			// runtime which then fixes it
 			Elements.push_back(i->second);
-			
-			Elements[2]->getType()->dump();
-			printf(" ");
 			
 			Selectors.push_back(llvm::ConstantStruct::get(SelRefStructTy, Elements));
 			
