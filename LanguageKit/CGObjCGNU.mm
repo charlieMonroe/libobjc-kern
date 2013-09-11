@@ -925,8 +925,8 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	// because the runtime performs this translation on load.
 	llvm::StructType *ClassTy = GetStructType(
 		Context,
-		PtrToInt8Ty,            // class_pointer
-		PtrToInt8Ty,            // super_class
+		IdTy,            // class_pointer
+		IdTy,            // super_class
 	    PtrToInt8Ty,			// dtable
 		FlagsStructTy,			// flags
 		Methods->getType(),     // methods
@@ -951,7 +951,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 		llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(PtrTy));
 	// Fill in the structure
 	std::vector<llvm::Constant*> Elements;
-	Elements.push_back(llvm::ConstantExpr::getBitCast(MetaClass, PtrToInt8Ty));
+	Elements.push_back(llvm::ConstantExpr::getBitCast(MetaClass, IdTy));
 	Elements.push_back(SuperClass);
 	Elements.push_back(NullP); // dtable
 	
