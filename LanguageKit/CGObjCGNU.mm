@@ -393,6 +393,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 {
 	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		/* If not types, fall back to the RT function. */
+		printf("Unknown types, returning result of function call %s \n", [SelName UTF8String]);
 		
 		llvm::Value *ConstSelName = MakeConstantString(SelName);
 		llvm::Constant *SelectorLookupFn =
@@ -737,10 +738,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 {
 if (isClassMessage) { NSLog(@"Sending class message [%@ %@]", ReceiverClass, selName); }
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	
-	llvm::Value *tmp = CGF.CreateTempAlloca(SelValue->getType());
-	CGF.Builder.CreateStore(SelValue, tmp);
-	Selector = tmp;
+	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	char ret = [selTypes characterAtIndex: 0];
 	const char *msgFuncName = "objc_msgSend";
