@@ -177,7 +177,7 @@ public:
 								 llvm::Value *Selector,
 								 llvm::SmallVectorImpl<llvm::Value*> &ArgV,
 								 llvm::BasicBlock *CleanupBlock,
-								 llvm::MDNode *metadata)
+								 llvm::MDNode *metadata);
 	virtual void GenerateCategory(
 		NSString *ClassName, NSString *CategoryName,
 		StringVector  &InstanceMethodNames,
