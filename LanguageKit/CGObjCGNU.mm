@@ -568,6 +568,8 @@ llvm::Value *CGObjCRuntime::callIMP(
 		LLVMType *argTy = fTy->getParamType(i);
 		if (callArgs[i]->getType() != argTy)
 		{
+			printf("\n^^^^^\n");
+			callArgs[i]->getType()->dump(); argTy->dump();
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
 	}
