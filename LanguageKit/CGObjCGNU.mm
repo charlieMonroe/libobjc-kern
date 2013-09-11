@@ -582,17 +582,17 @@ llvm::Value *CGObjCRuntime::callIMP(
 	/// Type of integers that are used in the buffer type
 	llvm::Type *SetJmpBufferIntTy;
 	
-	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(CGM->Context);
+	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(Context);
 	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
 	
 	/// A structure defining the exception data type
 	llvm::StructType *ExceptionDataTy = NULL;
 	if (llvm::Module::Pointer64){
 		SetJmpBufferSize = 12;
-		SetJmpBufferIntTy = LongTy;
+		SetJmpBufferIntTy = types->longTy;
 	}else if (llvm::Module::Pointer32){
 		SetJmpBufferSize = (18);
-		SetJmpBufferIntTy = IntTy;
+		SetJmpBufferIntTy = types->intTy;
 	}else{
 		printf("Unknown target and hence unknown setjmp buffer size.\n");
 		abort();
@@ -628,7 +628,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
-	llvm::Constant *Zero = llvm::ConstantInt::get(IntTy, 0);
+	llvm::Constant *Zero = llvm::ConstantInt::get(types->intTy, 0);
 	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
 	llvm::Value *SetJmpBuffer =
 	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
