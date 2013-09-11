@@ -379,7 +379,7 @@ llvm::GlobalVariable *CGObjCGNU::GetSelectorByName(NSString *SelName,
 										string(".objc_selector_")+[SelName UTF8String],
 										NULL,
 										llvm::GlobalVariable::NotThreadLocal,
-										NULL,
+										0,
 										true);
 	Types.push_back(TypedSelector(SelTypes, SelValue));
 	
@@ -401,7 +401,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
 		return Builder.CreateCall(SelectorLookupFn, ConstSelName);
 	}
 
-	llvm::GlobalAlias *SelValue = GetSelectorByName(SelName, SelTypes);
+	llvm::GlobalVariable *SelValue = GetSelectorByName(SelName, SelTypes);
 	
 	printf("SelValue: %p\n", SelValue);
 
