@@ -58,6 +58,10 @@ private:
 	LLVMType *PtrTy;
 	llvm::IntegerType *LongTy;
 	llvm::IntegerType *SizeTy;
+	
+	llvm::IntegerType *IntegerBit;
+	llvm::StructType *FlagsStructTy;
+	llvm::StructType *ClassTy;
 	LLVMType *PtrToIntTy;
 	std::vector<llvm::Constant*> Classes;
 	std::vector<llvm::Constant*> Categories;
@@ -285,6 +289,39 @@ CGObjCGNU::CGObjCGNU(CodeGenTypes *cgTypes,
 	
 	// TODO
 	SizeTy = LongTy;
+	
+	IntegerBit = llvm::Type::getInt1Ty(Context);
+	FlagsStructTy = llvm::StructType::get(
+															IntegerBit, // meta
+															IntegerBit, // resolved
+															IntegerBit, // initialized
+															IntegerBit, // user_created
+															IntegerBit, // has_custom_arr
+															IntegerBit, // fake
+															NULL
+															);
+	
+	ClassTy = GetStructType(
+											  Context,
+											  IdTy,            // class_pointer
+											  IdTy,            // super_class
+											  PtrToInt8Ty,			// dtable
+											  FlagsStructTy,			// flags
+											  PtrTy,				// methods
+											  PtrToInt8Ty,            // name
+											  PtrTy,		// ivar_offsets
+											  PtrTy,       // ivars
+											  PtrTy,                  // protocols
+											  PtrTy,                  // properties (not used by LK yet)
+											  PtrTy,                  // subclass_list
+											  PtrTy,                  // sibling_class
+											  PtrTy,                  // unresolved_previous
+											  PtrTy,                  // unresolved_next
+											  PtrTy,                  // extra_space
+											  PtrTy,                  // kernel_module
+											  SizeTy, // Instance size
+											  IntTy,                 // version
+											  (void *)0);
 
 }
 
@@ -296,7 +333,7 @@ llvm::Constant *CGObjCGNU::LookupClass(NSString *ClassName, bool isMeta)
 	llvm::Constant *Class = TheModule.getGlobalVariable([symbolName UTF8String]);
 	if (Class == NULL){
 		Class = new llvm::GlobalVariable(TheModule,
-										 SelStructTy, /* It should really by the class structure, but it shouldn't really matter since we are casting it to IdTy later on anyway. */
+										 ClassTy,
 										 false,
 										 llvm::GlobalValue::ExternalLinkage,
 										 0,
@@ -914,43 +951,6 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	llvm::Constant *IvarOffsets,
 	bool isMeta)
 {
-	llvm::IntegerType *IntegerBit = llvm::Type::getInt1Ty(Context);
-	llvm::StructType *FlagsStructTy = llvm::StructType::get(
-										  IntegerBit, // meta
-										  IntegerBit, // resolved
-										  IntegerBit, // initialized
-										  IntegerBit, // user_created
-										  IntegerBit, // has_custom_arr
-										  IntegerBit, // fake
-										  NULL
-										  );
-	
-	// Set up the class structure
-	// Note:  Several of these are char*s when they should be ids.  This is
-	// because the runtime performs this translation on load.
-	llvm::StructType *ClassTy = GetStructType(
-		Context,
-		IdTy,            // class_pointer
-		IdTy,            // super_class
-	    PtrToInt8Ty,			// dtable
-		FlagsStructTy,			// flags
-		Methods->getType(),     // methods
-		PtrToInt8Ty,            // name
-		IvarOffsets->getType(), // ivar_offsets
-		IVars->getType(),       // ivars
-		PtrTy,                  // protocols
-		PtrTy,                  // properties (not used by LK yet)
-		PtrTy,                  // subclass_list
-		PtrTy,                  // sibling_class
-		PtrTy,                  // unresolved_previous
-		PtrTy,                  // unresolved_next
-		PtrTy,                  // extra_space
-		PtrTy,                  // kernel_module
-		SizeTy, // Instance size
-		IntTy,                 // version
-		(void *)0);
-	
-	
 	llvm::Constant *Zero = ConstantInt::get(LongTy, 0);
 	llvm::Constant *NullP =
 		llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(PtrTy));
@@ -972,7 +972,7 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	llvm::Constant *Flags = llvm::ConstantStruct::get(FlagsStructTy, FlagElements);
 	Elements.push_back(Flags); // flags
 	
-	Elements.push_back(Methods);
+	Elements.push_back(llvm::ConstantExpr::getBitCast(Methods, PtrTy));
 	
 	if (NULL == Name)
 	{
@@ -981,8 +981,8 @@ llvm::Constant *CGObjCGNU::GenerateClassStructure(
 	}
 	Elements.push_back(MakeConstantString(Name));
 	
-	Elements.push_back(IvarOffsets);
-	Elements.push_back(IVars); // ivars
+	Elements.push_back(llvm::ConstantExpr::getBitCast(IvarOffsets, PtrTy));
+	Elements.push_back(llvm::ConstantExpr::getBitCast(IVars, PtrTy)); // ivars
 	Elements.push_back(llvm::ConstantExpr::getBitCast(Protocols, PtrTy)); // Proto
 	Elements.push_back(NullP); // properties
 	Elements.push_back(NullP); // subclass_list
