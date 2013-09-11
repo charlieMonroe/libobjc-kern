@@ -636,7 +636,6 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
                                             llvm::BasicBlock *CleanupBlock)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	llvm::Value *ReceiverClass = LookupClass(SuperClassName, false);
 	// If it's a class message, get the metaclass
@@ -693,7 +692,6 @@ void CGObjCGNU::lookupIMPAndTypes(CGBuilder &Builder,
                                   llvm::Value *&typeEncoding)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, 0);
-	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	if (0 == Sender)
 	{

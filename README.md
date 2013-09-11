@@ -233,6 +233,10 @@ Another point where any locking or allocations are performed is the `@synchroniz
 
 ```
 Note that the LanguageKit isn't complete and currently the edlc process crashes when launched.
+
+Current state of this is that the generation of runtime structures is updated for the kernel module as well as the usage of integer-based selector.
+
+It is still missing the change from libunwind-based stack unwinding and exception handling to the setjmp-longjmp-based one.
 ```
 
 An extension to this project is getting Smalltalk into the kernel. The Smalltalk runtime in included as well and it uses the ObjC runtime for all its features.

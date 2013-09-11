@@ -1253,7 +1253,6 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder &B,
 	B.CreateCondBr(B.CreateIsNotNull(typeEncoding), start, totalFail);
 	B.SetInsertPoint(totalFail);
 	llvm::Value *cmd = CGM->Runtime->GetSelector(B, selName, 0);
-	cmd = B.CreateLoad(B.CreateGEP(cmd, zero));
 	B.CreateCall2(CGM->TheModule->getOrInsertFunction("__LanguageKitInvalidTypeEncoding",
 	                                                  types.voidTy,
 	                                                  receiver->getType(),
