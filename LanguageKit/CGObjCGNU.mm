@@ -633,7 +633,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSendSuper(CGBuilder &Builder,
                                             llvm::BasicBlock *CleanupBlock)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	Selector = Builder.Load(Builder.CreateGEP(Selector, Zeroes[0]));
+	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	llvm::Value *ReceiverClass = LookupClass(SuperClassName, false);
 	// If it's a class message, get the metaclass
@@ -690,7 +690,7 @@ void CGObjCGNU::lookupIMPAndTypes(CGBuilder &Builder,
                                   llvm::Value *&typeEncoding)
 {
 	llvm::Value *Selector = GetSelector(Builder, selName, 0);
-	Selector = Builder.Load(Builder.CreateGEP(Selector, Zeroes[0]));
+	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	if (0 == Sender)
 	{
@@ -735,7 +735,7 @@ llvm::Value *CGObjCGNU::GenerateMessageSend(CGBuilder &Builder,
 {
 if (isClassMessage) { NSLog(@"Sending class message [%@ %@]", ReceiverClass, selName); }
 	llvm::Value *Selector = GetSelector(Builder, selName, selTypes);
-	Selector = Builder.Load(Builder.CreateGEP(Selector, Zeroes[0]));
+	Selector = Builder.CreateLoad(Builder.CreateGEP(Selector, Zeros[0]));
 	
 	char ret = [selTypes characterAtIndex: 0];
 	const char *msgFuncName = "objc_msgSend";
