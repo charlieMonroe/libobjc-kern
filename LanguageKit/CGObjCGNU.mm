@@ -628,7 +628,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
 	Function *ExceptionTryEnterFn = cast<Function>(
-												   TheModule->getOrInsertFunction("objc_exception_try_enter",
+												   TheModule.getOrInsertFunction("objc_exception_try_enter",
 																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	// Enter a try block:
@@ -643,7 +643,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
 	
 	Function *SetJmpFn = cast<Function>(
-										TheModule->getOrInsertFunction("setjmp",
+										TheModule.getOrInsertFunction("setjmp",
 																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
@@ -670,7 +670,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	}
 	
 	Function *ExceptionTryExitFn = cast<Function>(
-												   TheModule->getOrInsertFunction("objc_exception_try_exit",
+												   TheModule.getOrInsertFunction("objc_exception_try_exit",
 																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
