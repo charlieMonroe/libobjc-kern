@@ -620,7 +620,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
 	Function *ExceptionTryEnterFn = cast<Function>(
 												   TheModule->getOrInsertFunction("objc_exception_try_enter",
-																				  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
+																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	// Enter a try block:
 	//  - Call objc_exception_try_enter to push ExceptionData on top of
@@ -635,7 +635,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	
 	Function *SetJmpFn = cast<Function>(
 										TheModule->getOrInsertFunction("setjmp",
-																	   Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
+																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
 	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
@@ -662,7 +662,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	
 	Function *ExceptionTryExitFn = cast<Function>(
 												   TheModule->getOrInsertFunction("objc_exception_try_exit",
-																				  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
+																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
 	
@@ -674,7 +674,7 @@ llvm::Value *CGObjCRuntime::callIMP(
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
 	ret = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
 	
-	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
+	if (retTy != Type::getVoidTy(CGM->Context))
 	{
 		if (isSRet)
 		{
