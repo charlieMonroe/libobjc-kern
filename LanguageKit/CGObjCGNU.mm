@@ -465,10 +465,10 @@ llvm::Constant *CGObjCGNU::MakeGlobal(LLVMStructTy *Ty,
 	}
 	
 	for (unsigned i = 0, e = V.size(); i != e; ++i){
-		if (V[i]->getType() != T->getElementType(i)){
+		if (V[i]->getType() != Ty->getElementType(i)){
 			printf("Types do not match at index [%i]\n", i);
 			V[i]->getType()->dump();
-			T->getElementType(i)->dump();
+			Ty->getElementType(i)->dump();
 		}
    }
 	
