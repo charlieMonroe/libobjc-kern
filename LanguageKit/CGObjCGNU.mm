@@ -540,7 +540,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
 	llvm::AttrListPtr attributes = types->AI->attributeListForFunctionType(fTy, ReturnTy);
 	
-	imp = Builder.CreateBitCast(imp, llvm::PointerType::getUnqual(fTy));
+	// imp = Builder.CreateBitCast(imp, llvm::PointerType::getUnqual(fTy));
 	printf("\nIMP Type\n");
 	imp->getType()->dump();
 	printf("\nDone IMP Type\n");
