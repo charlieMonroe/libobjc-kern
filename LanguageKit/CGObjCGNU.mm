@@ -642,7 +642,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Enter a try block:
 	//  - Call objc_exception_try_enter to push ExceptionData on top of
 	//    the EH stack.
-	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
+	llvm::Value *ret = Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
 	//  - Call setjmp on the exception data buffer.
 	llvm::Constant *Zero = llvm::ConstantInt::get(types->intTy, 0);
@@ -657,8 +657,6 @@ llvm::Value *CGObjCGNU::callIMP(
 	llvm::CallInst *SetJmpResult =
 	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
 	SetJmpResult->setCanReturnTwice();
-	
-	llvm::Value *ret = 0;
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
