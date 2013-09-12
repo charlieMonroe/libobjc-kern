@@ -612,10 +612,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	{
 		ReturnBuilder.CreateRetVoid();
 	}
-//	RetBB = llvm::BasicBlock::Create(CGM->Context, "finish", CurrentFunction);
-
-	
 	ReturnBuilder.CreateBr(realRetBB);
+	
 	/*
 	ExceptionBB =
 		BasicBlock::Create(CGM->Context, "non_local_return_handler", CurrentFunction);
@@ -731,8 +729,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 
 void CodeGenSubroutine::EndScope(void)
 {
-	CGBuilder CleanupBuilder(CleanupEndBB);
-	CleanupBuilder.CreateBr(RetBB);
+//	CGBuilder CleanupBuilder(CleanupEndBB);
+//	CleanupBuilder.CreateBr(RetBB);
 }
 void CodeGenSubroutine::storeValueInVariable(llvm::Value *value, NSString *aVariable)
 {
