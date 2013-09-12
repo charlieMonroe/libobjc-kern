@@ -526,11 +526,11 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		initializeVariableWithValue(symbol, AI);
 		++AI;
 	}
-		
+	
 	// Entry point into the clanup
 	CleanupBB = BasicBlock::Create(CGM->Context, "cleanup", CurrentFunction);
-	CGBuilder cleanupBuilder(CleanupBB);
-	
+	// End point of the cleanup
+	CleanupEndBB = CleanupBB;
 	for (LKSymbol *symbol in locals)
 	{
 		initializeVariableWithValue(symbol, 0);
@@ -542,8 +542,78 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 			assert(0 != var);
 			var = loadByRefPointer(var);
 		}
+		CGBuilder cleanupBuilder(CleanupEndBB);
 		releaseVariable(cleanupBuilder.CreateLoad(var));
 	}
+
+	LLVMType *Int1Ty = Type::getInt1Ty(CGM->Context);
+	// Flag indicating if we are in an exception handler.  Used for branching
+	// later - should be removed by mem2reg and subsequent passes.
+	Value *inException = Builder.CreateAlloca(Int1Ty, 0, "inException");
+	Value *is_catch =
+		Builder.CreateAlloca(Int1Ty, 0, "is_catch");
+	Value *exceptionPtr =
+		Builder.CreateAlloca(types.ptrToVoidTy, 0, "exception_pointer");
+	Context = Builder.CreateAlloca(types.ptrToVoidTy, 0, "context");
+
+	Builder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 0), inException);
+	Builder.CreateStore(ConstantPointerNull::get(types.ptrToVoidTy), exceptionPtr);
+
+	
+	
+	// Create a basic block for returns, reached only from the cleanup block
+	RetVal = 0;
+	if (retTy != Type::getVoidTy(CGM->Context))
+	{
+		if (isSRet)
+		{
+			RetVal = CurrentFunction->arg_begin();
+		}
+		else
+		{
+			RetVal = Builder.CreateAlloca(retTy, 0, "return_value");
+		}
+		Builder.CreateStore(Constant::getNullValue(retTy), RetVal);
+	}
+	
+	/// Handle returns
+
+	// Create the real return handler
+	BasicBlock *realRetBB = llvm::BasicBlock::Create(CGM->Context, "return", CurrentFunction);
+	CGBuilder ReturnBuilder(realRetBB);
+
+	// If this is returning an object, autorelease it.
+	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType) && !returnsRetained)
+	{
+		Value *retObj = ReturnBuilder.CreateLoad(RetVal);
+		CGBuilder smallIntBuilder(CGM->Context);
+		splitSmallIntCase(retObj, ReturnBuilder, smallIntBuilder);
+		llvm::Value *autoreleased =
+			CGM->assign->autoreleaseReturnValue(ReturnBuilder, retObj);
+		PHINode *phi;
+		combineSmallIntCase(autoreleased, retObj, phi, ReturnBuilder,
+				smallIntBuilder);
+		retObj = phi;
+		ReturnBuilder.CreateStore(retObj, RetVal);
+	}
+	LLVMType *functionRetTy =
+		CurrentFunction->getFunctionType()->getReturnType();
+	if (functionRetTy != llvm::Type::getVoidTy(CGM->Context))
+	{
+		Value * R = ReturnBuilder.CreateLoad(RetVal);
+		if (functionRetTy != R->getType())
+		{
+			R = ReturnBuilder.CreateBitCast(R, functionRetTy);
+		}
+		R->getType()->dump();
+		functionRetTy->dump();
+		ReturnBuilder.CreateRet(R);
+	}
+	else
+	{
+		ReturnBuilder.CreateRetVoid();
+	}
+	ReturnBuilder.CreateBr(realRetBB);
 	
 	/*
 	ExceptionBB =
