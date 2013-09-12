@@ -612,7 +612,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	{
 		ReturnBuilder.CreateRetVoid();
 	}
-	RetBB = llvm::BasicBlock::Create(CGM->Context, "finish", CurrentFunction);
+//	RetBB = llvm::BasicBlock::Create(CGM->Context, "finish", CurrentFunction);
 
 	
 	ReturnBuilder.CreateBr(realRetBB);
