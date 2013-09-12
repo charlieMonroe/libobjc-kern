@@ -400,6 +400,7 @@ llvm::Value *CGObjCGNU::GetSelector(CGBuilder &Builder,
                                     NSString *SelName,
                                     NSString *SelTypes)
 {
+	NSLog(@"Getting selector %@", SelName);
 	if (SelTypes == nil || [SelTypes isEqualToString:@""]){
 		/* If not types, fall back to the RT function. */
 		llvm::Value *ConstSelName = MakeConstantString(SelName);
