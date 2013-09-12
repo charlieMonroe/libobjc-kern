@@ -646,7 +646,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	//    the EH stack.
 	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
 	
-	llvm::Value *ret = ReturnTy != Type::getVoidTy(Context) ? Builder.CreateAlloca(ReturnTy) : NULL;
+	llvm::Value *ret = ReturnTy != Type::getVoidTy(Context) ? Builder.CreateAlloca(ReturnTy) : Builder.CreateAlloca(IdTy);
 	
 	
 	//  - Call setjmp on the exception data buffer.
@@ -682,6 +682,8 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	if (ReturnTy != Type::getVoidTy(Context)){
 		TryBuilder.CreateStore(call, ret);
+	}else{
+		TryBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
 	}
 	
 	Function *ExceptionTryExitFn = cast<Function>(
@@ -731,6 +733,7 @@ llvm::Value *CGObjCGNU::callIMP(
 			}
 		}
 	}else{
+		ExceptionBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
 		ExceptionBuilder.ClearInsertionPoint();
 	}
 	
