@@ -510,10 +510,7 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 	std::vector<llvm::Constant*> Ivars;
 	
 	llvm::Constant *Class = LookupClass(@"_KKConstString", false);
-	Class->getType()->dump();
-	
 	llvm::Constant *ConstString = MakeConstantString(String);
-	ConstString->getType()->dump();
 	
 	Ivars.push_back(Class); // isa
 	Ivars.push_back(ConstantInt::get(IntTy, 0)); // retain count
@@ -522,7 +519,9 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 	llvm::Constant *ObjCStr = MakeGlobal(
 		GetStructType(Context, IdTy, IntTy, PtrToInt8Ty, IntTy,
 		(void *)0), Ivars, ".objc_str");
+	printf("Castring string : "); ObjCStr->getType()->dump();
 	ObjCStr = llvm::ConstantExpr::getBitCast(ObjCStr, IdTy); // It's an object
+	printf(" to "); ObjCStr->getType()->dump(); printf("\n");
 	ConstantStrings.push_back(ObjCStr);
 	return ObjCStr;
 }
