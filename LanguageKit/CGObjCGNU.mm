@@ -539,7 +539,12 @@ llvm::Value *CGObjCGNU::callIMP(
 	LLVMType *ReturnTy;
 	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
 	llvm::AttrListPtr attributes = types->AI->attributeListForFunctionType(fTy, ReturnTy);
+	
 	imp = Builder.CreateBitCast(imp, llvm::PointerType::getUnqual(fTy));
+	printf("\nIMP Type\n");
+	imp->getType()->dump();
+	printf("\nDone IMP Type\n");
+	
 
 	// Call the method
 	llvm::SmallVector<llvm::Value*, 8> callArgs;
@@ -575,7 +580,7 @@ llvm::Value *CGObjCGNU::callIMP(
 		}
 	}
 	
-	printf("Checking params vs function params\n");
+	printf("\nChecking params vs function params\n");
 	for (unsigned int i=0 ; i<fTy->getNumParams() ; i++)
 	{
 		LLVMType *argTy = fTy->getParamType(i);
@@ -586,7 +591,7 @@ llvm::Value *CGObjCGNU::callIMP(
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
 	}
-	printf("Done Checking params vs function params\n");
+	printf("\nDone Checking params vs function params\n");
 	
 	
 	/// Setjmp buffer type is an array of this size
