@@ -696,6 +696,7 @@ llvm::Value *CGObjCGNU::callIMP(
 				printf("Bitcast1\n");
 				ret->getType()->dump(); printf("  "); ReturnTy->dump(); printf("\n");
 				ret = Builder.CreateBitCast(ret, ReturnTy);
+				printf("After bitcast\n");
 			}
 			else
 			{
