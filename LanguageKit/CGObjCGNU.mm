@@ -551,11 +551,17 @@ llvm::Value *CGObjCGNU::callIMP(
 		callArgs.push_back(sret);
 		param++;
 	}
+	
+	printf("Args: \n");
+	
 	callArgs.push_back(Receiver);
+	Receiver->getType()->dump();
 	callArgs.push_back(Selector);
+	Selector->getType()->dump();
 	llvm::Value* callArg;
 	for (unsigned int i = 0; i < ArgV.size() ; i++) {
 		callArg = ArgV[i];
+		callArg->getType()->dump();
 		if (types->AI->willPassTypeAsPointer(callArg->getType()))
 		{
 			llvm::AllocaInst *StructPointer =
