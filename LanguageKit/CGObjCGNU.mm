@@ -657,8 +657,7 @@ llvm::Value *CGObjCGNU::callIMP(
 										TheModule.getOrInsertFunction("setjmp",
 																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
-	llvm::CallInst *SetJmpResult =
-	llvm::Value *ret = Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
+	llvm::CallInst *SetJmpResult = Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
 	SetJmpResult->setCanReturnTwice();
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
