@@ -691,7 +691,10 @@ llvm::Value *CGObjCGNU::callIMP(
 	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
 	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
-	ExceptionBuilder.CreateStore(ExceptionBuilder.CreateLoad(ExceptionResult), ret);
+	ExceptionResult = ExceptionBuilder.CreateLoad(ExceptionResult);
+	ExceptionResult->getType()->dump();
+	
+	ExceptionBuilder.CreateStore(ExceptionResult, ret);
 	
 	if (ReturnTy != Type::getVoidTy(Context))
 	{
