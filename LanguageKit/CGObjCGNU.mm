@@ -729,6 +729,7 @@ llvm::Value *CGObjCGNU::callIMP(
 		}
 	}else{
 		ExceptionBuilder.ClearInsertionPoint();
+		ret = Builder.CreateAlloca(IdTy);
 	}
 	
 	return ret;
