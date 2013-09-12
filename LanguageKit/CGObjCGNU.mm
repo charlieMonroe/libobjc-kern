@@ -522,8 +522,8 @@ llvm::Constant *CGObjCGNU::GenerateConstantString(NSString *String)
 	llvm::Constant *ObjCStr = MakeGlobal(
 		GetStructType(Context, IdTy, IntTy, PtrToInt8Ty, IntTy,
 		(void *)0), Ivars, ".objc_str");
-	ConstantStrings.push_back(
-		llvm::ConstantExpr::getBitCast(ObjCStr, PtrToInt8Ty));
+	ObjCStr = llvm::ConstantExpr::getBitCast(ObjCStr, IdTy); // It's an object
+	ConstantStrings.push_back(ObjCStr);
 	return ObjCStr;
 }
 llvm::Value *CGObjCGNU::callIMP(
