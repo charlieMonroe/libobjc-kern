@@ -673,6 +673,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	CGBuilder TryBuilder(TryBB);
 	
 	llvm::CallInst *call = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
+	call->setAttributes(attributes);
 	if (0 != metadata){
 		call->setMetadata(msgSendMDKind, metadata);
 	}
@@ -729,7 +730,6 @@ llvm::Value *CGObjCGNU::callIMP(
 		}
 	}else{
 		ExceptionBuilder.ClearInsertionPoint();
-		ret = Builder.CreateAlloca(IdTy);
 	}
 	
 	return ret;
