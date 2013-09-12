@@ -574,15 +574,20 @@ llvm::Value *CGObjCGNU::callIMP(
 			callArgs.push_back(callArg);
 		}
 	}
+	
+	printf("Checking params vs function params\n");
 	for (unsigned int i=0 ; i<fTy->getNumParams() ; i++)
 	{
 		LLVMType *argTy = fTy->getParamType(i);
-		if (callArgs[i]->getType() != argTy)
+		
+		callArgs[i]->getType()->dump(); argTy->dump();
+		i
+		f (callArgs[i]->getType() != argTy)
 		{
-			callArgs[i]->getType()->dump(); argTy->dump();
 			callArgs[i] = Builder.CreateBitCast(callArgs[i], argTy);
 		}
 	}
+	printf("Done Checking params vs function params\n");
 	
 	
 	/// Setjmp buffer type is an array of this size
@@ -643,7 +648,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	Function *SetJmpFn = cast<Function>(
 										TheModule.getOrInsertFunction("setjmp",
-																	   Type::getInt32Ty(Context), SetJmpType, (void *)0));
+																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
 	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
@@ -673,7 +678,6 @@ llvm::Value *CGObjCGNU::callIMP(
 																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
-	
 	
 	// Catch BB
 	CGBuilder ExceptionBuilder(ExcBB);
