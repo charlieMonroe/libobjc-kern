@@ -693,7 +693,8 @@ llvm::Value *CGObjCGNU::callIMP(
 		{
 			if (ret->getType()->canLosslesslyBitCastTo(ReturnTy))
 			{
-				printf("Bitcast1");
+				printf("Bitcast1\n");
+				ret->getType()->dump(); printf("  "); ReturnTy->dump(); printf("\n");
 				ret = Builder.CreateBitCast(ret, ReturnTy);
 			}
 			else
