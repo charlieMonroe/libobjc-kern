@@ -696,17 +696,17 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Catch BB
 	CGBuilder ExceptionBuilder(ExcBB);
 	
-	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
-	llvm::Value *ExcGEPIndexes[] = { Zero, Two };
-	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
+//	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
+//	llvm::Value *ExcGEPIndexes[] = { Zero, Two };
+//	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
 	
 	
 	if (ReturnTy != Type::getVoidTy(Context))
 	{
-		ExceptionResult = ExceptionBuilder.CreateBitCast(ExceptionBuilder.CreateLoad(ExceptionResult), ReturnTy);
-		ExceptionResult->getType()->dump();
+//		ExceptionResult = ExceptionBuilder.CreateBitCast(ExceptionBuilder.CreateLoad(ExceptionResult), ReturnTy);
+//		ExceptionResult->getType()->dump();
 		
-		ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeros[0]));
+//		ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeros[0]));
 		ExceptionBuilder.ClearInsertionPoint();
 		
 		if (isSRet)
@@ -733,7 +733,7 @@ llvm::Value *CGObjCGNU::callIMP(
 			}
 		}
 	}else{
-		ExceptionBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
+//		ExceptionBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
 		ExceptionBuilder.ClearInsertionPoint();
 	}
 	
