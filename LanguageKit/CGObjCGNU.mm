@@ -693,11 +693,13 @@ llvm::Value *CGObjCGNU::callIMP(
 		{
 			if (ret->getType()->canLosslesslyBitCastTo(ReturnTy))
 			{
+				printf("Bitcast1");
 				ret = Builder.CreateBitCast(ret, ReturnTy);
 			}
 			else
 			{
 				llvm::Value *tmp = Builder.CreateAlloca(ReturnTy);
+				printf("Bitcast2");
 				llvm::Value *storePtr =
 				Builder.CreateBitCast(tmp, llvm::PointerType::getUnqual(ret->getType()));
 				Builder.CreateStore(ret, storePtr);
