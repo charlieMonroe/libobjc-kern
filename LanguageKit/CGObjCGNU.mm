@@ -674,23 +674,23 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Try BB
 	CGBuilder TryBuilder(TryBB);
 	
-	llvm::CallInst *call = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
-	call->setAttributes(attributes);
+//	llvm::CallInst *call = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
+//	call->setAttributes(attributes);
 	if (0 != metadata){
-		call->setMetadata(msgSendMDKind, metadata);
+//		call->setMetadata(msgSendMDKind, metadata);
 	}
 	
 	if (ReturnTy != Type::getVoidTy(Context)){
-		TryBuilder.CreateStore(call, ret);
+//		TryBuilder.CreateStore(call, ret);
 	}else{
-		TryBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
+//		TryBuilder.CreateStore(Constant::getNullValue(IdTy), ret);
 	}
 	
-	Function *ExceptionTryExitFn = cast<Function>(
-												   TheModule.getOrInsertFunction("objc_exception_try_exit",
-																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
+//	Function *ExceptionTryExitFn = cast<Function>(
+//												   TheModule.getOrInsertFunction("objc_exception_try_exit",
+//																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
-	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
+//	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
 	TryBuilder.ClearInsertionPoint();
 	
 	// Catch BB
