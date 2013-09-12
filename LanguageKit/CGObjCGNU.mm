@@ -585,12 +585,6 @@ llvm::Value *CGObjCGNU::callIMP(
 	}
 	
 	
-	
-	
-	
-	
-	
-	
 	/// Setjmp buffer type is an array of this size
 	uint64_t SetJmpBufferSize;
 	/// Type of integers that are used in the buffer type
@@ -649,7 +643,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	Function *SetJmpFn = cast<Function>(
 										TheModule.getOrInsertFunction("setjmp",
-																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
+																	   Type::getInt32Ty(Context), SetJmpType, (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
 	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
@@ -715,7 +709,6 @@ llvm::Value *CGObjCGNU::callIMP(
 		}
 	}
 	
-	ExceptionBuilder.ClearInsertionPoint();
 	return ret;
 }
 
