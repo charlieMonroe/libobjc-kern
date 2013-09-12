@@ -642,7 +642,10 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Enter a try block:
 	//  - Call objc_exception_try_enter to push ExceptionData on top of
 	//    the EH stack.
-	llvm::Value *ret = Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
+	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
+	
+	llvm::Value *ret = Builder.CreateAlloca(ReturnTy);
+	
 	
 	//  - Call setjmp on the exception data buffer.
 	llvm::Constant *Zero = llvm::ConstantInt::get(types->intTy, 0);
@@ -655,7 +658,7 @@ llvm::Value *CGObjCGNU::callIMP(
 																	   Type::getInt32Ty(Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
 	
 	llvm::CallInst *SetJmpResult =
-	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
+	llvm::Value *ret = Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
 	SetJmpResult->setCanReturnTwice();
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
@@ -670,10 +673,12 @@ llvm::Value *CGObjCGNU::callIMP(
 	// Try BB
 	CGBuilder TryBuilder(TryBB);
 	
-	llvm::CallInst *inv = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
+	llvm::CallInst *call = TryBuilder.CreateCall(imp, callArgs, "imp.invoke");
 	if (0 != metadata){
-		inv->setMetadata(msgSendMDKind, metadata);
+		call->setMetadata(msgSendMDKind, metadata);
 	}
+	
+	TryBuilder.CreateStore(call, ret);
 	
 	Function *ExceptionTryExitFn = cast<Function>(
 												   TheModule.getOrInsertFunction("objc_exception_try_exit",
@@ -686,7 +691,8 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
 	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
-	ret = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
+	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
+	ExceptionBuilder.CreateStore(ExceptionResult, ret);
 	
 	if (ReturnTy != Type::getVoidTy(Context))
 	{
