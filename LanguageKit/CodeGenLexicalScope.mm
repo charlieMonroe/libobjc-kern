@@ -604,6 +604,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		{
 			R = ReturnBuilder.CreateBitCast(R, functionRetTy);
 		}
+		R->getType()->dump();
+		functionRetTy->dump();
 		ReturnBuilder.CreateRet(R);
 	}
 	else
@@ -612,116 +614,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	}
 	RetBB = llvm::BasicBlock::Create(CGM->Context, "finish", CurrentFunction);
 
-	NSLog(@"%@ - %@\n", functionName, arguments);
 	
-#ifndef __APPLE__
-	#define __APPLE__ 0
-#endif
-	
-	/// Setjmp buffer type is an array of this size
-	uint64_t SetJmpBufferSize;
-	/// Type of integers that are used in the buffer type
-	llvm::Type *SetJmpBufferIntTy;
-	
-	llvm::IntegerType *Int8Ty = llvm::Type::getInt8Ty(CGM->Context);
-	llvm::PointerType *Int8PtrTy = Int8Ty->getPointerTo();
-	
-	/// A structure defining the exception data type
-	llvm::StructType *ExceptionDataTy = NULL;
-	if (llvm::Module::Pointer64){
-		// On FreeBSD the setjmp is just (12 * long), oven on AMD64,
-		// since it doesn't save anything from the FPU in the kernel.
-		// On OS X it's (37 * int), though.
-		#if __APPLE__
-			SetJmpBufferSize = ((9 * 2) + 3 + 16); // From #include <setjmp.h>
-			SetJmpBufferIntTy = types.intTy;
-		#else
-			SetJmpBufferSize = 12;
-			SetJmpBufferIntTy = types.longTy;
-		#endif
-	}else if (llvm::Module::Pointer32){
-		SetJmpBufferSize = (18);
-		SetJmpBufferIntTy = types.intTy;
-	}else{
-		LOG("Unknown target and hence unknown setjmp buffer size.");
-	}
-	
-	// Exceptions
-	llvm::Type *SetJmpType = llvm::ArrayType::get(SetJmpBufferIntTy,
-						      SetJmpBufferSize);
-	
-	ExceptionDataTy =
-	llvm::StructType::create("struct._objc_exception_data",
-				 SetJmpType,
-				 Int8PtrTy, // Next
-				 Int8PtrTy, // Exception object
-				 Int8PtrTy, // Reserved 1
-				 Int8PtrTy, // Reserved 2
-				 NULL);
-
-	
-	// Allocate memory for the setjmp buffer.  This needs to be kept
-	// live throughout the try and catch blocks.
-	llvm::Value *ExceptionData = Builder.CreateAlloca(ExceptionDataTy, NULL,
-							  "exceptiondata.ptr");
-	
-	llvm::Type *ExceptionDataPointerTy = ExceptionDataTy->getPointerTo();
-	Function *ExceptionTryEnterFn = cast<Function>(
-						   TheModule->getOrInsertFunction("objc_exception_try_enter",
-										  Type::getVoidTy(CGM->Context), ExceptionDataPointerTy, (void *)0));
-	// Enter a try block:
-	//  - Call objc_exception_try_enter to push ExceptionData on top of
-	//    the EH stack.
-	Builder.CreateCall(ExceptionTryEnterFn, ExceptionData);
-	
-	//  - Call setjmp on the exception data buffer.
-	llvm::Constant *Zero = llvm::ConstantInt::get(types.intTy, 0);
-	llvm::Value *GEPIndexes[] = { Zero, Zero, Zero };
-	llvm::Value *SetJmpBuffer =
-	Builder.CreateGEP(ExceptionData, GEPIndexes, "setjmp_buffer");
-	
-	Function *SetJmpFn = cast<Function>(
-				       TheModule->getOrInsertFunction("setjmp",
-								      Type::getInt32Ty(CGM->Context), SetJmpBufferIntTy->getPointerTo(), (void *)0));
-	
-	llvm::CallInst *SetJmpResult =
-	Builder.CreateCall(SetJmpFn, SetJmpBuffer, "setjmp_result");
-	SetJmpResult->setCanReturnTwice();
-	
-	// If setjmp returned 0, enter the protected block; otherwise,
-	// branch to the handler.
-	ExceptionBB = BasicBlock::Create(CGM->Context, "try.handler", CurrentFunction);
-	llvm::Value *DidCatch =
-	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
-	Builder.CreateCondBr(DidCatch, ExceptionBB, entryBB);
-	
-	CGBuilder ExceptionBuilder(ExceptionBB);
-	
-	llvm::Constant *Two = llvm::ConstantInt::get(types.intTy, 2);
-	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
-	RetVal = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
-	
-	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType))
-	{
-		Value *retObj = ExceptionBuilder.CreateLoad(RetVal);
-		if (isLKObject(ReturnType) && @encode(LKObject)[0] != '@')
-		{
-			CGBuilder smallIntBuilder(CGM->Context);
-			splitSmallIntCase(retObj, ExceptionBuilder, smallIntBuilder);
-			CGM->assign->releaseValue(ExceptionBuilder, retObj);
-			llvm::PHINode *unused;
-			combineSmallIntCase(0, 0, unused, ExceptionBuilder, smallIntBuilder);
-		}
-		else
-		{
-			CGM->assign->releaseValue(ExceptionBuilder, retObj);
-		}
-	}
-	
-	ExceptionBuilder.CreateBr(CleanupBB);
-	ExceptionBuilder.ClearInsertionPoint();
-	
-	ReturnBuilder.SetInsertPoint(RetBB);
 	ReturnBuilder.CreateBr(realRetBB);
 	/*
 	ExceptionBB =
