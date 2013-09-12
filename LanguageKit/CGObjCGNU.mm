@@ -689,7 +689,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	CGBuilder ExceptionBuilder(ExcBB);
 	
 	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
-	llvm::Value *ExcGEPIndexes[] = { Zero, Zero, Two };
+	llvm::Value *ExcGEPIndexes[] = { Zero, Two };
 	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
 	ExceptionResult = ExceptionBuilder.CreateBitCast(ExceptionBuilder.CreateLoad(ExceptionResult), ReturnTy);
 	ExceptionResult->getType()->dump();
