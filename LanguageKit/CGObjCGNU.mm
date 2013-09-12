@@ -694,7 +694,7 @@ llvm::Value *CGObjCGNU::callIMP(
 	ExceptionResult = ExceptionBuilder.CreateLoad(ExceptionResult);
 	ExceptionResult->getType()->dump();
 	
-	ExceptionBuilder.CreateStore(ExceptionResult, ret);
+	ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeroes[0]));
 	
 	if (ReturnTy != Type::getVoidTy(Context))
 	{
