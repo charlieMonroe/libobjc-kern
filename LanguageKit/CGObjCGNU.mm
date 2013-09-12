@@ -691,13 +691,16 @@ llvm::Value *CGObjCGNU::callIMP(
 	llvm::Constant *Two = llvm::ConstantInt::get(IntTy, 2);
 	llvm::Value *ExcGEPIndexes[] = { Zero, Two };
 	llvm::Value *ExceptionResult = ExceptionBuilder.CreateGEP(ExceptionData, ExcGEPIndexes, "exc_obj");
-	ExceptionResult = ExceptionBuilder.CreateBitCast(ExceptionBuilder.CreateLoad(ExceptionResult), ReturnTy);
-	ExceptionResult->getType()->dump();
 	
-	ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeros[0]));
 	
 	if (ReturnTy != Type::getVoidTy(Context))
 	{
+		ExceptionResult = ExceptionBuilder.CreateBitCast(ExceptionBuilder.CreateLoad(ExceptionResult), ReturnTy);
+		ExceptionResult->getType()->dump();
+		
+		ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeros[0]));
+		
+		
 		if (isSRet)
 		{
 			ret = Builder.CreateLoad(sret);
