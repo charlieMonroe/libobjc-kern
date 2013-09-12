@@ -536,6 +536,10 @@ llvm::Value *CGObjCGNU::callIMP(
                             llvm::BasicBlock *CleanupBlock,
                             llvm::MDNode *metadata)
 {
+	llvm::Value *retXXX = Builder.CreateAlloca(IdTy);
+	TryBuilder.CreateStore(Constant::getNullValue(IdTy), retXXX);
+	return retXXX;
+	
 	bool isSRet;
 	LLVMType *ReturnTy;
 	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
@@ -669,7 +673,6 @@ llvm::Value *CGObjCGNU::callIMP(
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
 	Builder.CreateCondBr(DidCatch, ExcBB, TryBB);
-	
 	
 	// Try BB
 	CGBuilder TryBuilder(TryBB);
