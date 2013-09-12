@@ -526,6 +526,10 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		initializeVariableWithValue(symbol, AI);
 		++AI;
 	}
+	
+	
+	return;
+	
 	// Entry point into the clanup
 	CleanupBB = BasicBlock::Create(CGM->Context, "cleanup", CurrentFunction);
 	// End point of the cleanup
