@@ -654,8 +654,8 @@ llvm::Value *CGObjCGNU::callIMP(
 	
 	// If setjmp returned 0, enter the protected block; otherwise,
 	// branch to the handler.
-	llvm::BasicBlock *ExcBB = BasicBlock::Create(Context, "exc.handler", Builder.GetInsertPoint()->getParent());
-	llvm::BasicBlock *TryBB = BasicBlock::Create(Context, "try.handler", Builder.GetInsertPoint()->getParent());
+	llvm::BasicBlock *ExcBB = BasicBlock::Create(Context, "exc.handler", Builder.GetInsertPoint());
+	llvm::BasicBlock *TryBB = BasicBlock::Create(Context, "try.handler", Builder.GetInsertPoint());
 	llvm::Value *DidCatch =
 	Builder.CreateIsNotNull(SetJmpResult, "did_catch_exception");
 	Builder.CreateCondBr(DidCatch, ExcBB, TryBB);
