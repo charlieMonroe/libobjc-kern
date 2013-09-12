@@ -529,8 +529,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		
 	// Entry point into the clanup
 	CleanupBB = BasicBlock::Create(CGM->Context, "cleanup", CurrentFunction);
-	// End point of the cleanup
-	CleanupEndBB = CleanupBB;
+	CGBuilder cleanupBuilder(CleanupBB);
+	
 	for (LKSymbol *symbol in locals)
 	{
 		initializeVariableWithValue(symbol, 0);
@@ -542,7 +542,6 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 			assert(0 != var);
 			var = loadByRefPointer(var);
 		}
-		CGBuilder cleanupBuilder(CleanupEndBB);
 		releaseVariable(cleanupBuilder.CreateLoad(var));
 	}
 	
