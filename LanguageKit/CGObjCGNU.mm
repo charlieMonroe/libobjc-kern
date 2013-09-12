@@ -686,6 +686,7 @@ llvm::Value *CGObjCGNU::callIMP(
 																				  Type::getVoidTy(Context), ExceptionDataPointerTy, (void *)0));
 	
 	TryBuilder.CreateCall(ExceptionTryExitFn, ExceptionData);
+	TryBuilder.ClearInsertionPoint();
 	
 	// Catch BB
 	CGBuilder ExceptionBuilder(ExcBB);
@@ -701,7 +702,7 @@ llvm::Value *CGObjCGNU::callIMP(
 		ExceptionResult->getType()->dump();
 		
 		ExceptionBuilder.CreateStore(ExceptionResult, ExceptionBuilder.CreateGEP(ret, Zeros[0]));
-		
+		ExceptionBuilder.ClearInsertionPoint();
 		
 		if (isSRet)
 		{
@@ -726,6 +727,8 @@ llvm::Value *CGObjCGNU::callIMP(
 				ret = Builder.CreateLoad(tmp);
 			}
 		}
+	}else{
+		ExceptionBuilder.ClearInsertionPoint();
 	}
 	
 	return ret;
