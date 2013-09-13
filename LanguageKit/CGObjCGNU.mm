@@ -536,11 +536,6 @@ llvm::Value *CGObjCGNU::callIMP(
                             llvm::BasicBlock *CleanupBlock,
                             llvm::MDNode *metadata)
 {
-	return NULL;
-	llvm::Value *retXXX = Builder.CreateAlloca(IdTy);
-	Builder.CreateStore(Constant::getNullValue(IdTy), retXXX);
-	return retXXX;
-	
 	bool isSRet;
 	LLVMType *ReturnTy;
 	llvm::FunctionType *fTy = types->functionTypeFromString(typeEncoding, isSRet, ReturnTy);
