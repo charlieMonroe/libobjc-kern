@@ -234,9 +234,14 @@ Another point where any locking or allocations are performed is the `@synchroniz
 ```
 Note that the LanguageKit isn't complete and currently the edlc process crashes when launched.
 
-Current state of this is that the generation of runtime structures is updated for the kernel module as well as the usage of integer-based selector.
+Current state of this is that the compiler emits the correct kernel runtime structures and the selector types have been updated to use the integer-based type.
 
-It is still missing the change from libunwind-based stack unwinding and exception handling to the setjmp-longjmp-based one.
+It is still missing some changes from libunwind-based stack unwinding and exception handling to the setjmp-longjmp-based one.
+
+An example of how the setjmp-longjmp-exception-handling-protected message calls should work is done in file CGObjCGNU - method callIMP. There's a few more places the libunwind-based invocations need to be replaced with similar calls (just search for IRBuilderCreateInvoke).
+
+
+Unfortunately, for reasons I haven't yet unraveled, the edlc process crashes in the callIMP function (on return from the function), failing a function cast assertion - however, only if the actual return type is void.
 ```
 
 An extension to this project is getting Smalltalk into the kernel. The Smalltalk runtime in included as well and it uses the ObjC runtime for all its features.
