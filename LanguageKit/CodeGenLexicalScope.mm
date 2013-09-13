@@ -827,7 +827,7 @@ Value *CodeGenSubroutine::MessageSendId(CGBuilder *B,
 	}
 	llvm::Value *msg = Runtime->GenerateMessageSend(*B,
 			SelfPtr, receiver, selName,
-			selTypes, argv, ExceptionBB);
+			selTypes, argv);
 	if (isObject(selTypes))
 	{
 		// Retain the result, and then release it at the end.
@@ -912,8 +912,9 @@ Value *CodeGenSubroutine::MessageSend(CGBuilder *B,
 				Args[i] = SmallIntBuilder.CreateBitCast(Args[i], ParamTy);
 			}
 		}
+		// TODO
 		Result = IRBuilderCreateInvoke(&SmallIntBuilder, SmallIntFunction,
-				smallIntContinueBB, ExceptionBB, Args,
+				smallIntContinueBB, NULL, Args,
 				"small_int_message_result");
 		SmallIntBuilder.SetInsertPoint(smallIntContinueBB);
 		SmallIntBuilder.ClearInsertionPoint();
@@ -1212,10 +1213,11 @@ Value *CodeGenSubroutine::CallFunction(NSString *functionName,
 	llvm::Instruction *ret = 0;
 	if (0 != CleanupBB)
 	{
+		// TODO
 		llvm::BasicBlock *continueBB =
 			llvm::BasicBlock::Create(CGM->Context, "invoke_continue",
 					Builder.GetInsertBlock()->getParent());
-		ret = IRBuilderCreateInvoke(&Builder, f, continueBB, ExceptionBB,
+		ret = IRBuilderCreateInvoke(&Builder, f, continueBB, NULL,
 			callArgs);
 		Builder.SetInsertPoint(continueBB);
 		cast<llvm::InvokeInst>(ret)->setAttributes(attributes);
@@ -1253,7 +1255,7 @@ Value *CodeGenSubroutine::MessageSendSuper(NSString *selName,
 
 	llvm::Value *msg = Runtime->GenerateMessageSendSuper(Builder,
 		Sender, CGM->SuperClassName, SelfPtr, selName, selTypes, args,
-		CGM->inClassMethod, ExceptionBB);
+		CGM->inClassMethod);
 	if (MethodTy->getReturnType() == realReturnType)
 	{
 		msg = Builder.CreateBitCast(msg, realReturnType);
