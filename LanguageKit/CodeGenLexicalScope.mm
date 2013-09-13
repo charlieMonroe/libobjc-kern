@@ -549,21 +549,7 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		releaseVariable(cleanupBuilder.CreateLoad(var));
 	}
 
-	LLVMType *Int1Ty = Type::getInt1Ty(CGM->Context);
-	// Flag indicating if we are in an exception handler.  Used for branching
-	// later - should be removed by mem2reg and subsequent passes.
-	Value *inException = Builder.CreateAlloca(Int1Ty, 0, "inException");
-	Value *is_catch =
-		Builder.CreateAlloca(Int1Ty, 0, "is_catch");
-	Value *exceptionPtr =
-		Builder.CreateAlloca(types.ptrToVoidTy, 0, "exception_pointer");
-	Context = Builder.CreateAlloca(types.ptrToVoidTy, 0, "context");
 
-	Builder.CreateStore(ConstantInt::get(Type::getInt1Ty(CGM->Context), 0), inException);
-	Builder.CreateStore(ConstantPointerNull::get(types.ptrToVoidTy), exceptionPtr);
-
-	
-	
 	// Create a basic block for returns, reached only from the cleanup block
 	RetVal = 0;
 	if (retTy != Type::getVoidTy(CGM->Context))
@@ -579,11 +565,12 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 		Builder.CreateStore(Constant::getNullValue(retTy), RetVal);
 	}
 	
+	
 	/// Handle returns
 
 	// Create the real return handler
-	BasicBlock *realRetBB = llvm::BasicBlock::Create(CGM->Context, "return", CurrentFunction);
-	CGBuilder ReturnBuilder(realRetBB);
+	RetBB = llvm::BasicBlock::Create(CGM->Context, "return", CurrentFunction);
+	CGBuilder ReturnBuilder(RetBB);
 
 	// If this is returning an object, autorelease it.
 	if (retTy != Type::getVoidTy(CGM->Context) && isObject(ReturnType) && !returnsRetained)
@@ -616,7 +603,6 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 	{
 		ReturnBuilder.CreateRetVoid();
 	}
-	ReturnBuilder.CreateBr(realRetBB);
 	
 	/*
 	ExceptionBB =
@@ -733,8 +719,8 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
 
 void CodeGenSubroutine::EndScope(void)
 {
-//	CGBuilder CleanupBuilder(CleanupEndBB);
-//	CleanupBuilder.CreateBr(RetBB);
+	CGBuilder CleanupBuilder(CleanupEndBB);
+	CleanupBuilder.CreateBr(RetBB);
 }
 void CodeGenSubroutine::storeValueInVariable(llvm::Value *value, NSString *aVariable)
 {

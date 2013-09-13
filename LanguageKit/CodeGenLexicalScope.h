@@ -30,7 +30,6 @@ class CodeGenSubroutine
 	friend class CGObjCRuntime;
 protected:
 	CodeGenModule *CGM;
-	Value *Context;
 	DIDescriptor ScopeDescriptor;
 
 	typedef unordered_map<id,
@@ -43,7 +42,6 @@ protected:
 	Value* RetVal;
 	BasicBlock* CleanupBB;
 	BasicBlock* CleanupEndBB;
-	BasicBlock* ExceptionBB;
 	BasicBlock* RetBB;
 	Function* CurrentFunction;
 	CGBuilder Builder;
