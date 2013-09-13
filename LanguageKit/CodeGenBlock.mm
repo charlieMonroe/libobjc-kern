@@ -155,7 +155,7 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 	// Self is bound directly.
 	Self = Builder.CreateStructGEP(blockContext, 6);
 	// Context pointer for non-local returns
-	Context = Builder.CreateLoad(Builder.CreateStructGEP(blockContext, 5));
+	llvm::Value *Context = Builder.CreateLoad(Builder.CreateStructGEP(blockContext, 5));
 
 	// Create the block structure in the parent scope.
 	CodeGenSubroutine *parent = CGM->ScopeStack.back();
@@ -177,7 +177,7 @@ CodeGenBlock::CodeGenBlock(NSArray *locals,
 	// The block descriptor
 	b.CreateStore(b.CreateBitCast(emitBlockDescriptor(signature, blockStructureTy), types.ptrToVoidTy),
 		b.CreateStructGEP(block, 4));
-	b.CreateStore(b.CreateBitCast(parent->Context, types.ptrToVoidTy), b.CreateStructGEP(block, 5));
+	b.CreateStore(b.CreateBitCast(Context, types.ptrToVoidTy), b.CreateStructGEP(block, 5));
 	b.CreateStore(parent->LoadSelf(), b.CreateStructGEP(block, 6));
 
 	int i = 7;
