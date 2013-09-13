@@ -499,6 +499,9 @@ void CodeGenSubroutine::InitialiseFunction(NSString *functionName,
                                            NSString *typeEncoding,
                                            BOOL returnsRetained)
 {
+	NSLog(@"Initializing %@, args %@, locals %@, type encoding %@", functionName,
+		  arguments, locals, typeEncoding);
+	
 	ReturnType = typeEncoding;
 	// FIXME: This is a very long function and difficult to follow.  Split it
 	// up into more sensibly-sized chunks.
